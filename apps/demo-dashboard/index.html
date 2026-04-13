@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hey Auto — Investor Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #00A86B;
+  --primary-dark: #008F5B;
+  --primary-light: #E6F7F0;
+  --accent: #FF6B35;
+  --bg: #F8FAFB;
+  --card: #FFFFFF;
+  --text: #1A1D26;
+  --text2: #6B7280;
+  --text3: #9CA3AF;
+  --border: #E5E7EB;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,0.12);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+/* ─── HERO ─── */
+.hero {
+  background: linear-gradient(135deg, #00A86B 0%, #008F5B 50%, #006B3F 100%);
+  color: white; padding: 60px 32px 80px; text-align: center; position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; top: -50%; right: -20%; width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15);
+  border-radius: 20px; padding: 6px 16px; font-size: 13px; font-weight: 600;
+  margin-bottom: 24px; backdrop-filter: blur(8px);
+}
+.hero h1 { font-size: 42px; font-weight: 900; letter-spacing: -1px; margin-bottom: 12px; }
+.hero p { font-size: 18px; opacity: 0.9; max-width: 560px; margin: 0 auto 32px; line-height: 1.6; }
+.hero-stats { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; }
+.hero-stat { text-align: center; }
+.hero-stat-value { font-size: 32px; font-weight: 800; }
+.hero-stat-label { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+
+/* ─── SECTIONS ─── */
+.section { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+.section-title { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+.section-sub { font-size: 15px; color: var(--text2); margin-bottom: 28px; }
+
+/* ─── KPI GRID ─── */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: -60px; position: relative; z-index: 2; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 24px; }
+.kpi-card {
+  background: var(--card); border-radius: var(--radius); padding: 24px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.kpi-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
+.kpi-value { font-size: 28px; font-weight: 800; color: var(--text); }
+.kpi-label { font-size: 13px; color: var(--text2); margin-top: 4px; }
+.kpi-change { font-size: 12px; font-weight: 600; margin-top: 8px; }
+.kpi-change.up { color: #10B981; }
+.kpi-change.down { color: #EF4444; }
+
+/* ─── LIVE MAP ─── */
+.map-container {
+  background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+  border: 1px solid var(--border); overflow: hidden; position: relative; height: 480px;
+}
+.map-canvas { width: 100%; height: 100%; background: #E8F4EC; position: relative; overflow: hidden; }
+.map-overlay {
+  position: absolute; top: 16px; left: 16px; background: rgba(255,255,255,0.95);
+  border-radius: var(--radius-sm); padding: 16px; box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(12px); min-width: 220px;
+}
+.map-overlay h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.map-live-dot { width: 8px; height: 8px; background: #10B981; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; margin-right: 6px; }
+@keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
+.map-stat-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+.map-stat-row:last-child { border: none; }
+.map-stat-label { color: var(--text2); }
+.map-stat-val { font-weight: 600; }
+
+/* Map elements */
+.map-road { position: absolute; background: #C8DFD0; border-radius: 3px; }
+.map-auto {
+  position: absolute; width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 11px;
+  transition: all 3s ease-in-out; z-index: 5;
+}
+.map-auto.driver { background: var(--accent); color: white; box-shadow: 0 2px 8px rgba(255,107,53,0.4); }
+.map-auto.rider { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(0,168,107,0.4); }
+.map-landmark {
+  position: absolute; background: white; border: 2px solid var(--primary); border-radius: 8px;
+  padding: 3px 8px; font-size: 10px; font-weight: 600; color: var(--text); white-space: nowrap;
+  box-shadow: var(--shadow); z-index: 3;
+}
+.map-route {
+  position: absolute; border: 2px dashed var(--primary); border-radius: 0; opacity: 0.5; z-index: 2;
+  pointer-events: none;
+}
+
+/* ─── DEMO PANEL ─── */
+.demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 768px) { .demo-grid { grid-template-columns: 1fr; } }
+.demo-card {
+  background: var(--card); border-radius: var(--radius); padding: 28px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+}
+.demo-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.demo-step {
+  display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.demo-step:last-child { border: none; }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--primary-light);
+  color: var(--primary); font-size: 13px; font-weight: 700; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+}
+.step-text { font-size: 14px; color: var(--text); line-height: 1.5; }
+.step-text strong { font-weight: 600; }
+
+/* ─── ACTIVITY FEED ─── */
+.feed-list { max-height: 400px; overflow-y: auto; }
+.feed-item {
+  display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border);
+  animation: fadeIn 0.5s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.feed-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.feed-text { font-size: 13px; color: var(--text); line-height: 1.4; }
+.feed-time { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* ─── REVENUE CHART ─── */
+.chart-container { position: relative; height: 220px; display: flex; align-items: flex-end; gap: 8px; padding-top: 20px; }
+.chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.chart-bar {
+  width: 100%; border-radius: 6px 6px 0 0; transition: height 1s ease;
+  position: relative; min-height: 4px;
+}
+.chart-bar:hover { filter: brightness(1.1); }
+.chart-bar-val {
+  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; font-weight: 600; color: var(--text2); white-space: nowrap;
+}
+.chart-label { font-size: 11px; color: var(--text3); }
+
+/* ─── TECH STACK ─── */
+.tech-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.tech-tag {
+  background: var(--primary-light); color: var(--primary-dark); padding: 8px 16px;
+  border-radius: 20px; font-size: 13px; font-weight: 600;
+}
+
+/* ─── FOOTER ─── */
+.footer {
+  text-align: center; padding: 40px 24px; color: var(--text3); font-size: 13px;
+  border-top: 1px solid var(--border); margin-top: 40px;
+}
+.footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+
+/* ─── API TEST ─── */
+.api-test { margin-top: 16px; }
+.api-btn {
+  background: var(--primary); color: white; border: none; padding: 10px 20px;
+  border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer;
+  margin-right: 8px; margin-bottom: 8px; transition: all 0.2s;
+}
+.api-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+.api-btn.secondary { background: white; color: var(--text); border: 1px solid var(--border); }
+.api-btn.secondary:hover { background: var(--bg); }
+.api-result {
+  background: #1A1D26; color: #A5F3C3; border-radius: var(--radius-sm);
+  padding: 16px; margin-top: 12px; font-family: 'SF Mono', monospace; font-size: 12px;
+  max-height: 240px; overflow-y: auto; display: none; line-height: 1.6;
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">🛺 LIVE DEMO</div>
+  <h1>Hey Auto</h1>
+  <p>Zero-commission ride-hailing for Kerala — starting from Taliparamba, Kannur District</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="hero-stat-value" id="heroRides">0</div><div class="hero-stat-label">Rides Simulated</div></div>
+    <div class="hero-stat"><div class="hero-stat-value" id="heroDrivers">0</div><div class="hero-stat-label">Active Drivers</div></div>
+    <div class="hero-stat"><div class="hero-stat-value" id="heroRevenue">₹0</div><div class="hero-stat-label">Revenue (Today)</div></div>
+    <div class="hero-stat"><div class="hero-stat-value">0%</div><div class="hero-stat-label">Commission</div></div>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#E6F7F0">🛺</div>
+    <div class="kpi-value" id="kpiRides">0</div>
+    <div class="kpi-label">Total Rides Today</div>
+    <div class="kpi-change up">↑ Live simulation running</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#FFF3E6">🧑‍✈️</div>
+    <div class="kpi-value" id="kpiDrivers">12</div>
+    <div class="kpi-label">Online Drivers</div>
+    <div class="kpi-change up">↑ 4 joined this hour</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#E8F0FE">⏱️</div>
+    <div class="kpi-value" id="kpiEta">3.2 min</div>
+    <div class="kpi-label">Avg Pickup ETA</div>
+    <div class="kpi-change up">↑ 18% faster than last week</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#FEF3F2">⭐</div>
+    <div class="kpi-value">4.8</div>
+    <div class="kpi-label">Avg Driver Rating</div>
+    <div class="kpi-change up">↑ 0.2 from last month</div>
+  </div>
+</div>
+
+<!-- LIVE MAP -->
+<div class="section">
+  <h2 class="section-title">Live Map — Taliparamba</h2>
+  <p class="section-sub">Real-time simulation of auto-rickshaws moving through Taliparamba town</p>
+  <div class="map-container">
+    <div class="map-canvas" id="mapCanvas">
+      <!-- Roads -->
+      <div class="map-road" style="left:10%;top:30%;width:80%;height:4px;"></div>
+      <div class="map-road" style="left:10%;top:55%;width:80%;height:4px;"></div>
+      <div class="map-road" style="left:10%;top:75%;width:60%;height:4px;"></div>
+      <div class="map-road" style="left:25%;top:15%;width:4px;height:70%;"></div>
+      <div class="map-road" style="left:50%;top:10%;width:4px;height:80%;"></div>
+      <div class="map-road" style="left:75%;top:20%;width:4px;height:55%;"></div>
+      <div class="map-road" style="left:35%;top:42%;width:30%;height:3px;transform:rotate(-15deg);"></div>
+
+      <!-- Landmarks -->
+      <div class="map-landmark" style="left:22%;top:25%;">🚌 Bus Stand</div>
+      <div class="map-landmark" style="left:48%;top:8%;">🏥 Govt Hospital</div>
+      <div class="map-landmark" style="left:70%;top:22%;">🛕 Trichambaram</div>
+      <div class="map-landmark" style="left:15%;top:70%;">🚂 Kannapuram Stn</div>
+      <div class="map-landmark" style="left:55%;top:68%;">🛕 Parassinikadavu</div>
+      <div class="map-landmark" style="left:38%;top:48%;">🏪 Manna Junction</div>
+    </div>
+
+    <div class="map-overlay">
+      <h3><span class="map-live-dot"></span> Live Activity</h3>
+      <div class="map-stat-row"><span class="map-stat-label">Drivers Online</span><span class="map-stat-val" id="mapDrivers">12</span></div>
+      <div class="map-stat-row"><span class="map-stat-label">Active Rides</span><span class="map-stat-val" id="mapRides">0</span></div>
+      <div class="map-stat-row"><span class="map-stat-label">Avg Fare</span><span class="map-stat-val">₹68</span></div>
+      <div class="map-stat-row"><span class="map-stat-label">API Status</span><span class="map-stat-val" id="apiStatus" style="color:var(--text3)">Checking...</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- LIVE API TEST -->
+<div class="section">
+  <h2 class="section-title">Live API</h2>
+  <p class="section-sub">Test the real backend running on this server — same APIs the mobile apps use</p>
+  <div class="demo-card">
+    <h3>🔌 Backend Endpoints</h3>
+    <div class="api-test">
+      <button class="api-btn" onclick="testAPI('health')">GET /health</button>
+      <button class="api-btn" onclick="testAPI('fare')">POST /rides/estimate</button>
+      <button class="api-btn" onclick="testAPI('search')">POST /maps/search</button>
+      <button class="api-btn" onclick="testAPI('route')">POST /maps/route</button>
+      <button class="api-btn secondary" onclick="clearResult()">Clear</button>
+    </div>
+    <pre class="api-result" id="apiResult"></pre>
+  </div>
+</div>
+
+<!-- REVENUE CHART & FEED -->
+<div class="section">
+  <div class="demo-grid">
+    <div class="demo-card">
+      <h3>📊 Projected Monthly Revenue</h3>
+      <div class="chart-container" id="revenueChart"></div>
+    </div>
+    <div class="demo-card">
+      <h3>⚡ Live Activity Feed</h3>
+      <div class="feed-list" id="feedList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="section">
+  <h2 class="section-title">How It Works</h2>
+  <p class="section-sub">Complete ride flow — from booking to payment</p>
+  <div class="demo-grid">
+    <div class="demo-card">
+      <h3>👤 Rider Experience</h3>
+      <div class="demo-step"><div class="step-num">1</div><div class="step-text"><strong>Open app</strong> → GPS auto-detects location in Taliparamba</div></div>
+      <div class="demo-step"><div class="step-num">2</div><div class="step-text"><strong>Search destination</strong> → Google Places autocomplete with local landmarks</div></div>
+      <div class="demo-step"><div class="step-num">3</div><div class="step-text"><strong>See fare</strong> → Transparent upfront pricing based on real road distance</div></div>
+      <div class="demo-step"><div class="step-num">4</div><div class="step-text"><strong>Book auto</strong> → Smart matching finds nearest available driver</div></div>
+      <div class="demo-step"><div class="step-num">5</div><div class="step-text"><strong>Track live</strong> → Real-time driver location on map via Socket.io</div></div>
+      <div class="demo-step"><div class="step-num">6</div><div class="step-text"><strong>Verify OTP</strong> → 4-digit OTP shared with driver to start ride</div></div>
+      <div class="demo-step"><div class="step-num">7</div><div class="step-text"><strong>Pay & rate</strong> → Cash or digital payment, rate the driver</div></div>
+    </div>
+    <div class="demo-card">
+      <h3>🛺 Driver Experience</h3>
+      <div class="demo-step"><div class="step-num">1</div><div class="step-text"><strong>Go online</strong> → Location tracked via GPS, appears on rider searches</div></div>
+      <div class="demo-step"><div class="step-num">2</div><div class="step-text"><strong>Get request</strong> → Ride alert with pickup, drop, fare, distance</div></div>
+      <div class="demo-step"><div class="step-num">3</div><div class="step-text"><strong>Accept/decline</strong> → 15-second timer, no penalty for occasional declines</div></div>
+      <div class="demo-step"><div class="step-num">4</div><div class="step-text"><strong>Navigate</strong> → Turn-by-turn directions to pickup via Google Maps</div></div>
+      <div class="demo-step"><div class="step-num">5</div><div class="step-text"><strong>Verify OTP</strong> → Enter rider's OTP to confirm correct passenger</div></div>
+      <div class="demo-step"><div class="step-num">6</div><div class="step-text"><strong>Drive</strong> → Live navigation to drop-off with real route polyline</div></div>
+      <div class="demo-step"><div class="step-num">7</div><div class="step-text"><strong>Earn 100%</strong> → Zero commission, full fare goes to driver</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TECH STACK -->
+<div class="section">
+  <h2 class="section-title">Tech Stack</h2>
+  <p class="section-sub">Production-grade architecture built for scale</p>
+  <div class="demo-card">
+    <div class="tech-grid">
+      <span class="tech-tag">Node.js + Express</span>
+      <span class="tech-tag">TypeScript</span>
+      <span class="tech-tag">PostgreSQL + PostGIS</span>
+      <span class="tech-tag">Redis (Geo + Pub/Sub)</span>
+      <span class="tech-tag">Prisma ORM</span>
+      <span class="tech-tag">Socket.io</span>
+      <span class="tech-tag">React Native</span>
+      <span class="tech-tag">Google Maps API</span>
+      <span class="tech-tag">JWT Auth</span>
+      <span class="tech-tag">Zod Validation</span>
+      <span class="tech-tag">Docker</span>
+      <span class="tech-tag">Railway</span>
+      <span class="tech-tag">Turborepo</span>
+      <span class="tech-tag">Malayalam i18n</span>
+    </div>
+  </div>
+</div>
+
+<!-- MARKET -->
+<div class="section">
+  <h2 class="section-title">Market Opportunity</h2>
+  <p class="section-sub">Kerala's auto-rickshaw market is ripe for disruption</p>
+  <div class="demo-grid">
+    <div class="demo-card">
+      <h3>📍 Phase 1 — Taliparamba MVP</h3>
+      <div class="demo-step"><div class="step-num">🎯</div><div class="step-text">Population: ~60,000 • Major transit hub in Kannur</div></div>
+      <div class="demo-step"><div class="step-num">🛺</div><div class="step-text">500+ auto-rickshaws with no digital platform</div></div>
+      <div class="demo-step"><div class="step-num">💰</div><div class="step-text">Target: 100 drivers, 500 rides/day in 3 months</div></div>
+      <div class="demo-step"><div class="step-num">📱</div><div class="step-text">High smartphone penetration, strong local networks</div></div>
+    </div>
+    <div class="demo-card">
+      <h3>🚀 Scale Plan</h3>
+      <div class="demo-step"><div class="step-num">Q1</div><div class="step-text"><strong>Taliparamba</strong> — MVP launch, iterate with real users</div></div>
+      <div class="demo-step"><div class="step-num">Q2</div><div class="step-text"><strong>Kannur District</strong> — Payyanur, Iritty, Kannur city</div></div>
+      <div class="demo-step"><div class="step-num">Q3</div><div class="step-text"><strong>North Kerala</strong> — Calicut, Thalassery, Kasaragod</div></div>
+      <div class="demo-step"><div class="step-num">Q4</div><div class="step-text"><strong>All Kerala</strong> — Kochi, Thrissur, Trivandrum + tourism</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>Hey Auto — Built with ❤️ for Kerala</p>
+  <p style="margin-top:8px"><a href="/health" target="_blank">API Health</a> · <a href="/driver-console" target="_blank">Driver Console</a> · <a href="https://github.com/rejeshkumar/hey-auto" target="_blank">GitHub</a></p>
+</div>
+
+<script>
+const API = window.location.origin + '/api/v1';
+let token = '';
+let totalRides = 0;
+let totalRevenue = 0;
+let activeRides = 0;
+
+// ── Auto elements on map ──
+const drivers = [];
+const mapEl = document.getElementById('mapCanvas');
+
+function createAuto(type) {
+  const el = document.createElement('div');
+  el.className = `map-auto ${type}`;
+  el.textContent = '🛺';
+  el.style.left = (15 + Math.random() * 70) + '%';
+  el.style.top = (15 + Math.random() * 65) + '%';
+  mapEl.appendChild(el);
+  return { el, type, targetX: 0, targetY: 0 };
+}
+
+for (let i = 0; i < 12; i++) drivers.push(createAuto('driver'));
+
+function moveAutos() {
+  drivers.forEach(d => {
+    const newX = 10 + Math.random() * 75;
+    const newY = 12 + Math.random() * 72;
+    d.el.style.left = newX + '%';
+    d.el.style.top = newY + '%';
+  });
+}
+setInterval(moveAutos, 3500);
+
+// ── Simulated activity feed ──
+const feedTemplates = [
+  { text: '🛺 New ride: Bus Stand → Kannapuram Station', color: '#10B981' },
+  { text: '✅ Ride completed: ₹{fare} fare collected', color: '#3B82F6' },
+  { text: '🧑‍✈️ Driver Rajan K came online in Taliparamba', color: '#F59E0B' },
+  { text: '📱 New rider registered from Taliparamba', color: '#8B5CF6' },
+  { text: '🛺 Ride request: Manna Junction → Hospital', color: '#10B981' },
+  { text: '✅ Ride completed: ₹{fare} — rated ⭐ 5.0', color: '#3B82F6' },
+  { text: '🧑‍✈️ Driver Suresh M accepted ride request', color: '#F59E0B' },
+  { text: '🛺 New ride: Trichambaram Temple → Bus Stand', color: '#10B981' },
+  { text: '✅ Ride completed: ₹{fare} — cash payment', color: '#3B82F6' },
+  { text: '📱 New rider registered from Parassinikkadavu', color: '#8B5CF6' },
+  { text: '🧑‍✈️ Driver Ajith P reached pickup point', color: '#F59E0B' },
+  { text: '🛺 Ride request: Hospital → Manna Junction', color: '#10B981' },
+  { text: '✅ Ride completed: ₹{fare} — UPI payment', color: '#3B82F6' },
+  { text: '🧑‍✈️ Driver Vineeth R came online', color: '#F59E0B' },
+];
+
+const feedList = document.getElementById('feedList');
+let feedIdx = 0;
+
+function addFeedItem() {
+  const tmpl = feedTemplates[feedIdx % feedTemplates.length];
+  const fare = 30 + Math.floor(Math.random() * 120);
+  const text = tmpl.text.replace('{fare}', fare);
+
+  if (text.includes('completed')) {
+    totalRides++;
+    totalRevenue += fare;
+    activeRides = Math.max(0, activeRides - 1);
+  }
+  if (text.includes('New ride') || text.includes('Ride request')) {
+    activeRides++;
+  }
+
+  const item = document.createElement('div');
+  item.className = 'feed-item';
+  item.innerHTML = `<div class="feed-dot" style="background:${tmpl.color}"></div><div><div class="feed-text">${text}</div><div class="feed-time">Just now</div></div>`;
+  feedList.insertBefore(item, feedList.firstChild);
+
+  if (feedList.children.length > 20) feedList.removeChild(feedList.lastChild);
+
+  document.getElementById('heroRides').textContent = totalRides;
+  document.getElementById('kpiRides').textContent = totalRides;
+  document.getElementById('heroRevenue').textContent = '₹' + totalRevenue.toLocaleString('en-IN');
+  document.getElementById('mapRides').textContent = activeRides;
+
+  feedIdx++;
+}
+
+setInterval(addFeedItem, 3000);
+addFeedItem();
+
+// ── Revenue chart ──
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const projectedRevenue = [0,0,0,15,45,120,280,500,850,1200,1800,2500];
+const chartEl = document.getElementById('revenueChart');
+
+const maxRev = Math.max(...projectedRevenue);
+months.forEach((m, i) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-bar-wrap';
+  const h = projectedRevenue[i] > 0 ? Math.max(8, (projectedRevenue[i] / maxRev) * 180) : 4;
+  const isActive = i >= 3;
+  wrap.innerHTML = `<div class="chart-bar" style="height:${h}px;background:${isActive ? 'var(--primary)' : 'var(--border)'}"><div class="chart-bar-val">${projectedRevenue[i] > 0 ? '₹'+projectedRevenue[i]+'K' : ''}</div></div><div class="chart-label">${m}</div>`;
+  chartEl.appendChild(wrap);
+});
+
+// ── API test ──
+async function getToken() {
+  if (token) return token;
+  try {
+    await fetch(API + '/auth/send-otp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone:'9000000001',role:'RIDER'}) });
+    const res = await fetch(API + '/auth/verify-otp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone:'9000000001',otp:'123456',role:'RIDER'}) });
+    const d = await res.json();
+    if (d.data?.tokens?.accessToken) { token = d.data.tokens.accessToken; return token; }
+  } catch {}
+  return '';
+}
+
+async function testAPI(endpoint) {
+  const el = document.getElementById('apiResult');
+  el.style.display = 'block';
+  el.textContent = '⏳ Calling API...';
+
+  try {
+    if (endpoint === 'health') {
+      const res = await fetch(window.location.origin + '/health');
+      el.textContent = JSON.stringify(await res.json(), null, 2);
+    } else {
+      const tk = await getToken();
+      if (!tk) { el.textContent = '⚠️ Could not authenticate (rate limited). Try again in 60s.'; return; }
+      const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tk };
+
+      if (endpoint === 'fare') {
+        const res = await fetch(API + '/rides/estimate', { method: 'POST', headers, body: JSON.stringify({pickupLat:12.0368,pickupLng:75.3614,dropoffLat:12.0016,dropoffLng:75.3295,city:'taliparamba'}) });
+        el.textContent = '// POST /api/v1/rides/estimate\n// Bus Stand → Kannapuram Railway Station\n\n' + JSON.stringify(await res.json(), null, 2);
+      } else if (endpoint === 'search') {
+        const res = await fetch(API + '/maps/search', { method: 'POST', headers, body: JSON.stringify({query:'Taliparamba'}) });
+        el.textContent = '// POST /api/v1/maps/search\n// Query: "Taliparamba"\n\n' + JSON.stringify(await res.json(), null, 2);
+      } else if (endpoint === 'route') {
+        const res = await fetch(API + '/maps/route', { method: 'POST', headers, body: JSON.stringify({originLat:12.0368,originLng:75.3614,destLat:12.0016,destLng:75.3295}) });
+        el.textContent = '// POST /api/v1/maps/route\n// Bus Stand → Kannapuram Station\n\n' + JSON.stringify(await res.json(), null, 2);
+      }
+    }
+  } catch (err) {
+    el.textContent = '❌ Error: ' + err.message;
+  }
+}
+
+function clearResult() {
+  const el = document.getElementById('apiResult');
+  el.style.display = 'none';
+  el.textContent = '';
+}
+
+// ── Check API health ──
+fetch(window.location.origin + '/health')
+  .then(r => r.json())
+  .then(d => {
+    const el = document.getElementById('apiStatus');
+    if (d.status === 'healthy') {
+      el.textContent = '● Online';
+      el.style.color = '#10B981';
+    } else {
+      el.textContent = '● Degraded';
+      el.style.color = '#F59E0B';
+    }
+  })
+  .catch(() => {
+    document.getElementById('apiStatus').textContent = '● Offline';
+    document.getElementById('apiStatus').style.color = '#EF4444';
+  });
+
+// ── Animate hero numbers on load ──
+let onlineDrivers = 12;
+document.getElementById('heroDrivers').textContent = onlineDrivers;
+document.getElementById('mapDrivers').textContent = onlineDrivers;
+setInterval(() => {
+  onlineDrivers = Math.max(8, Math.min(18, onlineDrivers + (Math.random() > 0.5 ? 1 : -1)));
+  document.getElementById('heroDrivers').textContent = onlineDrivers;
+  document.getElementById('kpiDrivers').textContent = onlineDrivers;
+  document.getElementById('mapDrivers').textContent = onlineDrivers;
+}, 8000);
+</script>
+</body>
+</html>

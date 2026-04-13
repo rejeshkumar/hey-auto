@@ -1,5 +1,6 @@
 import express from 'express';
 import http from 'http';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -96,6 +97,16 @@ app.use(`${apiPrefix}/payments`, paymentRoutes);
 app.use(`${apiPrefix}/notifications`, notificationRoutes);
 app.use(`${apiPrefix}/admin`, adminRoutes);
 app.use(`${apiPrefix}/maps`, mapsRoutes);
+
+// Serve static web apps (demo dashboard, driver console)
+const publicDir = path.join(__dirname, '..', 'public');
+app.use('/demo', express.static(path.join(publicDir, 'demo')));
+app.use('/driver-console', express.static(path.join(publicDir, 'driver-console')));
+
+// Root redirect to demo
+app.get('/', (_req, res) => {
+  res.redirect('/demo');
+});
 
 // 404 handler
 app.use((_req, res) => {
