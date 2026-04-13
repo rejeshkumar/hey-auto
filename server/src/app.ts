@@ -99,7 +99,9 @@ app.use(`${apiPrefix}/admin`, adminRoutes);
 app.use(`${apiPrefix}/maps`, mapsRoutes);
 
 // Serve static web apps (demo dashboard, driver console)
-const publicDir = path.join(process.cwd(), 'public');
+// In Docker: cwd is /app/server, public is at /app/public
+// Locally: cwd is /project/server, public would be at /project/public
+const publicDir = path.resolve(process.cwd(), '..', 'public');
 app.use('/demo', express.static(path.join(publicDir, 'demo')));
 app.use('/driver-console', express.static(path.join(publicDir, 'driver-console')));
 
