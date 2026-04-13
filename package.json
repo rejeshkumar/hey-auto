@@ -1,0 +1,34 @@
+{
+  "name": "hey-auto",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hey Auto - Zero-commission auto-rickshaw booking platform for Kerala",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "server"
+  ],
+  "scripts": {
+    "dev:server": "turbo run dev --filter=server",
+    "dev:rider": "turbo run start --filter=rider-app",
+    "dev:driver": "turbo run start --filter=driver-app",
+    "dev:admin": "turbo run dev --filter=admin-dashboard",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "db:migrate": "cd server && npx prisma migrate dev",
+    "db:seed": "cd server && npx prisma db seed",
+    "db:studio": "cd server && npx prisma studio",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@10.8.0"
+}

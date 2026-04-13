@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: heyauto-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: heyauto
+      POSTGRES_USER: heyauto
+      POSTGRES_PASSWORD: heyauto_dev_2024
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heyauto"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: heyauto-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: heyauto-redis-ui
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    depends_on:
+      - redis
+
+volumes:
+  postgres_data:
+  redis_data:

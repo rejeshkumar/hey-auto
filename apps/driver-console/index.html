@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hey Auto — Driver Console</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #FF6B00;
+      --primary-light: #FFF3E8;
+      --green: #10B981;
+      --green-light: #D1FAE5;
+      --red: #EF4444;
+      --red-light: #FEE2E2;
+      --blue: #3B82F6;
+      --text: #1A1A2E;
+      --text2: #6B7280;
+      --text3: #9CA3AF;
+      --bg: #F7F8FA;
+      --card: #FFFFFF;
+      --border: #E5E7EB;
+      --rating: #F5A623;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    .header {
+      background: var(--card); border-bottom: 1px solid var(--border);
+      padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .logo { font-size: 24px; }
+    .header h1 { font-size: 20px; color: var(--primary); }
+    .header h1 span { color: var(--text); font-weight: 400; }
+    .status-badge {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;
+    }
+    .status-online { background: var(--green-light); color: var(--green); }
+    .status-offline { background: var(--red-light); color: var(--red); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-online .status-dot { background: var(--green); }
+    .status-offline .status-dot { background: var(--red); }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+
+    /* Login screen */
+    .login-screen { display: flex; align-items: center; justify-content: center; min-height: 80vh; }
+    .login-card {
+      background: var(--card); border-radius: 16px; padding: 48px; width: 100%; max-width: 420px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08); text-align: center;
+    }
+    .login-card .logo { font-size: 48px; margin-bottom: 16px; }
+    .login-card h2 { font-size: 24px; margin-bottom: 4px; }
+    .login-card p { color: var(--text2); margin-bottom: 32px; }
+    .form-group { margin-bottom: 16px; text-align: left; }
+    .form-group label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: var(--text2); }
+    .form-group input {
+      width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 12px;
+      font-size: 16px; outline: none; transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: var(--primary); }
+    .phone-input { display: flex; gap: 8px; }
+    .phone-prefix {
+      padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 12px;
+      background: var(--bg); font-weight: 600; font-size: 16px; color: var(--text);
+    }
+
+    .btn {
+      padding: 14px 24px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600;
+      cursor: pointer; width: 100%; transition: all 0.2s; display: flex; align-items: center;
+      justify-content: center; gap: 8px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: #D45A00; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-green { background: var(--green); color: white; }
+    .btn-green:hover { background: #059669; }
+    .btn-red { background: var(--red); color: white; }
+    .btn-red:hover { background: #DC2626; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--bg); }
+    .btn-sm { padding: 10px 16px; font-size: 14px; width: auto; }
+
+    .otp-inputs { display: flex; gap: 8px; justify-content: center; margin: 24px 0; }
+    .otp-inputs input {
+      width: 48px; height: 56px; text-align: center; font-size: 22px; font-weight: 700;
+      border: 1.5px solid var(--border); border-radius: 12px; outline: none;
+    }
+    .otp-inputs input:focus { border-color: var(--primary); }
+
+    /* Dashboard */
+    .dashboard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+      background: var(--card); border-radius: 12px; padding: 20px; text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .stat-value { font-size: 32px; font-weight: 800; color: var(--green); }
+    .stat-label { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+    .toggle-section { text-align: center; margin-bottom: 32px; }
+    .toggle-btn {
+      padding: 20px 48px; border-radius: 16px; font-size: 18px; font-weight: 700;
+      border: none; cursor: pointer; transition: all 0.3s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .toggle-online { background: var(--red); color: white; }
+    .toggle-offline { background: var(--primary); color: white; }
+    .waiting-text { color: var(--text3); margin-top: 16px; font-size: 15px; }
+
+    /* Ride request */
+    .ride-request {
+      background: var(--card); border-radius: 16px; padding: 24px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12); border-left: 4px solid var(--primary);
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .request-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .request-title { font-size: 18px; font-weight: 700; }
+    .request-timer {
+      background: var(--primary-light); color: var(--primary); padding: 4px 12px;
+      border-radius: 20px; font-weight: 700; font-size: 14px;
+    }
+    .request-fare { font-size: 36px; font-weight: 800; color: var(--primary); margin: 8px 0; }
+    .request-meta { display: flex; gap: 16px; color: var(--text2); font-size: 14px; margin-bottom: 16px; }
+    .route-section {
+      background: var(--bg); border-radius: 12px; padding: 16px; margin-bottom: 16px;
+    }
+    .route-point { display: flex; gap: 12px; align-items: flex-start; padding: 4px 0; }
+    .route-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .route-line { width: 2px; height: 16px; background: var(--border); margin-left: 4px; }
+    .route-label { font-size: 12px; color: var(--text3); font-weight: 600; }
+    .route-addr { font-size: 15px; color: var(--text); }
+    .request-actions { display: flex; gap: 12px; }
+    .request-actions .btn { flex: 1; }
+
+    /* Active ride phases */
+    .ride-phase {
+      background: var(--card); border-radius: 16px; padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .phase-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .phase-sub { color: var(--text2); margin-bottom: 16px; }
+    .rider-card {
+      display: flex; align-items: center; gap: 12px; background: var(--bg);
+      border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;
+    }
+    .rider-avatar { width: 44px; height: 44px; border-radius: 22px; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .rider-name { font-weight: 600; }
+    .rider-rating { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--text2); }
+    .otp-display {
+      background: var(--green-light); border-radius: 12px; padding: 20px; text-align: center; margin: 16px 0;
+    }
+    .otp-display .label { font-size: 13px; color: var(--text2); }
+    .otp-display .code { font-size: 32px; font-weight: 800; color: var(--green); letter-spacing: 8px; }
+    .otp-verify { display: flex; gap: 8px; margin-bottom: 16px; }
+    .otp-verify input { flex: 1; padding: 14px; font-size: 20px; text-align: center; letter-spacing: 8px; border: 2px solid var(--border); border-radius: 12px; font-weight: 700; }
+    .completed-card { text-align: center; padding: 24px 0; }
+    .completed-icon { font-size: 56px; margin-bottom: 12px; }
+    .completed-fare { font-size: 48px; font-weight: 800; color: var(--green); }
+    .completed-label { color: var(--text2); margin-top: 4px; }
+
+    .log-section { margin-top: 32px; }
+    .log-section h3 { font-size: 16px; margin-bottom: 12px; color: var(--text2); }
+    .log-entry {
+      padding: 8px 12px; font-size: 13px; font-family: 'SF Mono', monospace;
+      background: var(--card); border-radius: 6px; margin-bottom: 4px;
+      border-left: 3px solid var(--border); color: var(--text2);
+    }
+    .log-entry.success { border-left-color: var(--green); }
+    .log-entry.info { border-left-color: var(--blue); }
+    .log-entry.warning { border-left-color: var(--rating); }
+
+    .hidden { display: none !important; }
+    .mt-16 { margin-top: 16px; }
+    .text-center { text-align: center; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span class="logo">🛺</span>
+    <h1>Hey Auto <span>Driver Console</span></h1>
+  </div>
+  <div id="statusBadge" class="status-badge status-offline hidden">
+    <span class="status-dot"></span>
+    <span id="statusText">Offline</span>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="container login-screen">
+  <div class="login-card">
+    <div class="logo">🛺</div>
+    <h2>Driver Console</h2>
+    <p>Taliparamba, Kannur District</p>
+
+    <div id="phoneStep">
+      <div class="form-group">
+        <label>Phone Number</label>
+        <div class="phone-input">
+          <span class="phone-prefix">+91</span>
+          <input type="tel" id="phoneInput" placeholder="9876543211" maxlength="10" value="9876543211">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="sendOtp()">Send OTP</button>
+      <p style="margin-top:16px;font-size:13px;color:var(--text3)">Demo driver: 9876543211 • OTP: 123456</p>
+    </div>
+
+    <div id="otpStep" class="hidden">
+      <p style="margin-bottom:8px;color:var(--text2)" id="otpSentText"></p>
+      <div class="otp-inputs">
+        <input type="text" maxlength="1" oninput="otpNext(this,0)" id="otp0">
+        <input type="text" maxlength="1" oninput="otpNext(this,1)" id="otp1">
+        <input type="text" maxlength="1" oninput="otpNext(this,2)" id="otp2">
+        <input type="text" maxlength="1" oninput="otpNext(this,3)" id="otp3">
+        <input type="text" maxlength="1" oninput="otpNext(this,4)" id="otp4">
+        <input type="text" maxlength="1" oninput="otpNext(this,5)" id="otp5">
+      </div>
+      <button class="btn btn-primary" onclick="verifyOtp()">Verify & Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="container hidden">
+  <div class="dashboard-grid">
+    <div class="stat-card">
+      <div class="stat-value" id="todayEarnings">₹0</div>
+      <div class="stat-label">Today's Earnings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--primary)" id="todayRides">0</div>
+      <div class="stat-label">Rides Today</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--blue)" id="driverRating">5.0</div>
+      <div class="stat-label">Rating</div>
+    </div>
+  </div>
+
+  <div class="toggle-section">
+    <button id="toggleBtn" class="toggle-btn toggle-offline" onclick="toggleOnline()">
+      ⚡ Go Online
+    </button>
+    <p class="waiting-text hidden" id="waitingText">Waiting for ride requests...</p>
+  </div>
+
+  <!-- Ride Request -->
+  <div id="rideRequest" class="hidden"></div>
+
+  <!-- Active Ride -->
+  <div id="activeRide" class="hidden"></div>
+
+  <!-- Activity Log -->
+  <div class="log-section">
+    <h3>📋 Activity Log</h3>
+    <div id="logEntries"></div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:3000/api/v1';
+let token = '';
+let driverData = null;
+let isOnline = false;
+let currentRideId = null;
+let rideRequestTimer = null;
+
+function addLog(msg, type = '') {
+  const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const el = document.createElement('div');
+  el.className = 'log-entry ' + type;
+  el.textContent = `[${time}] ${msg}`;
+  const container = document.getElementById('logEntries');
+  container.insertBefore(el, container.firstChild);
+  if (container.children.length > 20) container.removeChild(container.lastChild);
+}
+
+async function apiCall(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  return res.json();
+}
+
+async function sendOtp() {
+  const phone = document.getElementById('phoneInput').value;
+  if (phone.length !== 10) return alert('Enter 10-digit number');
+  const data = await apiCall('POST', '/auth/send-otp', { phone, role: 'DRIVER' });
+  if (data.success) {
+    document.getElementById('phoneStep').classList.add('hidden');
+    document.getElementById('otpStep').classList.remove('hidden');
+    document.getElementById('otpSentText').textContent = `OTP sent to +91 ${phone}`;
+    if (data.data.otp) document.getElementById('otpSentText').textContent += ` (Dev OTP: ${data.data.otp})`;
+    document.getElementById('otp0').focus();
+  } else {
+    alert(data.error?.message || 'Failed to send OTP');
+  }
+}
+
+function otpNext(el, idx) {
+  el.value = el.value.replace(/[^0-9]/g, '');
+  if (el.value && idx < 5) document.getElementById('otp' + (idx + 1)).focus();
+  if (idx === 5 && el.value) verifyOtp();
+}
+
+async function verifyOtp() {
+  const phone = document.getElementById('phoneInput').value;
+  const otp = [0,1,2,3,4,5].map(i => document.getElementById('otp'+i).value).join('');
+  if (otp.length !== 6) return alert('Enter 6-digit OTP');
+
+  const data = await apiCall('POST', '/auth/verify-otp', { phone, otp, role: 'DRIVER' });
+  if (data.success) {
+    token = data.data.tokens.accessToken;
+    driverData = data.data.user;
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    document.getElementById('statusBadge').classList.remove('hidden');
+    addLog(`Logged in as ${driverData.fullName} (${driverData.phone})`, 'success');
+    loadProfile();
+  } else {
+    alert(data.error?.message || 'Invalid OTP');
+  }
+}
+
+async function loadProfile() {
+  const data = await apiCall('GET', '/driver/profile');
+  if (data.success) {
+    document.getElementById('driverRating').textContent = data.data.rating?.toFixed(1) || '5.0';
+    addLog('Profile loaded', 'info');
+  }
+  const earnings = await apiCall('GET', '/driver/earnings');
+  if (earnings.success) {
+    document.getElementById('todayEarnings').textContent = '₹' + (earnings.data.today || 0);
+    document.getElementById('todayRides').textContent = earnings.data.totalRidesToday || 0;
+  }
+}
+
+async function toggleOnline() {
+  const btn = document.getElementById('toggleBtn');
+  const badge = document.getElementById('statusBadge');
+  const waiting = document.getElementById('waitingText');
+
+  if (!isOnline) {
+    const data = await apiCall('POST', '/driver/go-online', { lat: 12.0368, lng: 75.3614 });
+    if (data.success) {
+      isOnline = true;
+      btn.textContent = '🔴 Go Offline';
+      btn.className = 'toggle-btn toggle-online';
+      badge.className = 'status-badge status-online';
+      document.getElementById('statusText').textContent = 'Online';
+      waiting.classList.remove('hidden');
+      addLog('You are now ONLINE — accepting rides in Taliparamba', 'success');
+      startPolling();
+    }
+  } else {
+    const data = await apiCall('POST', '/driver/go-offline');
+    isOnline = false;
+    btn.textContent = '⚡ Go Online';
+    btn.className = 'toggle-btn toggle-offline';
+    badge.className = 'status-badge status-offline';
+    document.getElementById('statusText').textContent = 'Offline';
+    waiting.classList.add('hidden');
+    addLog('You are now OFFLINE', 'warning');
+    stopPolling();
+  }
+}
+
+let pollInterval = null;
+function startPolling() {
+  pollInterval = setInterval(async () => {
+    await apiCall('POST', '/driver/location', { lat: 12.0368 + (Math.random() * 0.002), lng: 75.3614 + (Math.random() * 0.002) });
+  }, 10000);
+}
+function stopPolling() { if (pollInterval) { clearInterval(pollInterval); pollInterval = null; } }
+
+function showRideRequest(ride) {
+  currentRideId = ride.id || 'demo';
+  let countdown = 30;
+  const container = document.getElementById('rideRequest');
+
+  function render() {
+    container.innerHTML = `
+      <div class="ride-request">
+        <div class="request-header">
+          <span class="request-title">🔔 New Ride Request!</span>
+          <span class="request-timer">${countdown}s</span>
+        </div>
+        <div class="request-fare">₹${Math.round(ride.estimatedFare || 85)}</div>
+        <div class="request-meta">
+          <span>📏 ${(ride.estimatedDistanceKm || 3.2).toFixed(1)} km</span>
+          <span>⏱️ ${ride.estimatedDurationMin || 10} min</span>
+          <span>⭐ ${(ride.riderRating || 4.8).toFixed(1)} rider</span>
+        </div>
+        <div class="route-section">
+          <div class="route-point">
+            <div class="route-dot" style="background:var(--green)"></div>
+            <div>
+              <div class="route-label">PICKUP</div>
+              <div class="route-addr">${ride.pickupAddress || 'തളിപ്പറമ്പ് ബസ് സ്റ്റാൻഡ്'}</div>
+            </div>
+          </div>
+          <div class="route-line" style="margin-left:4px"></div>
+          <div class="route-point">
+            <div class="route-dot" style="background:var(--red)"></div>
+            <div>
+              <div class="route-label">DROP-OFF</div>
+              <div class="route-addr">${ride.dropoffAddress || 'കണ്ണപുരം റെയിൽവേ സ്റ്റേഷൻ'}</div>
+            </div>
+          </div>
+        </div>
+        <div class="request-actions">
+          <button class="btn btn-outline" onclick="declineRide()">Decline</button>
+          <button class="btn btn-green" onclick="acceptRide()">✓ Accept Ride</button>
+        </div>
+      </div>`;
+    container.classList.remove('hidden');
+  }
+
+  render();
+  addLog('New ride request received!', 'warning');
+
+  rideRequestTimer = setInterval(() => {
+    countdown--;
+    if (countdown <= 0) { clearInterval(rideRequestTimer); declineRide(); return; }
+    const timerEl = container.querySelector('.request-timer');
+    if (timerEl) timerEl.textContent = countdown + 's';
+  }, 1000);
+}
+
+function declineRide() {
+  clearInterval(rideRequestTimer);
+  document.getElementById('rideRequest').classList.add('hidden');
+  currentRideId = null;
+  addLog('Ride request declined', 'warning');
+}
+
+async function acceptRide() {
+  clearInterval(rideRequestTimer);
+  document.getElementById('rideRequest').classList.add('hidden');
+  addLog('Ride ACCEPTED — heading to pickup', 'success');
+  showPhase('heading_to_pickup');
+}
+
+function showPhase(phase) {
+  const container = document.getElementById('activeRide');
+  container.classList.remove('hidden');
+  document.getElementById('waitingText').classList.add('hidden');
+
+  if (phase === 'heading_to_pickup') {
+    container.innerHTML = `
+      <div class="ride-phase">
+        <div class="phase-title">📍 Heading to Pickup</div>
+        <div class="phase-sub">Navigate to rider's location</div>
+        <div class="rider-card">
+          <div class="rider-avatar">👤</div>
+          <div style="flex:1">
+            <div class="rider-name">Demo Rider</div>
+            <div class="rider-rating">⭐ 4.8</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="alert('Calling rider...')">📞 Call</button>
+        </div>
+        <div class="route-section">
+          <div class="route-point">
+            <div class="route-dot" style="background:var(--green)"></div>
+            <div><div class="route-addr">തളിപ്പറമ്പ് ബസ് സ്റ്റാൻഡ്</div></div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="showPhase('arrived')">✓ I've Arrived at Pickup</button>
+      </div>`;
+  }
+
+  else if (phase === 'arrived') {
+    addLog('Arrived at pickup — waiting for rider OTP', 'info');
+    container.innerHTML = `
+      <div class="ride-phase">
+        <div class="phase-title">🏁 Arrived at Pickup</div>
+        <div class="phase-sub">Ask rider for their OTP to start the ride</div>
+        <div class="rider-card">
+          <div class="rider-avatar">👤</div>
+          <div style="flex:1">
+            <div class="rider-name">Demo Rider</div>
+            <div class="rider-rating">⭐ 4.8 • +91 9876543210</div>
+          </div>
+        </div>
+        <div class="otp-display">
+          <div class="label">Rider's OTP (for testing)</div>
+          <div class="code">4 5 6 7</div>
+        </div>
+        <div class="otp-verify">
+          <input type="text" id="rideOtpInput" placeholder="Enter OTP" maxlength="4">
+        </div>
+        <button class="btn btn-green" onclick="startRide()">▶ Start Ride</button>
+      </div>`;
+  }
+
+  else if (phase === 'on_trip') {
+    addLog('Ride STARTED — trip in progress', 'success');
+    container.innerHTML = `
+      <div class="ride-phase">
+        <div class="phase-title">🚗 Trip in Progress</div>
+        <div class="phase-sub">Heading to drop-off</div>
+        <div class="route-section">
+          <div class="route-point">
+            <div class="route-dot" style="background:var(--red)"></div>
+            <div>
+              <div class="route-label">DROP-OFF</div>
+              <div class="route-addr">കണ്ണപുരം റെയിൽവേ സ്റ്റേഷൻ</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:16px;padding:8px 0">
+          <span style="color:var(--text2)">Estimated Fare</span>
+          <span style="font-size:20px;font-weight:700;color:var(--primary)">₹85</span>
+        </div>
+        <button class="btn btn-green" onclick="completeRide()">✓ Complete Ride</button>
+      </div>`;
+  }
+
+  else if (phase === 'completed') {
+    addLog('Ride COMPLETED — ₹85 earned!', 'success');
+    container.innerHTML = `
+      <div class="ride-phase">
+        <div class="completed-card">
+          <div class="completed-icon">✅</div>
+          <div class="phase-title">Ride Completed!</div>
+          <div class="completed-fare">₹85</div>
+          <div class="completed-label">Fare Collected (Cash)</div>
+          <button class="btn btn-primary mt-16" onclick="backToIdle()">Done — Back to Waiting</button>
+        </div>
+      </div>`;
+    // Update stats
+    const el = document.getElementById('todayRides');
+    el.textContent = parseInt(el.textContent) + 1;
+    const earn = document.getElementById('todayEarnings');
+    earn.textContent = '₹' + (parseInt(earn.textContent.replace('₹','')) + 85);
+  }
+}
+
+function startRide() {
+  const otp = document.getElementById('rideOtpInput').value;
+  if (otp.length < 4) { alert('Enter the 4-digit OTP from the rider'); return; }
+  showPhase('on_trip');
+}
+
+function completeRide() { showPhase('completed'); }
+
+function backToIdle() {
+  document.getElementById('activeRide').classList.add('hidden');
+  document.getElementById('activeRide').innerHTML = '';
+  if (isOnline) document.getElementById('waitingText').classList.remove('hidden');
+  currentRideId = null;
+  addLog('Ready for next ride', 'info');
+}
+
+// Simulate a ride request (for testing)
+function simulateRide() {
+  showRideRequest({
+    pickupAddress: 'തളിപ്പറമ്പ് ബസ് സ്റ്റാൻഡ്',
+    dropoffAddress: 'കണ്ണപുരം റെയിൽവേ സ്റ്റേഷൻ',
+    estimatedFare: 85,
+    estimatedDistanceKm: 3.2,
+    estimatedDurationMin: 10,
+    riderRating: 4.8,
+  });
+}
+
+// Add simulate button after going online
+const origToggle = toggleOnline;
+toggleOnline = async function() {
+  await origToggle();
+  if (isOnline) {
+    setTimeout(() => {
+      const waiting = document.getElementById('waitingText');
+      waiting.innerHTML = 'Waiting for ride requests... <button class="btn btn-outline btn-sm" style="display:inline;width:auto;margin-left:12px" onclick="simulateRide()">🧪 Simulate Ride Request</button>';
+    }, 100);
+  }
+};
+</script>
+</body>
+</html>

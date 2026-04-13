@@ -1,0 +1,91 @@
+import { Router, Request, Response, NextFunction } from 'express';
+import { authenticate, authorize } from '../../middleware/auth';
+import { adminService } from './admin.service';
+
+const router = Router();
+
+router.use(authenticate, authorize('ADMIN'));
+
+router.get('/dashboard', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const stats = await adminService.getDashboardStats();
+    res.json({ success: true, data: stats });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/drivers', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await adminService.getDrivers({
+      status: req.query.status as string,
+      city: req.query.city as string,
+      page: parseInt(req.query.page as string) || 1,
+      limit: parseInt(req.query.limit as string) || 20,
+      search: req.query.search as string,
+    });
+    res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/drivers/:id/verify', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { action } = req.body;
+    const driverId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const result = await adminService.verifyDriver(driverId, action, req.user!.userId);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/documents/pending', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const result = await adminService.getPendingDocuments(page, limit);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/documents/:id/verify', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { action, rejectionReason } = req.body;
+    const docId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const result = await adminService.verifyDocument(docId, action, req.user!.userId, rejectionReason);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/rides', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await adminService.getRides({
+      status: req.query.status as string,
+      city: req.query.city as string,
+      page: parseInt(req.query.page as string) || 1,
+      limit: parseInt(req.query.limit as string) || 20,
+      dateFrom: req.query.dateFrom as string,
+      dateTo: req.query.dateTo as string,
+    });
+    res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/fare-config', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await adminService.updateFareConfig(req.body);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+export { router as adminRoutes };

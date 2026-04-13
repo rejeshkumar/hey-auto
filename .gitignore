@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+
+# React Native
+apps/rider-app/ios/Pods/
+apps/driver-app/ios/Pods/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Android
+apps/rider-app/android/.gradle/
+apps/driver-app/android/.gradle/
+apps/rider-app/android/app/build/
+apps/driver-app/android/app/build/
+local.properties
+
+# Turbo
+.turbo/
+
+# Docker
+postgres_data/
+redis_data/
+
+# Prisma
+server/prisma/migrations/**/migration_lock.toml
+
+# Uploads
+uploads/
