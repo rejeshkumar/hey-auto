@@ -29,22 +29,24 @@ export class AuthService {
       );
     }
 
-    const otp = env.NODE_ENV === 'development' ? '123456' : generateOTP(6);
+    const smsConfigured = !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN);
+    const useDemoOtp = !smsConfigured;
+    const otp = useDemoOtp ? '123456' : generateOTP(6);
 
     await redis.setex(`${OTP_PREFIX}${phone}`, env.OTP_EXPIRY_SEC, otp);
     await redis.setex(cooldownKey, 30, '1');
     await redis.del(`${OTP_ATTEMPTS_PREFIX}${phone}`);
 
-    if (env.NODE_ENV !== 'development') {
+    if (!useDemoOtp) {
       await this.sendSms(phone, `Your Hey Auto verification code is: ${otp}`);
     }
 
-    logger.info({ phone: phone.slice(-4), role }, 'OTP sent');
+    logger.info({ phone: phone.slice(-4), role, demoMode: useDemoOtp }, 'OTP sent');
 
     return {
       message: 'OTP sent successfully',
       expiresIn: env.OTP_EXPIRY_SEC,
-      ...(env.NODE_ENV === 'development' && { otp }),
+      ...(useDemoOtp && { otp }),
     };
   }
 
