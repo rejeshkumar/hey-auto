@@ -5,9 +5,8 @@
     "watchPatterns": ["server/**", "packages/**", "apps/demo-dashboard/**", "apps/driver-console/**"]
   },
   "deploy": {
-    "startCommand": "npx prisma migrate deploy && node dist/app.js",
     "healthcheckPath": "/health",
-    "healthcheckTimeout": 30,
+    "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }

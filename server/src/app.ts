@@ -99,7 +99,7 @@ app.use(`${apiPrefix}/admin`, adminRoutes);
 app.use(`${apiPrefix}/maps`, mapsRoutes);
 
 // Serve static web apps (demo dashboard, driver console)
-const publicDir = path.join(__dirname, '..', 'public');
+const publicDir = path.join(process.cwd(), 'public');
 app.use('/demo', express.static(path.join(publicDir, 'demo')));
 app.use('/driver-console', express.static(path.join(publicDir, 'driver-console')));
 
