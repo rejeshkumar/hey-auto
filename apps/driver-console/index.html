@@ -280,20 +280,34 @@ function addLog(msg, type = '') {
 }
 
 async function apiCall(method, path, body) {
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
-  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(API + path, opts);
-  return res.json();
+  try {
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+    };
+    if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+    if (body) opts.body = JSON.stringify(body);
+    console.log('API call:', method, API + path);
+    const res = await fetch(API + path, opts);
+    const json = await res.json();
+    console.log('API response:', json);
+    return json;
+  } catch (err) {
+    console.error('API error:', err);
+    alert('API error: ' + err.message);
+    return { success: false, error: { message: err.message } };
+  }
 }
 
 async function sendOtp() {
   const phone = document.getElementById('phoneInput').value;
   if (phone.length !== 10) return alert('Enter 10-digit number');
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
   const data = await apiCall('POST', '/auth/send-otp', { phone, role: 'DRIVER' });
+  btn.disabled = false;
+  btn.textContent = 'Send OTP';
   if (data.success) {
     document.getElementById('phoneStep').classList.add('hidden');
     document.getElementById('otpStep').classList.remove('hidden');

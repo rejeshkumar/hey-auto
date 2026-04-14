@@ -30,22 +30,17 @@ const server = http.createServer(app);
 // Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: env.NODE_ENV === 'production'
-      ? ['https://heyauto.in', 'https://admin.heyauto.in']
-      : '*',
+    origin: true,
     methods: ['GET', 'POST'],
+    credentials: true,
   },
   pingInterval: 10000,
   pingTimeout: 5000,
 });
 
 // Security
-app.use(helmet());
-app.use(cors({
-  origin: env.NODE_ENV === 'production'
-    ? ['https://heyauto.in', 'https://admin.heyauto.in']
-    : '*',
-}));
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(cors({ origin: true, credentials: true }));
 
 // Rate limiting
 const limiter = rateLimit({
