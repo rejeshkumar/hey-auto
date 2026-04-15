@@ -98,13 +98,33 @@ export class AuthService {
           data: { userId: user.id },
         });
       } else {
-        await prisma.driverProfile.create({
+        const profile = await prisma.driverProfile.create({
           data: {
             userId: user.id,
-            licenseNumber: '',
+            licenseNumber: 'KL-' + Math.floor(1000 + Math.random() * 9000),
             city: 'taliparamba',
+            verificationStatus: 'VERIFIED',
+            isOnline: false,
+            currentLat: 12.0368,
+            currentLng: 75.3614,
           },
         });
+        await prisma.vehicle.create({
+          data: {
+            driverId: profile.id,
+            registrationNo: 'KL-63-J-' + Math.floor(1000 + Math.random() * 9000),
+            model: 'Bajaj RE',
+            color: 'Yellow-Green',
+            type: 'AUTO',
+            isActive: true,
+          },
+        });
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { fullName: 'Driver ' + phone.slice(-4), status: 'ACTIVE' },
+        });
+        user.fullName = 'Driver ' + phone.slice(-4);
+        user.status = 'ACTIVE' as any;
       }
     }
 
