@@ -10,6 +10,7 @@ import type {
 
 const DRIVER_LOCATION_KEY = 'driver_locations';
 const DRIVER_ONLINE_PREFIX = 'driver_online:';
+const RIDE_REQUEST_PREFIX = 'ride_request:';
 
 export class DriverService {
   async getProfile(userId: string) {
@@ -155,9 +156,19 @@ export class DriverService {
   async goOnline(userId: string) {
     const profile = await prisma.driverProfile.findUnique({
       where: { userId },
-      include: { vehicles: { where: { isActive: true } } },
+      include: {
+        vehicles: { where: { isActive: true } },
+        subscriptions: {
+          where: {
+            status: 'ACTIVE',
+            expiresAt: { gt: new Date() },
+          },
+          take: 1,
+        },
+      },
     });
     if (!profile) throw new NotFoundError('Driver profile not found');
+
     if (profile.verificationStatus !== 'VERIFIED') {
       throw new BadRequestError('Your profile is not verified yet');
     }
@@ -167,6 +178,19 @@ export class DriverService {
     if (!profile.currentLat || !profile.currentLng) {
       throw new BadRequestError('Location not available. Please enable GPS.');
     }
+
+    // ── Subscription check ──────────────────────────
+    if (profile.subscriptions.length === 0) {
+      throw new BadRequestError(
+        JSON.stringify({
+          code: 'SUBSCRIPTION_REQUIRED',
+          message: 'Pay ₹25 to go online today',
+          messageMl: 'ഇന്ന് ഓൺലൈൻ ആകാൻ ₹25 അടയ്ക്കൂ',
+          requiresSubscription: true,
+        })
+      );
+    }
+    // ───────────────────────────────────────────────
 
     await prisma.driverProfile.update({
       where: { userId },
@@ -253,6 +277,43 @@ export class DriverService {
       totalEarnings,
       totalTips,
       rides,
+    };
+  }
+
+  /**
+   * Returns the pending ride request for a driver (polled by the driver PWA).
+   * Reads from the same Redis key that ride.service writes.
+   */
+  async getPendingRideRequest(userId: string) {
+    const raw = await redis.get(`${RIDE_REQUEST_PREFIX}${userId}`);
+    if (!raw) return null;
+
+    let rideId: string;
+    try {
+      ({ rideId } = JSON.parse(raw));
+    } catch {
+      return null;
+    }
+
+    const ride = await prisma.ride.findUnique({
+      where: { id: rideId },
+      include: { rider: { select: { fullName: true, avatarUrl: true } } },
+    });
+
+    if (!ride || ride.status !== 'REQUESTED') {
+      // Stale key — clean up
+      await redis.del(`${RIDE_REQUEST_PREFIX}${userId}`);
+      return null;
+    }
+
+    return {
+      rideId:               ride.id,
+      pickupAddress:        ride.pickupAddress,
+      dropoffAddress:       ride.dropoffAddress,
+      estimatedFare:        ride.estimatedFare,
+      estimatedDistanceKm:  ride.estimatedDistanceKm,
+      estimatedDurationMin: ride.estimatedDurationMin,
+      riderName:            ride.rider?.fullName ?? 'Rider',
     };
   }
 

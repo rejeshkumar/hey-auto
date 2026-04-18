@@ -23,6 +23,8 @@ import { paymentRoutes } from './modules/payment';
 import { notificationRoutes } from './modules/notification';
 import { adminRoutes } from './modules/admin';
 import { mapsRoutes } from './modules/maps/maps.routes';
+import { whatsappRoutes, whatsappService } from './modules/whatsapp';
+import { subscriptionRoutes } from './modules/payment/subscription.routes';
 
 const app = express();
 const server = http.createServer(app);
@@ -89,20 +91,26 @@ app.use(`${apiPrefix}/rider`, riderRoutes);
 app.use(`${apiPrefix}/driver`, driverRoutes);
 app.use(`${apiPrefix}/rides`, rideRoutes);
 app.use(`${apiPrefix}/payments`, paymentRoutes);
+app.use(`${apiPrefix}/subscription`, subscriptionRoutes);
 app.use(`${apiPrefix}/notifications`, notificationRoutes);
 app.use(`${apiPrefix}/admin`, adminRoutes);
 app.use(`${apiPrefix}/maps`, mapsRoutes);
+app.use(`${apiPrefix}/whatsapp`, whatsappRoutes);
 
 // Serve static web apps (demo dashboard, driver console)
 // In Docker: cwd is /app/server, public is at /app/public
 // Locally: cwd is /project/server, public would be at /project/public
 const publicDir = path.resolve(process.cwd(), '..', 'public');
-app.use('/demo', express.static(path.join(publicDir, 'demo')));
 app.use('/driver-console', express.static(path.join(publicDir, 'driver-console')));
+app.use('/rider', express.static(path.join(publicDir, 'rider')));
 
-// Root redirect to demo
+// Legacy /demo → serves apps/demo-dashboard directly
+const appsDir = path.resolve(process.cwd(), '..', 'apps');
+app.use('/demo', express.static(path.join(appsDir, 'demo-dashboard')));
+
+// Root redirect
 app.get('/', (_req, res) => {
-  res.redirect('/demo');
+  res.redirect('/rider');
 });
 
 // 404 handler
@@ -118,6 +126,9 @@ app.use(errorHandler);
 
 // Socket.io handlers
 setupSocketHandlers(io);
+
+// WhatsApp ride-event listener (separate Redis subscriber)
+whatsappService.setupRideEventListener();
 
 // Start server
 const PORT = env.PORT;
