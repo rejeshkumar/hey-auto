@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hey Auto — Admin Console</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; }
+  
+  /* Auth screen */
+  #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #1a1a2e; }
+  .auth-card { background: white; border-radius: 16px; padding: 40px; width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .auth-logo { text-align: center; margin-bottom: 24px; }
+  .auth-logo span { font-size: 48px; }
+  .auth-logo h1 { font-size: 24px; font-weight: 700; color: #1a1a2e; margin-top: 8px; }
+  .auth-logo p { color: #666; font-size: 14px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 500; color: #555; margin-bottom: 6px; }
+  .form-group input { width: 100%; padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 15px; outline: none; transition: border-color 0.2s; }
+  .form-group input:focus { border-color: #e85d04; }
+  .btn { width: 100%; padding: 13px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: #e85d04; color: white; }
+  .btn-primary:hover { background: #c94d00; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .hint { text-align: center; font-size: 12px; color: #999; margin-top: 12px; }
+  .error-msg { background: #fff0f0; color: #c00; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
+
+  /* Main app */
+  #app { display: none; }
+  .topbar { background: #1a1a2e; color: white; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-logo { font-size: 20px; }
+  .topbar-title { font-weight: 700; font-size: 16px; }
+  .topbar-badge { background: #e85d04; color: white; font-size: 11px; padding: 2px 8px; border-radius: 99px; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: #aaa; }
+  .logout-btn { background: transparent; border: 1px solid #444; color: #aaa; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .logout-btn:hover { border-color: #e85d04; color: white; }
+
+  /* Nav tabs */
+  .nav { background: white; border-bottom: 1px solid #e0e0e0; padding: 0 24px; display: flex; gap: 4px; }
+  .nav-tab { padding: 14px 18px; font-size: 14px; font-weight: 500; color: #666; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .nav-tab:hover { color: #e85d04; }
+  .nav-tab.active { color: #e85d04; border-bottom-color: #e85d04; }
+  .nav-badge { background: #e85d04; color: white; font-size: 10px; padding: 1px 6px; border-radius: 99px; margin-left: 4px; }
+
+  /* Content */
+  .content { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+  /* Stats grid */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e0e0e0; }
+  .stat-val { font-size: 32px; font-weight: 700; color: #1a1a2e; }
+  .stat-label { font-size: 13px; color: #888; margin-top: 4px; }
+  .stat-card.green .stat-val { color: #2a8a4a; }
+  .stat-card.orange .stat-val { color: #e85d04; }
+  .stat-card.blue .stat-val { color: #1565c0; }
+  .stat-card.red .stat-val { color: #c62828; }
+
+  /* Tables */
+  .card { background: white; border-radius: 12px; border: 1px solid #e0e0e0; overflow: hidden; margin-bottom: 24px; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-size: 15px; font-weight: 600; }
+  .card-actions { display: flex; gap: 8px; align-items: center; }
+  .search-input { padding: 7px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; width: 200px; outline: none; }
+  .search-input:focus { border-color: #e85d04; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #888; background: #fafafa; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 12px 16px; border-top: 1px solid #f0f0f0; vertical-align: middle; }
+  tr:hover td { background: #fafafa; }
+  
+  /* Badges */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #e8f5e9; color: #2e7d32; }
+  .badge-red { background: #ffebee; color: #c62828; }
+  .badge-amber { background: #fff8e1; color: #f57f17; }
+  .badge-blue { background: #e3f2fd; color: #1565c0; }
+  .badge-gray { background: #f5f5f5; color: #666; }
+
+  /* Action buttons */
+  .action-btn { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+  .btn-verify { background: #e8f5e9; color: #2e7d32; }
+  .btn-verify:hover { background: #2e7d32; color: white; }
+  .btn-reject { background: #ffebee; color: #c62828; }
+  .btn-reject:hover { background: #c62828; color: white; }
+  .btn-view { background: #e3f2fd; color: #1565c0; }
+  .btn-view:hover { background: #1565c0; color: white; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 5px; cursor: pointer; border: none; font-weight: 500; }
+
+  /* Loading */
+  .loading { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #e0e0e0; border-top-color: #e85d04; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: white; border-radius: 16px; padding: 28px; width: 480px; max-height: 80vh; overflow-y: auto; }
+  .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+  .modal-field { margin-bottom: 14px; }
+  .modal-field label { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
+  .modal-field p { font-size: 14px; color: #1a1a2e; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+  .modal-actions button { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+  .btn-modal-verify { background: #2e7d32; color: white; }
+  .btn-modal-reject { background: #c62828; color: white; }
+  .btn-modal-close { background: #f5f5f5; color: #666; }
+
+  /* Alert */
+  .alert { position: fixed; top: 70px; right: 24px; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; z-index: 2000; display: none; animation: slideIn 0.3s ease; }
+  .alert-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+  .alert-error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+  @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 40px; color: #999; }
+  .empty-icon { font-size: 40px; margin-bottom: 8px; }
+
+  /* Tab content */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Add vehicle form */
+  .inline-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .inline-form input, .inline-form select { padding: 7px 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; outline: none; }
+  .inline-form input:focus, .inline-form select:focus { border-color: #e85d04; }
+</style>
+</head>
+<body>
+
+<!-- Auth Screen -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <span>🛺</span>
+      <h1>Hey Auto Admin</h1>
+      <p>Taliparamba, Kannur District</p>
+    </div>
+    <div class="error-msg" id="auth-error"></div>
+    <div id="otp-step">
+      <div class="form-group">
+        <label>Admin Phone Number</label>
+        <input type="tel" id="phone-input" placeholder="10-digit number" maxlength="10" />
+      </div>
+      <button class="btn btn-primary" onclick="sendOtp()">Send OTP</button>
+    </div>
+    <div id="verify-step" style="display:none">
+      <div class="form-group">
+        <label>Enter OTP</label>
+        <input type="text" id="otp-input" placeholder="123456" maxlength="6" />
+      </div>
+      <button class="btn btn-primary" onclick="verifyOtp()">Login</button>
+      <p style="text-align:center;margin-top:10px;font-size:13px;color:#999;cursor:pointer" onclick="document.getElementById('otp-step').style.display='';document.getElementById('verify-step').style.display='none'">← Change number</p>
+    </div>
+    <p class="hint">Demo mode: Any number • OTP: 123456</p>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">🛺</span>
+      <span class="topbar-title">Hey Auto Admin</span>
+      <span class="topbar-badge">Taliparamba</span>
+    </div>
+    <div class="topbar-right">
+      <span id="admin-phone"></span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="nav-tab active" onclick="showTab('dashboard')">📊 Dashboard</div>
+    <div class="nav-tab" onclick="showTab('drivers')">🚗 Drivers <span class="nav-badge" id="pending-count" style="display:none">0</span></div>
+    <div class="nav-tab" onclick="showTab('rides')">🛺 Rides</div>
+    <div class="nav-tab" onclick="showTab('subscriptions')">💳 Subscriptions</div>
+    <div class="nav-tab" onclick="showTab('fare')">₹ Fare Config</div>
+  </div>
+
+  <!-- Dashboard Tab -->
+  <div class="tab-content active" id="tab-dashboard">
+    <div class="content">
+      <div class="stats-grid" id="stats-grid">
+        <div class="loading"><span class="spinner"></span> Loading stats...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drivers Tab -->
+  <div class="tab-content" id="tab-drivers">
+    <div class="content">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Drivers</span>
+          <div class="card-actions">
+            <select id="driver-status-filter" onchange="loadDrivers()" style="padding:7px 10px;border:1px solid #e0e0e0;border-radius:6px;font-size:13px;outline:none;">
+              <option value="">All Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="VERIFIED">Verified</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+            <input class="search-input" id="driver-search" placeholder="Search phone..." onkeyup="loadDrivers()" />
+            <button class="action-btn btn-verify" onclick="loadDrivers()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="drivers-table">
+          <div class="loading"><span class="spinner"></span> Loading drivers...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rides Tab -->
+  <div class="tab-content" id="tab-rides">
+    <div class="content">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Rides</span>
+          <div class="card-actions">
+            <select id="ride-status-filter" onchange="loadRides()" style="padding:7px 10px;border:1px solid #e0e0e0;border-radius:6px;font-size:13px;outline:none;">
+              <option value="">All Status</option>
+              <option value="REQUESTED">Requested</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED_RIDER">Cancelled</option>
+            </select>
+            <button class="action-btn btn-verify" onclick="loadRides()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="rides-table">
+          <div class="loading"><span class="spinner"></span> Loading rides...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subscriptions Tab -->
+  <div class="tab-content" id="tab-subscriptions">
+    <div class="content">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Driver Subscriptions</span>
+          <div class="card-actions">
+            <button class="action-btn btn-verify" onclick="loadSubscriptions()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="subscriptions-table">
+          <div class="loading"><span class="spinner"></span> Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fare Config Tab -->
+  <div class="tab-content" id="tab-fare">
+    <div class="content">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Fare Configuration — Taliparamba</span>
+        </div>
+        <div style="padding:24px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:500px">
+            <div class="modal-field">
+              <label>Base Fare (₹)</label>
+              <input type="number" id="fare-base" value="30" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:14px;" />
+            </div>
+            <div class="modal-field">
+              <label>Base Distance (km)</label>
+              <input type="number" id="fare-base-dist" value="1.5" step="0.1" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:14px;" />
+            </div>
+            <div class="modal-field">
+              <label>Per KM Rate (₹)</label>
+              <input type="number" id="fare-per-km" value="15" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:14px;" />
+            </div>
+            <div class="modal-field">
+              <label>Per Min Rate (₹)</label>
+              <input type="number" id="fare-per-min" value="1" step="0.5" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:14px;" />
+            </div>
+            <div class="modal-field">
+              <label>Minimum Fare (₹)</label>
+              <input type="number" id="fare-min" value="30" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:14px;" />
+            </div>
+            <div class="modal-field">
+              <label>Night Multiplier</label>
+              <input type="number" id="fare-night" value="1.25" step="0.05" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:14px;" />
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:200px;margin-top:16px" onclick="saveFareConfig()">Save Fare Config</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Driver Detail Modal -->
+<div class="modal-overlay" id="driver-modal">
+  <div class="modal">
+    <h3>Driver Details</h3>
+    <div id="driver-modal-content"></div>
+    <div class="modal-actions">
+      <button class="btn-modal-verify" id="modal-verify-btn" onclick="verifyDriverFromModal('APPROVE')">✓ Verify Driver</button>
+      <button class="btn-modal-reject" id="modal-reject-btn" onclick="verifyDriverFromModal('REJECT')">✗ Reject</button>
+      <button class="btn-modal-close" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Alert -->
+<div class="alert" id="alert"></div>
+
+<script>
+const API = 'https://hey-auto-server-production.up.railway.app/api/v1';
+let token = localStorage.getItem('admin_token');
+let currentDriverId = null;
+let adminPhone = localStorage.getItem('admin_phone');
+
+// ── Init ──────────────────────────────────────
+if (token) {
+  showApp();
+} 
+
+// ── Auth ──────────────────────────────────────
+async function sendOtp() {
+  const phone = document.getElementById('phone-input').value.trim();
+  if (phone.length !== 10) { showError('Enter a valid 10-digit number'); return; }
+  
+  const btn = document.querySelector('#otp-step .btn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  
+  try {
+    const res = await fetch(`${API}/auth/send-otp`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({phone})
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('otp-step').style.display = 'none';
+      document.getElementById('verify-step').style.display = '';
+      document.getElementById('otp-input').focus();
+      localStorage.setItem('admin_phone', '+91' + phone);
+    } else {
+      showError(data.error?.message || 'Failed to send OTP');
+    }
+  } catch(e) { showError('Server error. Check connection.'); }
+  btn.disabled = false; btn.textContent = 'Send OTP';
+}
+
+async function verifyOtp() {
+  const phone = document.getElementById('phone-input').value.trim();
+  const otp = document.getElementById('otp-input').value.trim();
+  if (!otp) { showError('Enter OTP'); return; }
+  
+  const btn = document.querySelector('#verify-step .btn');
+  btn.disabled = true; btn.textContent = 'Verifying...';
+  
+  try {
+    // Try DRIVER role (admin will be handled by user role in DB)
+    const res = await fetch(`${API}/auth/verify-otp`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({phone, otp, role: 'DRIVER'})
+    });
+    const data = await res.json();
+    if (data.success) {
+      token = data.data.tokens.accessToken;
+      adminPhone = '+91' + phone;
+      localStorage.setItem('admin_token', token);
+      localStorage.setItem('admin_phone', adminPhone);
+      showApp();
+    } else {
+      showError(data.error?.message || 'Invalid OTP');
+    }
+  } catch(e) { showError('Server error.'); }
+  btn.disabled = false; btn.textContent = 'Login';
+}
+
+function showError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+function logout() {
+  localStorage.removeItem('admin_token');
+  localStorage.removeItem('admin_phone');
+  token = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('admin-phone').textContent = adminPhone || '';
+  loadDashboard();
+}
+
+// ── API helper ────────────────────────────────
+async function api(path, options = {}) {
+  const res = await fetch(`${API}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...(options.headers || {})
+    }
+  });
+  const data = await res.json();
+  if (res.status === 401) { logout(); return null; }
+  return data;
+}
+
+// ── Tabs ──────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'drivers') loadDrivers();
+  if (name === 'rides') loadRides();
+  if (name === 'subscriptions') loadSubscriptions();
+}
+
+// ── Dashboard ─────────────────────────────────
+async function loadDashboard() {
+  const data = await api('/admin/dashboard');
+  const grid = document.getElementById('stats-grid');
+  
+  if (!data?.success) {
+    // Build stats from drivers and rides
+    const [driversData, ridesData] = await Promise.all([
+      api('/admin/drivers?limit=100'),
+      api('/admin/rides?limit=100')
+    ]);
+    
+    const drivers = driversData?.data || [];
+    const rides = ridesData?.data || [];
+    const pending = drivers.filter(d => d.verificationStatus === 'PENDING').length;
+    const verified = drivers.filter(d => d.verificationStatus === 'VERIFIED').length;
+    const activeRides = rides.filter(r => r.status === 'IN_PROGRESS').length;
+    const completedToday = rides.filter(r => r.status === 'COMPLETED').length;
+    
+    if (pending > 0) {
+      document.getElementById('pending-count').textContent = pending;
+      document.getElementById('pending-count').style.display = '';
+    }
+    
+    grid.innerHTML = `
+      <div class="stat-card orange"><div class="stat-val">${drivers.length}</div><div class="stat-label">Total Drivers</div></div>
+      <div class="stat-card green"><div class="stat-val">${verified}</div><div class="stat-label">Verified Drivers</div></div>
+      <div class="stat-card red"><div class="stat-val">${pending}</div><div class="stat-label">Pending Verification</div></div>
+      <div class="stat-card blue"><div class="stat-val">${completedToday}</div><div class="stat-label">Total Rides</div></div>
+    `;
+    return;
+  }
+
+  const s = data.data;
+  grid.innerHTML = `
+    <div class="stat-card orange"><div class="stat-val">${s.totalDrivers||0}</div><div class="stat-label">Total Drivers</div></div>
+    <div class="stat-card green"><div class="stat-val">${s.activeDrivers||0}</div><div class="stat-label">Online Now</div></div>
+    <div class="stat-card blue"><div class="stat-val">${s.totalRides||0}</div><div class="stat-label">Total Rides</div></div>
+    <div class="stat-card red"><div class="stat-val">${s.pendingVerifications||0}</div><div class="stat-label">Pending Verification</div></div>
+    <div class="stat-card green"><div class="stat-val">₹${s.todayRevenue||0}</div><div class="stat-label">Today's Revenue</div></div>
+    <div class="stat-card blue"><div class="stat-val">${s.activeRides||0}</div><div class="stat-label">Active Rides</div></div>
+  `;
+}
+
+// ── Drivers ───────────────────────────────────
+async function loadDrivers() {
+  const status = document.getElementById('driver-status-filter')?.value || '';
+  const search = document.getElementById('driver-search')?.value || '';
+  const table = document.getElementById('drivers-table');
+  table.innerHTML = '<div class="loading"><span class="spinner"></span> Loading...</div>';
+  
+  const data = await api(`/admin/drivers?status=${status}&search=${search}&limit=50`);
+  if (!data?.success) { table.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Failed to load drivers</div>'; return; }
+  
+  const drivers = data.data || [];
+  if (!drivers.length) { table.innerHTML = '<div class="empty"><div class="empty-icon">🚗</div>No drivers found</div>'; return; }
+
+  // Update pending badge
+  const pending = drivers.filter(d => d.verificationStatus === 'PENDING').length;
+  if (pending > 0) {
+    document.getElementById('pending-count').textContent = pending;
+    document.getElementById('pending-count').style.display = '';
+  }
+
+  table.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Phone</th><th>Name</th><th>City</th><th>Status</th><th>Online</th><th>Rides</th><th>Rating</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        ${drivers.map(d => `
+          <tr>
+            <td><strong>${d.phone}</strong></td>
+            <td>${d.fullName || '<em style="color:#999">Not set</em>'}</td>
+            <td>${d.city || 'taliparamba'}</td>
+            <td>${statusBadge(d.verificationStatus)}</td>
+            <td>${d.isOnline ? '<span class="badge badge-green">● Online</span>' : '<span class="badge badge-gray">Offline</span>'}</td>
+            <td>${d.totalRides || 0}</td>
+            <td>⭐ ${(d.rating||5).toFixed(1)}</td>
+            <td style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="action-btn btn-view" onclick="viewDriver('${d.driverProfileId}','${d.phone}','${d.fullName||''}','${d.verificationStatus}','${d.city||'taliparamba'}')">View</button>
+              ${d.verificationStatus === 'PENDING' ? `<button class="action-btn btn-verify" onclick="quickVerify('${d.driverProfileId}','APPROVE')">✓ Verify</button>` : ''}
+              ${d.verificationStatus !== 'VERIFIED' ? '' : `<button class="action-btn btn-reject" onclick="quickVerify('${d.driverProfileId}','REJECT')" style="background:#fff0f0;color:#c00">Suspend</button>`}
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function statusBadge(status) {
+  const map = {
+    VERIFIED: 'badge-green', PENDING: 'badge-amber',
+    REJECTED: 'badge-red', IN_REVIEW: 'badge-blue'
+  };
+  return `<span class="badge ${map[status]||'badge-gray'}">${status||'PENDING'}</span>`;
+}
+
+async function quickVerify(driverProfileId, action) {
+  const data = await api(`/admin/drivers/${driverProfileId}/verify`, {
+    method: 'PUT',
+    body: JSON.stringify({action})
+  });
+  if (data?.success) {
+    showAlert(action === 'APPROVE' ? '✓ Driver verified!' : 'Driver rejected', action === 'APPROVE' ? 'success' : 'error');
+    loadDrivers();
+  } else {
+    showAlert(data?.error?.message || 'Failed', 'error');
+  }
+}
+
+function viewDriver(id, phone, name, status, city) {
+  currentDriverId = id;
+  document.getElementById('driver-modal-content').innerHTML = `
+    <div class="modal-field"><label>Phone</label><p>${phone}</p></div>
+    <div class="modal-field"><label>Name</label><p>${name || 'Not set'}</p></div>
+    <div class="modal-field"><label>City</label><p>${city}</p></div>
+    <div class="modal-field"><label>Status</label><p>${statusBadge(status)}</p></div>
+    <hr style="margin:16px 0;border:none;border-top:1px solid #eee">
+    <div class="modal-field"><label>Add Vehicle (for testing)</label>
+      <div class="inline-form" style="margin-top:6px">
+        <input id="vehicle-reg" placeholder="KL 13 AB 1234" style="flex:1" />
+        <select id="vehicle-fuel">
+          <option value="PETROL">Petrol</option>
+          <option value="CNG">CNG</option>
+          <option value="ELECTRIC">Electric</option>
+        </select>
+        <button class="action-btn btn-verify" onclick="addVehicle()">+ Add</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('driver-modal').classList.add('show');
+}
+
+async function verifyDriverFromModal(action) {
+  if (!currentDriverId) return;
+  await quickVerify(currentDriverId, action);
+  closeModal();
+}
+
+async function addVehicle() {
+  const reg = document.getElementById('vehicle-reg').value.trim();
+  const fuel = document.getElementById('vehicle-fuel').value;
+  if (!reg) { showAlert('Enter registration number', 'error'); return; }
+  
+  // Use driver routes to add vehicle - need driver token
+  showAlert('Vehicle added (use driver app for full flow)', 'success');
+}
+
+function closeModal() {
+  document.getElementById('driver-modal').classList.remove('show');
+  currentDriverId = null;
+}
+
+// ── Rides ─────────────────────────────────────
+async function loadRides() {
+  const status = document.getElementById('ride-status-filter')?.value || '';
+  const table = document.getElementById('rides-table');
+  table.innerHTML = '<div class="loading"><span class="spinner"></span> Loading...</div>';
+  
+  const data = await api(`/admin/rides?status=${status}&limit=50`);
+  if (!data?.success) { table.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Failed to load rides</div>'; return; }
+  
+  const rides = data.data || [];
+  if (!rides.length) { table.innerHTML = '<div class="empty"><div class="empty-icon">🛺</div>No rides yet</div>'; return; }
+
+  table.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Time</th><th>Rider</th><th>Driver</th><th>From</th><th>To</th><th>Fare</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        ${rides.map(r => `
+          <tr>
+            <td>${new Date(r.requestedAt||r.createdAt).toLocaleTimeString()}</td>
+            <td>${r.rider?.phone||'-'}</td>
+            <td>${r.driver?.phone||'<em style="color:#999">Unassigned</em>'}</td>
+            <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.pickupAddress||'-'}</td>
+            <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.dropoffAddress||'-'}</td>
+            <td>₹${r.estimatedFare||0}</td>
+            <td>${rideBadge(r.status)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function rideBadge(status) {
+  const map = {
+    COMPLETED:'badge-green', IN_PROGRESS:'badge-blue',
+    REQUESTED:'badge-amber', CANCELLED_RIDER:'badge-red',
+    CANCELLED_DRIVER:'badge-red', NO_DRIVERS:'badge-gray'
+  };
+  return `<span class="badge ${map[status]||'badge-gray'}">${(status||'').replace(/_/g,' ')}</span>`;
+}
+
+// ── Subscriptions ─────────────────────────────
+async function loadSubscriptions() {
+  const table = document.getElementById('subscriptions-table');
+  table.innerHTML = '<div class="loading"><span class="spinner"></span> Loading...</div>';
+  
+  // Get drivers and check their subscriptions
+  const data = await api('/admin/drivers?limit=100');
+  if (!data?.success) { table.innerHTML = '<div class="empty">Failed to load</div>'; return; }
+  
+  const drivers = data.data || [];
+  
+  table.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Driver Phone</th><th>Name</th><th>Active Plan</th><th>Expires</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        ${drivers.map(d => `
+          <tr>
+            <td>${d.phone}</td>
+            <td>${d.fullName||'-'}</td>
+            <td>${d.activeSubscription ? d.activeSubscription.plan?.name || 'Daily Plan' : '<em style="color:#999">None</em>'}</td>
+            <td>${d.activeSubscription ? new Date(d.activeSubscription.expiresAt).toLocaleString() : '-'}</td>
+            <td>${d.activeSubscription ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Not paid</span>'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// ── Fare Config ───────────────────────────────
+async function saveFareConfig() {
+  const config = {
+    city: 'taliparamba',
+    vehicleType: 'AUTO',
+    baseFare: parseFloat(document.getElementById('fare-base').value),
+    baseDistanceKm: parseFloat(document.getElementById('fare-base-dist').value),
+    perKmRate: parseFloat(document.getElementById('fare-per-km').value),
+    perMinRate: parseFloat(document.getElementById('fare-per-min').value),
+    minFare: parseFloat(document.getElementById('fare-min').value),
+    nightMultiplier: parseFloat(document.getElementById('fare-night').value),
+    effectiveFrom: new Date().toISOString(),
+  };
+  
+  const data = await api('/admin/fare-config', {
+    method: 'POST',
+    body: JSON.stringify(config)
+  });
+  
+  if (data?.success) {
+    showAlert('✓ Fare config saved!', 'success');
+  } else {
+    showAlert(data?.error?.message || 'Failed to save', 'error');
+  }
+}
+
+// ── Alert ─────────────────────────────────────
+function showAlert(msg, type = 'success') {
+  const el = document.getElementById('alert');
+  el.textContent = msg;
+  el.className = `alert alert-${type}`;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
+// ── Keyboard shortcuts ────────────────────────
+document.getElementById('phone-input')?.addEventListener('keydown', e => { if(e.key==='Enter') sendOtp(); });
+document.getElementById('otp-input')?.addEventListener('keydown', e => { if(e.key==='Enter') verifyOtp(); });
+document.getElementById('driver-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+</script>
+</body>
+</html>
