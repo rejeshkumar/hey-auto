@@ -73,8 +73,9 @@ export class AuthService {
     await redis.del(`${OTP_PREFIX}${phone}`);
     await redis.del(attemptsKey);
 
+    // Look up by phone only — DB role wins (supports ADMIN login)
     let user = await prisma.user.findFirst({
-      where: { phone, role: role as UserRole },
+      where: { phone },
     });
 
     let isNewUser = false;
