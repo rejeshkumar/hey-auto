@@ -179,8 +179,9 @@ export class DriverService {
       throw new BadRequestError('Location not available. Please enable GPS.');
     }
 
-    // ── Subscription check ──────────────────────────
-    if (profile.subscriptions.length === 0) {
+    // ── Subscription check (skip in development) ────
+    const isDev = process.env.NODE_ENV === 'development';
+    if (!isDev && profile.subscriptions.length === 0) {
       throw new BadRequestError(
         JSON.stringify({
           code: 'SUBSCRIPTION_REQUIRED',
