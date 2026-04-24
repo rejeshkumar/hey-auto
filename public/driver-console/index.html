@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#FF6B00">
+  <title>Hey Auto — Driver</title>
+  <style>
+    /* ── Reset & tokens ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange:  #FF6B00;
+      --orange2: #D45A00;
+      --green:   #10B981;
+      --green2:  #059669;
+      --red:     #EF4444;
+      --red2:    #DC2626;
+      --blue:    #3B82F6;
+      --yellow:  #F59E0B;
+      --bg:      #F4F5F7;
+      --card:    #FFFFFF;
+      --border:  #E2E8F0;
+      --ink:     #1A1A2E;
+      --ink2:    #4A5568;
+      --ink3:    #A0AEC0;
+      --radius:  14px;
+      --shadow:  0 2px 12px rgba(0,0,0,.08);
+    }
+
+    /* ── Typography (senior-citizen friendly: min 16 px) ────────── */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans Malayalam', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.5;
+      min-height: 100vh;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* ── Utility ─────────────────────────────────────────────────── */
+    .hidden   { display: none !important; }
+    .ml       { font-size: 1.05em; }
+    .sub      { font-size: 0.82em; color: var(--ink2); }
+    .bold     { font-weight: 700; }
+    .center   { text-align: center; }
+
+    /* ── Header ──────────────────────────────────────────────────── */
+    .header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .header-brand .icon { font-size: 26px; }
+    .header-brand h1 { font-size: 18px; font-weight: 800; color: var(--orange); }
+    .header-brand h1 span { color: var(--ink); font-weight: 400; font-size: 15px; }
+
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; border-radius: 20px;
+      font-size: 13px; font-weight: 700;
+    }
+    .pill-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .pill-online  { background: #D1FAE5; color: var(--green); }
+    .pill-online  .pill-dot { background: var(--green); }
+    .pill-offline { background: #FEE2E2; color: var(--red); }
+    .pill-offline .pill-dot { background: var(--red); }
+
+    /* ── Screens ─────────────────────────────────────────────────── */
+    .screen { padding: 20px 16px; max-width: 520px; margin: 0 auto; }
+
+    /* ── Card ────────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      margin-bottom: 16px;
+    }
+
+    /* ── Login ───────────────────────────────────────────────────── */
+    #loginScreen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: calc(100vh - 60px);
+    }
+    .login-card { width: 100%; max-width: 400px; text-align: center; }
+    .login-logo { font-size: 60px; margin-bottom: 10px; }
+    .login-title { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+    .login-sub { color: var(--ink2); margin-bottom: 28px; font-size: 15px; }
+
+    /* ── Form ────────────────────────────────────────────────────── */
+    .label {
+      display: block; font-size: 14px; font-weight: 600;
+      color: var(--ink2); margin-bottom: 7px; text-align: left;
+    }
+    .field-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .prefix {
+      padding: 14px 16px; border: 1.5px solid var(--border);
+      border-radius: var(--radius); font-weight: 700; font-size: 16px;
+      background: var(--bg); color: var(--ink); flex-shrink: 0;
+    }
+    input[type="tel"], input[type="text"], input[type="number"] {
+      width: 100%; padding: 14px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 16px; color: var(--ink);
+      background: var(--card); outline: none;
+      -webkit-appearance: none;
+    }
+    input:focus { border-color: var(--orange); }
+
+    /* OTP boxes */
+    .otp-row { display: flex; gap: 8px; justify-content: center; margin: 20px 0; }
+    .otp-box {
+      width: 46px; height: 56px; text-align: center;
+      font-size: 22px; font-weight: 800;
+      border: 2px solid var(--border); border-radius: 12px;
+      color: var(--ink); background: var(--card); outline: none;
+    }
+    .otp-box:focus { border-color: var(--orange); }
+
+    /* ── Buttons ─────────────────────────────────────────────────── */
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 16px 20px;
+      border: none; border-radius: var(--radius);
+      font-size: 17px; font-weight: 700; cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { opacity: .85; transform: scale(.98); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-orange  { background: var(--orange);  color: #fff; }
+    .btn-green   { background: var(--green);   color: #fff; }
+    .btn-red     { background: var(--red);     color: #fff; }
+    .btn-outline {
+      background: transparent; color: var(--ink);
+      border: 2px solid var(--border);
+    }
+    .btn-row { display: flex; gap: 10px; }
+    .btn-row .btn { flex: 1; }
+
+    /* ── Stats strip ─────────────────────────────────────────────── */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .stat-card { background: var(--card); border-radius: var(--radius); padding: 16px 10px; text-align: center; box-shadow: var(--shadow); }
+    .stat-val  { font-size: 26px; font-weight: 800; }
+    .stat-lbl  { font-size: 11px; color: var(--ink2); margin-top: 3px; line-height: 1.3; }
+
+    /* ── Toggle button (big, senior-friendly) ────────────────────── */
+    .toggle-wrap { text-align: center; margin: 8px 0 20px; }
+    .toggle-btn  {
+      padding: 22px 48px; border-radius: 20px;
+      font-size: 20px; font-weight: 800;
+      border: none; cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0,0,0,.18);
+      transition: all .25s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .toggle-btn:active { transform: scale(.97); }
+    .toggle-btn:disabled { opacity: .5; cursor: wait; }
+    .btn-go-online  { background: var(--green);  color: #fff; }
+    .btn-go-offline { background: var(--red);    color: #fff; }
+    .waiting-hint { color: var(--ink3); font-size: 14px; margin-top: 12px; }
+
+    /* ── Ride request card ───────────────────────────────────────── */
+    .req-card {
+      border: 3px solid var(--orange);
+      border-radius: var(--radius);
+      background: var(--card);
+      padding: 20px;
+      margin-bottom: 16px;
+      animation: pop .3s ease;
+    }
+    @keyframes pop {
+      from { transform: translateY(18px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+    .req-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .req-title { font-size: 18px; font-weight: 800; }
+    .req-timer {
+      background: #FFF3E8; color: var(--orange);
+      padding: 4px 12px; border-radius: 20px;
+      font-weight: 800; font-size: 15px; min-width: 44px; text-align: center;
+    }
+    .req-fare  { font-size: 40px; font-weight: 900; color: var(--orange); margin: 6px 0; }
+    .req-meta  { display: flex; gap: 14px; color: var(--ink2); font-size: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+    .route-box { background: var(--bg); border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+    .route-row { display: flex; gap: 10px; align-items: flex-start; padding: 3px 0; }
+    .dot       { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .dot-green { background: var(--green); }
+    .dot-red   { background: var(--red); }
+    .route-lbl { font-size: 11px; font-weight: 700; color: var(--ink3); letter-spacing: .5px; }
+    .route-addr { font-size: 15px; color: var(--ink); margin-top: 1px; }
+
+    /* ── Active ride phases ──────────────────────────────────────── */
+    .phase-card { background: var(--card); border-radius: var(--radius); padding: 22px; margin-bottom: 16px; box-shadow: var(--shadow); }
+    .phase-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+    .phase-sub   { color: var(--ink2); margin-bottom: 16px; font-size: 15px; }
+    .rider-row   { display: flex; align-items: center; gap: 12px; background: var(--bg); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
+    .rider-icon  { font-size: 30px; }
+    .rider-name  { font-weight: 700; font-size: 17px; }
+    .rider-sub   { color: var(--ink2); font-size: 13px; }
+
+    /* OTP display */
+    .otp-display { background: #D1FAE5; border-radius: 12px; padding: 18px; text-align: center; margin: 12px 0; }
+    .otp-display .otp-lbl  { font-size: 13px; color: var(--ink2); margin-bottom: 6px; }
+    .otp-display .otp-code { font-size: 36px; font-weight: 900; color: var(--green); letter-spacing: 10px; }
+
+    /* OTP entry */
+    .otp-entry { display: flex; gap: 8px; margin-bottom: 14px; }
+    .otp-entry input {
+      flex: 1; padding: 14px; font-size: 24px; text-align: center;
+      letter-spacing: 8px; border: 2px solid var(--border);
+      border-radius: var(--radius); font-weight: 800;
+    }
+    .otp-entry input:focus { border-color: var(--green); }
+
+    /* Fare bar */
+    .fare-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 0; margin-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .fare-bar .lbl   { color: var(--ink2); font-size: 15px; }
+    .fare-bar .amount{ font-size: 26px; font-weight: 800; color: var(--orange); }
+
+    /* Completed */
+    .complete-card { text-align: center; padding: 16px 0; }
+    .complete-icon { font-size: 64px; margin-bottom: 10px; }
+    .complete-fare { font-size: 52px; font-weight: 900; color: var(--green); }
+    .complete-lbl  { color: var(--ink2); font-size: 16px; margin-top: 4px; }
+
+    /* ── Error / toast ───────────────────────────────────────────── */
+    .err-box {
+      background: #FEE2E2; color: var(--red);
+      border-radius: 10px; padding: 12px 16px;
+      font-size: 14px; margin-top: 10px;
+      display: none;
+    }
+
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #1A1A2E; color: #fff;
+      padding: 12px 20px; border-radius: 10px;
+      font-size: 14px; z-index: 999;
+      opacity: 0; transition: opacity .3s;
+      pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ── Log ─────────────────────────────────────────────────────── */
+    .log-section h3  { font-size: 14px; color: var(--ink2); margin-bottom: 10px; }
+    .log-entry {
+      padding: 7px 12px; font-size: 12px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: var(--card); border-radius: 6px; margin-bottom: 4px;
+      border-left: 3px solid var(--border); color: var(--ink2);
+    }
+    .log-entry.ok  { border-left-color: var(--green); }
+    .log-entry.inf { border-left-color: var(--blue); }
+    .log-entry.wrn { border-left-color: var(--yellow); }
+    .log-entry.err { border-left-color: var(--red); }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────────────────────── -->
+<div class="header">
+  <div class="header-brand">
+    <span class="icon">🛺</span>
+    <h1>ഹേ ഓട്ടോ <span>Driver</span></h1>
+  </div>
+  <div id="statusPill" class="pill pill-offline hidden">
+    <span class="pill-dot"></span>
+    <span id="statusTxt">Offline</span>
+  </div>
+</div>
+
+<!-- ── LOGIN ───────────────────────────────────────────────────────────── -->
+<div id="loginScreen" class="screen">
+  <div class="card login-card">
+    <div class="login-logo">🛺</div>
+    <div class="login-title">Driver Login</div>
+    <div class="login-sub">തളിപ്പറമ്പ്, കണ്ണൂർ<br><span class="sub">(Taliparamba, Kannur)</span></div>
+
+    <!-- Step 1: phone -->
+    <div id="phoneStep">
+      <label class="label">📱 ഫോൺ നമ്പർ <span class="sub">(Phone Number)</span></label>
+      <div class="field-row">
+        <span class="prefix">+91</span>
+        <input type="tel" id="phoneInput" placeholder="9876543210" maxlength="10" inputmode="numeric">
+      </div>
+      <button class="btn btn-orange" id="sendOtpBtn" onclick="sendOtp()">OTP അയക്കൂ <span class="sub" style="color:#fff">(Send OTP)</span></button>
+      <div id="sendErr" class="err-box"></div>
+      <p class="sub center" style="margin-top:14px">ഡെമോ OTP: <strong>123456</strong></p>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div id="otpStep" class="hidden">
+      <p id="otpHint" style="margin-bottom:4px;color:var(--ink2)"></p>
+      <div class="otp-row">
+        <input class="otp-box" type="tel" maxlength="1" id="o0" oninput="otpKey(this,0)" inputmode="numeric">
+        <input class="otp-box" type="tel" maxlength="1" id="o1" oninput="otpKey(this,1)" inputmode="numeric">
+        <input class="otp-box" type="tel" maxlength="1" id="o2" oninput="otpKey(this,2)" inputmode="numeric">
+        <input class="otp-box" type="tel" maxlength="1" id="o3" oninput="otpKey(this,3)" inputmode="numeric">
+        <input class="otp-box" type="tel" maxlength="1" id="o4" oninput="otpKey(this,4)" inputmode="numeric">
+        <input class="otp-box" type="tel" maxlength="1" id="o5" oninput="otpKey(this,5)" inputmode="numeric">
+      </div>
+      <button class="btn btn-orange" id="verifyBtn" onclick="verifyOtp()">Login ചെയ്യൂ <span class="sub" style="color:#fff">(Verify & Login)</span></button>
+      <div id="verifyErr" class="err-box"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ────────────────────────────────────────────────────────── -->
+<div id="dashboard" class="screen hidden">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--green)" id="earnVal">₹0</div>
+      <div class="stat-lbl">ഇന്നത്തെ<br>വരുമാനം</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--orange)" id="ridesVal">0</div>
+      <div class="stat-lbl">ഇന്ന്<br>Rides</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--blue)" id="ratingVal">5.0</div>
+      <div class="stat-lbl">⭐ Rating</div>
+    </div>
+  </div>
+
+  <!-- Online / offline toggle -->
+  <div class="toggle-wrap">
+    <button id="toggleBtn" class="toggle-btn btn-go-online" onclick="toggleOnline()">
+      ⚡ Online ആകൂ<br><span style="font-size:14px;font-weight:400">(Go Online)</span>
+    </button>
+    <div id="toggleErr" class="err-box" style="max-width:320px;margin:10px auto 0"></div>
+    <p class="waiting-hint hidden" id="waitingHint">⏳ ഓട്ടോ request കാത്തിരിക്കുന്നു...</p>
+  </div>
+
+  <!-- Incoming ride request -->
+  <div id="rideRequest" class="hidden"></div>
+
+  <!-- Active ride phases -->
+  <div id="activeRide" class="hidden"></div>
+
+  <!-- Activity log -->
+  <div class="log-section">
+    <h3>📋 Activity Log</h3>
+    <div id="logWrap"></div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- ── SCRIPT ────────────────────────────────────────────────────────────── -->
+<script>
+'use strict';
+
+// ── Config ────────────────────────────────────────────────────────────────────
+const API = location.origin + '/api/v1';
+const POLL_MS       = 4000;   // ride-request polling interval
+const STATUS_POLL   = 10000;  // active-ride status polling
+const REQUEST_SEC   = 28;     // countdown for incoming request
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let token       = sessionStorage.getItem('ha_token') || '';
+let driverInfo  = null;
+let isOnline    = false;
+let pollTimer   = null;
+let statusTimer = null;
+let reqTimer    = null;
+let activeRideId = null;
+let sessionRides    = 0;
+let sessionEarnings = 0;
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function log(msg, type = 'inf') {
+  const t = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  const el = document.createElement('div');
+  el.className = 'log-entry ' + type;
+  el.textContent = '[' + t + '] ' + msg;
+  const w = document.getElementById('logWrap');
+  w.insertBefore(el, w.firstChild);
+  if (w.children.length > 40) w.removeChild(w.lastChild);
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+async function api(method, path, body) {
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+    if (body)  opts.body = JSON.stringify(body);
+    const r = await fetch(API + path, opts);
+    return await r.json();
+  } catch (e) {
+    return { success: false, error: { message: 'Network error' } };
+  }
+}
+
+// ── Login: send OTP ───────────────────────────────────────────────────────────
+async function sendOtp() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  if (!/^\d{10}$/.test(phone)) { showErr('sendErr', 'ശരിയായ 10-digit ഫോൺ നമ്പർ ടൈപ്പ് ചെയ്യൂ'); return; }
+  const btn = document.getElementById('sendOtpBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+
+  const d = await api('POST', '/auth/send-otp', { phone, role: 'DRIVER' });
+  btn.disabled = false;
+  btn.innerHTML = 'OTP അയക്കൂ <span class="sub" style="color:#fff">(Send OTP)</span>';
+
+  if (d.success) {
+    document.getElementById('phoneStep').classList.add('hidden');
+    document.getElementById('otpStep').classList.remove('hidden');
+    const hint = d.data?.otp ? ' — OTP: ' + d.data.otp : '';
+    document.getElementById('otpHint').textContent = '+91 ' + phone + ' ലേക്ക് OTP അയച്ചു' + hint;
+    document.getElementById('o0').focus();
+    log('OTP sent → +91 ' + phone, 'inf');
+  } else {
+    showErr('sendErr', d.error?.message || 'OTP send failed');
+  }
+}
+
+function otpKey(el, idx) {
+  el.value = el.value.replace(/\D/g, '');
+  if (el.value && idx < 5) document.getElementById('o' + (idx + 1)).focus();
+  if (idx === 5 && el.value) verifyOtp();
+}
+
+// ── Login: verify OTP ─────────────────────────────────────────────────────────
+async function verifyOtp() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  const otp   = [0,1,2,3,4,5].map(i => document.getElementById('o'+i).value).join('');
+  if (otp.length !== 6) { showErr('verifyErr', '6 digits ടൈപ്പ് ചെയ്യൂ'); return; }
+  const btn = document.getElementById('verifyBtn');
+  btn.disabled = true; btn.textContent = 'Verifying…';
+
+  const d = await api('POST', '/auth/verify-otp', { phone, otp, role: 'DRIVER' });
+  btn.disabled = false;
+  btn.innerHTML = 'Login ചെയ്യൂ <span class="sub" style="color:#fff">(Verify & Login)</span>';
+
+  if (d.success) {
+    token = d.data.tokens.accessToken;
+    driverInfo = d.data.user;
+    sessionStorage.setItem('ha_token', token);
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    document.getElementById('statusPill').classList.remove('hidden');
+    log('✅ Logged in — ' + (driverInfo.fullName || driverInfo.phone), 'ok');
+    await loadProfile();
+  } else {
+    showErr('verifyErr', d.error?.message || 'Invalid OTP');
+    log('Login failed: ' + (d.error?.message || 'Unknown'), 'err');
+  }
+}
+
+async function loadProfile() {
+  const d = await api('GET', '/driver/profile');
+  if (d.success) {
+    document.getElementById('ratingVal').textContent = (d.data.rating || 5.0).toFixed(1);
+    log('Profile loaded — ' + (d.data.city || 'Taliparamba'), 'inf');
+    // Restore online state if driver was already online
+    if (d.data.isOnline) {
+      isOnline = true;
+      setOnlineUI(true);
+      startPolling();
+    }
+  }
+}
+
+// ── Load today's earnings ─────────────────────────────────────────────────────
+async function loadEarnings() {
+  const d = await api('GET', '/driver/earnings?period=today');
+  if (d.success) {
+    document.getElementById('earnVal').textContent  = '₹' + (d.data.totalEarnings || 0);
+    document.getElementById('ridesVal').textContent = d.data.totalRides || 0;
+  }
+}
+
+// ── Online / Offline toggle ───────────────────────────────────────────────────
+function setOnlineUI(online) {
+  const pill = document.getElementById('statusPill');
+  const txt  = document.getElementById('statusTxt');
+  const btn  = document.getElementById('toggleBtn');
+  const hint = document.getElementById('waitingHint');
+
+  if (online) {
+    pill.className = 'pill pill-online';
+    txt.textContent = 'Online';
+    btn.className = 'toggle-btn btn-go-offline';
+    btn.innerHTML = '🔴 Offline ആകൂ<br><span style="font-size:14px;font-weight:400">(Go Offline)</span>';
+    hint.classList.remove('hidden');
+  } else {
+    pill.className = 'pill pill-offline';
+    txt.textContent = 'Offline';
+    btn.className = 'toggle-btn btn-go-online';
+    btn.innerHTML = '⚡ Online ആകൂ<br><span style="font-size:14px;font-weight:400">(Go Online)</span>';
+    hint.classList.add('hidden');
+  }
+}
+
+async function toggleOnline() {
+  const btn = document.getElementById('toggleBtn');
+  btn.disabled = true;
+
+  if (!isOnline) {
+    // Get GPS location before going online
+    const loc = await getLocation();
+    const d = await api('POST', '/driver/go-online', loc);
+    btn.disabled = false;
+    if (d.success) {
+      isOnline = true;
+      setOnlineUI(true);
+      document.getElementById('toggleErr').style.display = 'none';
+      log('✅ ONLINE — Taliparamba', 'ok');
+      toast('Online ആയി! Rides കാത്തിരിക്കുന്നു...');
+      startPolling();
+      startLocationBroadcast();
+    } else {
+      showErr('toggleErr', d.error?.message || 'Online ആകാൻ കഴിഞ്ഞില്ല');
+      log('Go online failed: ' + (d.error?.message || ''), 'err');
+    }
+  } else {
+    await api('POST', '/driver/go-offline');
+    btn.disabled = false;
+    isOnline = false;
+    setOnlineUI(false);
+    stopPolling();
+    log('Offline ആയി', 'wrn');
+    toast('Offline ആയി');
+  }
+}
+
+function getLocation() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve({ lat: 12.0368, lng: 75.3614 });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      ()  => resolve({ lat: 12.0368, lng: 75.3614 }),
+      { timeout: 5000, maximumAge: 30000 }
+    );
+  });
+}
+
+// ── Polling (replaces WebSocket for WhatsApp browser compat) ──────────────────
+function startPolling() {
+  stopPolling();
+  pollTimer = setInterval(checkRideRequest, POLL_MS);
+}
+
+function stopPolling() {
+  if (pollTimer)  { clearInterval(pollTimer);  pollTimer  = null; }
+}
+
+let lastSeenRideId = null;
+
+async function checkRideRequest() {
+  if (!isOnline || activeRideId) return;  // don't poll if already on a ride
+  const d = await api('GET', '/driver/ride-request');
+  if (!d.success || !d.data) return;
+
+  const req = d.data;
+  if (req.rideId === lastSeenRideId) return;  // already showing this request
+  lastSeenRideId = req.rideId;
+  showRideRequest(req);
+}
+
+let locTimer = null;
+function startLocationBroadcast() {
+  locTimer = setInterval(async () => {
+    const loc = await getLocation();
+    await api('PUT', '/driver/location', loc);
+  }, 15000);
+}
+
+// ── Incoming ride request ─────────────────────────────────────────────────────
+function showRideRequest(req) {
+  stopPolling();  // pause while request is visible
+  let secs = REQUEST_SEC;
+  const cont = document.getElementById('rideRequest');
+
+  function render() {
+    const urgency = secs <= 8 ? 'color:var(--red)' : '';
+    cont.innerHTML =
+      '<div class="req-card">' +
+        '<div class="req-head">' +
+          '<span class="req-title">🔔 പുതിയ Ride Request!</span>' +
+          '<span class="req-timer" style="' + urgency + '">' + secs + 's</span>' +
+        '</div>' +
+        '<div class="req-fare">₹' + Math.round(req.estimatedFare || 0) + '</div>' +
+        '<div class="req-meta">' +
+          '<span>📏 ' + (req.estimatedDistanceKm || 0).toFixed(1) + ' km</span>' +
+          '<span>⏱️ ' + (req.estimatedDurationMin || 0) + ' min</span>' +
+          (req.riderName ? '<span>👤 ' + escHtml(req.riderName) + '</span>' : '') +
+        '</div>' +
+        '<div class="route-box">' +
+          '<div class="route-row"><span class="dot dot-green"></span><div>' +
+            '<div class="route-lbl">PICKUP</div>' +
+            '<div class="route-addr">' + escHtml(req.pickupAddress || '') + '</div>' +
+          '</div></div>' +
+          '<div style="width:2px;height:14px;background:var(--border);margin-left:4px"></div>' +
+          '<div class="route-row"><span class="dot dot-red"></span><div>' +
+            '<div class="route-lbl">DROP-OFF</div>' +
+            '<div class="route-addr">' + escHtml(req.dropoffAddress || '') + '</div>' +
+          '</div></div>' +
+        '</div>' +
+        '<div class="btn-row">' +
+          '<button class="btn btn-outline" onclick="declineRide(' + JSON.stringify(req.rideId) + ')">❌ Decline</button>' +
+          '<button class="btn btn-green" onclick="acceptRide(' + JSON.stringify(req) + ')">✅ Accept ചെയ്യൂ</button>' +
+        '</div>' +
+      '</div>';
+    cont.classList.remove('hidden');
+  }
+  render();
+  log('🔔 New request ₹' + Math.round(req.estimatedFare) + ' — ' + req.pickupAddress, 'wrn');
+  toast('പുതിയ Ride Request!');
+
+  reqTimer = setInterval(() => {
+    secs--;
+    if (secs <= 0) { clearInterval(reqTimer); declineRide(req.rideId, true); return; }
+    const el = cont.querySelector('.req-timer');
+    if (el) { el.textContent = secs + 's'; el.style.color = secs <= 8 ? 'var(--red)' : ''; }
+  }, 1000);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function declineRide(rideId, timedOut = false) {
+  clearInterval(reqTimer);
+  document.getElementById('rideRequest').classList.add('hidden');
+  lastSeenRideId = null;
+  if (rideId && !rideId.startsWith('demo-')) {
+    await api('POST', '/rides/' + rideId + '/decline');
+  }
+  log(timedOut ? 'Request timed out' : 'Request declined', 'wrn');
+  if (isOnline) startPolling();  // resume polling
+}
+
+async function acceptRide(req) {
+  clearInterval(reqTimer);
+  document.getElementById('rideRequest').classList.add('hidden');
+
+  const d = await api('POST', '/rides/' + req.rideId + '/accept');
+  if (!d.success) {
+    toast('Accept failed: ' + (d.error?.message || 'Ride no longer available'));
+    log('Accept failed: ' + (d.error?.message || ''), 'err');
+    lastSeenRideId = null;
+    if (isOnline) startPolling();
+    return;
+  }
+
+  activeRideId = req.rideId;
+  stopPolling();
+  document.getElementById('waitingHint').classList.add('hidden');
+  log('✅ Accepted ₹' + Math.round(req.estimatedFare) + ' — ' + req.dropoffAddress, 'ok');
+  toast('Ride accepted!');
+  showPhaseHeadingPickup(req);
+  startStatusPolling();
+}
+
+// ── Status polling (detect rider cancellations etc.) ─────────────────────────
+function startStatusPolling() {
+  statusTimer = setInterval(async () => {
+    if (!activeRideId) { stopStatusPolling(); return; }
+    const d = await api('GET', '/rides/' + activeRideId);
+    if (!d.success) return;
+    const status = d.data?.status;
+    if (['CANCELLED_RIDER', 'CANCELLED_DRIVER', 'NO_DRIVERS'].includes(status)) {
+      stopStatusPolling();
+      activeRideId = null;
+      document.getElementById('activeRide').classList.add('hidden');
+      document.getElementById('activeRide').innerHTML = '';
+      toast('Ride ക്യാൻസൽ ആയി');
+      log('Ride cancelled', 'wrn');
+      backToIdle();
+    }
+  }, STATUS_POLL);
+}
+
+function stopStatusPolling() {
+  if (statusTimer) { clearInterval(statusTimer); statusTimer = null; }
+}
+
+// ── Ride phases ───────────────────────────────────────────────────────────────
+function showPhaseHeadingPickup(req) {
+  const c = document.getElementById('activeRide');
+  c.innerHTML =
+    '<div class="phase-card">' +
+      '<div class="phase-title">📍 Pickup ലേക്ക് പോകൂ</div>' +
+      '<div class="phase-sub">_(Heading to pickup)_</div>' +
+      '<div class="rider-row">' +
+        '<div class="rider-icon">👤</div>' +
+        '<div><div class="rider-name">' + escHtml(req.riderName || 'Rider') + '</div>' +
+        '<div class="rider-sub">Ride · ₹' + Math.round(req.estimatedFare) + '</div></div>' +
+      '</div>' +
+      '<div class="route-box" style="margin-bottom:16px">' +
+        '<div class="route-row"><span class="dot dot-green"></span><div>' +
+          '<div class="route-lbl">PICKUP</div>' +
+          '<div class="route-addr">' + escHtml(req.pickupAddress) + '</div>' +
+        '</div></div>' +
+      '</div>' +
+      '<button class="btn btn-orange" onclick="arrivedAtPickup(' + JSON.stringify(req) + ')">✅ Pickup ൽ എത്തി<br><span style="font-size:13px;font-weight:400">(I\'ve Arrived at Pickup)</span></button>' +
+    '</div>';
+  c.classList.remove('hidden');
+}
+
+async function arrivedAtPickup(req) {
+  const d = await api('POST', '/rides/' + req.rideId + '/arrived');
+  if (!d.success) { toast('Error: ' + (d.error?.message || '')); return; }
+  log('Arrived at pickup', 'inf');
+  showPhaseArrived(req, d.data?.rideOtp || '');
+}
+
+function showPhaseArrived(req, rideOtp) {
+  const c = document.getElementById('activeRide');
+  c.innerHTML =
+    '<div class="phase-card">' +
+      '<div class="phase-title">🏁 Pickup ൽ എത്തി</div>' +
+      '<div class="phase-sub">_(Arrived at pickup — get OTP from rider)_</div>' +
+      '<div class="rider-row">' +
+        '<div class="rider-icon">👤</div>' +
+        '<div><div class="rider-name">' + escHtml(req.riderName || 'Rider') + '</div>' +
+        '<div class="rider-sub">OTP കൊടുക്കൂ</div></div>' +
+      '</div>' +
+      (rideOtp ? '<div class="otp-display"><div class="otp-lbl">Rider\'s OTP (demo)</div><div class="otp-code">' + rideOtp + '</div></div>' : '') +
+      '<div class="otp-entry"><input type="tel" id="otpIn" placeholder="OTP" maxlength="4" inputmode="numeric"></div>' +
+      '<button class="btn btn-green" onclick="verifyOtpRide(' + JSON.stringify(req) + ')">▶ Ride ആരംഭിക്കൂ<br><span style="font-size:13px;font-weight:400">(Start Ride)</span></button>' +
+    '</div>';
+  log('Arrived at pickup', 'inf');
+}
+
+async function verifyOtpRide(req) {
+  const otp = (document.getElementById('otpIn').value || '').trim();
+  if (otp.length < 4) { toast('4-digit OTP ടൈപ്പ് ചെയ്യൂ'); return; }
+
+  const v = await api('POST', '/rides/' + req.rideId + '/verify-otp', { otp });
+  if (!v.success) { toast('OTP തെറ്റ്! (Invalid OTP)'); return; }
+
+  const s = await api('POST', '/rides/' + req.rideId + '/start');
+  if (!s.success) { toast('Start failed'); return; }
+
+  log('🚗 Ride started', 'ok');
+  showPhaseInProgress(req);
+}
+
+function showPhaseInProgress(req) {
+  const c = document.getElementById('activeRide');
+  c.innerHTML =
+    '<div class="phase-card">' +
+      '<div class="phase-title">🚗 യാത്ര തുടരുന്നു</div>' +
+      '<div class="phase-sub">_(Ride in progress)_</div>' +
+      '<div class="route-box" style="margin-bottom:14px">' +
+        '<div class="route-row"><span class="dot dot-red"></span><div>' +
+          '<div class="route-lbl">DROP-OFF</div>' +
+          '<div class="route-addr">' + escHtml(req.dropoffAddress) + '</div>' +
+        '</div></div>' +
+      '</div>' +
+      '<div class="fare-bar">' +
+        '<span class="lbl">Estimated Fare</span>' +
+        '<span class="amount">₹' + Math.round(req.estimatedFare) + '</span>' +
+      '</div>' +
+      '<button class="btn btn-green" onclick="completeRide(' + JSON.stringify(req) + ')">✅ Ride Complete ചെയ്യൂ<br><span style="font-size:13px;font-weight:400">(Complete Ride)</span></button>' +
+    '</div>';
+}
+
+async function completeRide(req) {
+  const d = await api('POST', '/rides/' + req.rideId + '/complete');
+  const fare = d.data?.totalAmount ?? d.data?.actualFare ?? req.estimatedFare;
+  if (d.success) {
+    sessionRides++;
+    sessionEarnings += Math.round(fare);
+    document.getElementById('ridesVal').textContent = sessionRides;
+    document.getElementById('earnVal').textContent  = '₹' + sessionEarnings;
+    log('✅ Completed ₹' + Math.round(fare), 'ok');
+    showPhaseCompleted(fare);
+  } else {
+    toast('Complete failed: ' + (d.error?.message || ''));
+  }
+}
+
+function showPhaseCompleted(fare) {
+  stopStatusPolling();
+  activeRideId = null;
+  const c = document.getElementById('activeRide');
+  c.innerHTML =
+    '<div class="phase-card"><div class="complete-card">' +
+      '<div class="complete-icon">✅</div>' +
+      '<div class="phase-title">Ride പൂർത്തിയായി!</div>' +
+      '<div class="complete-fare">₹' + Math.round(fare) + '</div>' +
+      '<div class="complete-lbl">Cash collect ചെയ്യൂ</div>' +
+      '<button class="btn btn-orange" style="margin-top:20px" onclick="backToIdle()">Done — കാത്തിരിക്കൂ<br><span style="font-size:13px;font-weight:400">(Back to Waiting)</span></button>' +
+    '</div></div>';
+  toast('✅ Ride complete! ₹' + Math.round(fare));
+  loadEarnings();
+}
+
+function backToIdle() {
+  stopStatusPolling();
+  activeRideId  = null;
+  lastSeenRideId = null;
+  const ar = document.getElementById('activeRide');
+  ar.classList.add('hidden');
+  ar.innerHTML = '';
+  if (isOnline) {
+    document.getElementById('waitingHint').classList.remove('hidden');
+    startPolling();
+  }
+  log('Ready for next ride', 'inf');
+}
+
+// ── Demo / simulate ───────────────────────────────────────────────────────────
+// (Keep for offline testing — hidden in prod if no request comes)
+function simulateRide() {
+  const fares  = [48, 62, 75, 88, 105, 120];
+  const picks  = ['തളിപ്പറമ്പ് ബസ് സ്റ്റാൻഡ്', 'Govt Hospital', 'Manna Junction'];
+  const drops  = ['കണ്ണപുരം Railway Station', 'Parassinikkadavu Temple', 'Trichambaram Temple'];
+  const fare   = fares[Math.floor(Math.random() * fares.length)];
+  const dist   = +(1.5 + Math.random() * 7).toFixed(1);
+  showRideRequest({
+    rideId:               'demo-' + Date.now(),
+    pickupAddress:        picks[Math.floor(Math.random() * picks.length)],
+    dropoffAddress:       drops[Math.floor(Math.random() * drops.length)],
+    estimatedFare:        fare,
+    estimatedDistanceKm:  dist,
+    estimatedDurationMin: Math.ceil(dist * 3),
+    riderName:            'Demo Rider',
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+// If token exists in sessionStorage, skip login and go straight to dashboard
+if (token) {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+  document.getElementById('statusPill').classList.remove('hidden');
+  loadProfile();
+  loadEarnings();
+}
+</script>
+</body>
+</html>

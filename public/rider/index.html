@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#00A86B">
+  <title>Hey Auto — ഓട്ടോ ബുക്ക് ചെയ്യൂ</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green:   #00A86B;
+      --green2:  #008F5B;
+      --orange:  #FF6B35;
+      --red:     #EF4444;
+      --blue:    #3B82F6;
+      --yellow:  #F59E0B;
+      --bg:      #F4F7F5;
+      --card:    #FFFFFF;
+      --border:  #E2E8F0;
+      --ink:     #1A2E1F;
+      --ink2:    #4A6352;
+      --ink3:    #9CA3AF;
+      --r:       14px;
+      --shadow:  0 2px 12px rgba(0,0,0,.08);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans Malayalam', 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--ink);
+      font-size: 16px; line-height: 1.5; min-height: 100vh;
+      -webkit-text-size-adjust: 100%;
+    }
+    .hidden { display: none !important; }
+
+    /* ── Header ── */
+    .header {
+      background: var(--green);
+      padding: 14px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon { font-size: 26px; }
+    .brand h1 { font-size: 18px; font-weight: 800; color: #fff; }
+    .brand h1 span { font-weight: 400; font-size: 14px; opacity: .85; }
+    .user-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,.2); color: #fff;
+      padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    }
+
+    /* ── Screen / Card ── */
+    .screen { padding: 18px 16px; max-width: 500px; margin: 0 auto; }
+    .card {
+      background: var(--card); border-radius: var(--r);
+      box-shadow: var(--shadow); padding: 22px; margin-bottom: 16px;
+    }
+    .card-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .card-sub { color: var(--ink2); font-size: 14px; margin-bottom: 18px; }
+
+    /* ── Login ── */
+    #loginScreen { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); }
+    .login-card { width: 100%; max-width: 400px; text-align: center; }
+    .login-logo { font-size: 64px; margin-bottom: 10px; }
+    .login-title { font-size: 26px; font-weight: 800; margin-bottom: 4px; }
+    .login-sub { color: var(--ink2); margin-bottom: 28px; font-size: 15px; }
+
+    /* ── Form ── */
+    .label { display: block; font-size: 13px; font-weight: 600; color: var(--ink2); margin-bottom: 6px; }
+    .field-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .prefix {
+      padding: 14px 14px; border: 1.5px solid var(--border);
+      border-radius: var(--r); font-weight: 700; font-size: 16px;
+      background: var(--bg); flex-shrink: 0;
+    }
+    input[type="tel"], input[type="text"] {
+      width: 100%; padding: 14px 16px;
+      border: 1.5px solid var(--border); border-radius: var(--r);
+      font-size: 16px; color: var(--ink); background: var(--card);
+      outline: none; -webkit-appearance: none;
+    }
+    input:focus { border-color: var(--green); }
+    .otp-row { display: flex; gap: 8px; justify-content: center; margin: 18px 0; }
+    .otp-box {
+      width: 46px; height: 56px; text-align: center;
+      font-size: 22px; font-weight: 800;
+      border: 2px solid var(--border); border-radius: 12px;
+      color: var(--ink); background: var(--card); outline: none;
+    }
+    .otp-box:focus { border-color: var(--green); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 15px 20px;
+      border: none; border-radius: var(--r);
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { opacity: .85; transform: scale(.98); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-green  { background: var(--green);  color: #fff; }
+    .btn-orange { background: var(--orange); color: #fff; }
+    .btn-outline { background: transparent; color: var(--ink); border: 2px solid var(--border); }
+    .btn-row { display: flex; gap: 10px; }
+    .btn-row .btn { flex: 1; }
+    .btn + .btn { margin-top: 10px; }
+
+    /* ── Place picker ── */
+    .place-btn {
+      width: 100%; padding: 14px 16px;
+      border: 1.5px solid var(--border); border-radius: var(--r);
+      background: var(--card); color: var(--ink2);
+      font-size: 15px; text-align: left; cursor: pointer;
+      display: flex; align-items: center; gap: 10px;
+      -webkit-tap-highlight-color: transparent;
+      margin-bottom: 10px;
+    }
+    .place-btn.filled { color: var(--ink); border-color: var(--green); font-weight: 600; }
+    .place-icon { font-size: 18px; flex-shrink: 0; }
+    .place-list {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: var(--r); overflow: hidden; margin-bottom: 12px;
+    }
+    .place-item {
+      padding: 13px 16px; border-bottom: 1px solid var(--border);
+      cursor: pointer; font-size: 15px; display: flex; align-items: center; gap: 10px;
+    }
+    .place-item:last-child { border-bottom: none; }
+    .place-item:active { background: var(--bg); }
+    .place-name { font-weight: 600; }
+    .place-area { font-size: 12px; color: var(--ink3); }
+
+    /* ── Fare estimate ── */
+    .fare-hero {
+      text-align: center; padding: 10px 0 16px;
+      border-bottom: 1px solid var(--border); margin-bottom: 16px;
+    }
+    .fare-amount { font-size: 52px; font-weight: 900; color: var(--green); }
+    .fare-label  { color: var(--ink2); font-size: 14px; }
+    .fare-pills  { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+    .fare-pill   {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 12px; font-size: 13px; color: var(--ink2);
+    }
+    .route-box { background: var(--bg); border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+    .route-row { display: flex; gap: 10px; align-items: flex-start; padding: 3px 0; }
+    .dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .dot-green { background: var(--green); }
+    .dot-red   { background: var(--red); }
+    .route-lbl  { font-size: 11px; font-weight: 700; color: var(--ink3); letter-spacing: .5px; }
+    .route-addr { font-size: 15px; color: var(--ink); margin-top: 1px; }
+    .divider-line { width: 2px; height: 14px; background: var(--border); margin-left: 4px; }
+
+    /* ── Ride status ── */
+    .status-banner {
+      border-radius: var(--r); padding: 16px 18px; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .status-searching { background: #FEF3C7; color: #92400E; }
+    .status-assigned  { background: #D1FAE5; color: #065F46; }
+    .status-arrived   { background: #DBEAFE; color: #1E40AF; }
+    .status-progress  { background: #EDE9FE; color: #5B21B6; }
+    .status-icon { font-size: 28px; }
+    .status-title { font-weight: 700; font-size: 16px; }
+    .status-sub   { font-size: 13px; opacity: .8; margin-top: 2px; }
+
+    .driver-card {
+      background: var(--bg); border-radius: 12px; padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+    }
+    .driver-icon { font-size: 32px; }
+    .driver-name { font-weight: 700; font-size: 16px; }
+    .driver-sub  { color: var(--ink2); font-size: 13px; margin-top: 2px; }
+
+    .otp-display {
+      background: #D1FAE5; border-radius: 12px; padding: 16px;
+      text-align: center; margin-bottom: 14px;
+    }
+    .otp-display .lbl  { font-size: 13px; color: var(--ink2); margin-bottom: 6px; }
+    .otp-display .code {
+      font-size: 40px; font-weight: 900; color: var(--green);
+      letter-spacing: 12px; font-family: monospace;
+    }
+
+    .completed-card { text-align: center; padding: 12px 0; }
+    .completed-icon { font-size: 60px; margin-bottom: 10px; }
+    .completed-fare { font-size: 52px; font-weight: 900; color: var(--green); }
+    .completed-sub  { color: var(--ink2); margin-top: 4px; }
+
+    /* ── Error ── */
+    .err-box {
+      background: #FEE2E2; color: var(--red);
+      border-radius: 10px; padding: 12px 16px;
+      font-size: 14px; margin-top: 10px; display: none;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #1A2E1F; color: #fff;
+      padding: 12px 20px; border-radius: 10px;
+      font-size: 14px; z-index: 999;
+      opacity: 0; transition: opacity .3s;
+      pointer-events: none; white-space: nowrap; max-width: 90vw;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="brand">
+    <span class="brand-icon">🛺</span>
+    <h1>ഹേ ഓട്ടോ <span>(Hey Auto)</span></h1>
+  </div>
+  <div id="userPill" class="user-pill hidden">
+    <span>👤</span><span id="userName">Rider</span>
+  </div>
+</div>
+
+<!-- ── LOGIN ─────────────────────────────────────────────────── -->
+<div id="loginScreen" class="screen">
+  <div class="card login-card">
+    <div class="login-logo">🛺</div>
+    <div class="login-title">ഓട്ടോ ബുക്ക് ചെയ്യൂ</div>
+    <div class="login-sub">Book Auto · Taliparamba, Kannur</div>
+
+    <div id="phoneStep">
+      <label class="label">📱 ഫോൺ നമ്പർ (Phone Number)</label>
+      <div class="field-row">
+        <span class="prefix">+91</span>
+        <input type="tel" id="phoneInput" placeholder="9876543210" maxlength="10" inputmode="numeric">
+      </div>
+      <button class="btn btn-green" id="sendOtpBtn" onclick="sendOtp()">
+        OTP അയക്കൂ (Send OTP)
+      </button>
+      <div id="sendErr" class="err-box"></div>
+      <p style="margin-top:14px;font-size:13px;color:var(--ink3);text-align:center">ഡെമോ OTP: <strong>123456</strong></p>
+    </div>
+
+    <div id="otpStep" class="hidden">
+      <p id="otpHint" style="color:var(--ink2);margin-bottom:4px;font-size:14px"></p>
+      <div class="otp-row">
+        <input class="otp-box" type="tel" maxlength="1" id="o0" oninput="otpKey(this,0)" inputmode="numeric">
+        <input class="otp-box" type="tel" maxlength="1" id="o1" oninput="otpKey(this,1)" inputmode="numeric">
+        <input class="otp-box" type="tel" maxlength="1" id="o2" oninput="otpKey(this,2)" inputmode="numeric">
+        <input class="otp-box" type="tel" maxlength="1" id="o3" oninput="otpKey(this,3)" inputmode="numeric">
+        <input class="otp-box" type="tel" maxlength="1" id="o4" oninput="otpKey(this,4)" inputmode="numeric">
+        <input class="otp-box" type="tel" maxlength="1" id="o5" oninput="otpKey(this,5)" inputmode="numeric">
+      </div>
+      <button class="btn btn-green" id="verifyBtn" onclick="verifyOtp()">
+        Login ചെയ്യൂ (Verify & Login)
+      </button>
+      <div id="verifyErr" class="err-box"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── BOOKING ────────────────────────────────────────────────── -->
+<div id="bookingScreen" class="screen hidden">
+
+  <!-- Place selection -->
+  <div id="placeStep" class="card">
+    <div class="card-title">🛺 ഓട്ടോ ബുക്ക് ചെയ്യൂ</div>
+    <div class="card-sub">Book Auto · Taliparamba</div>
+
+    <label class="label">📍 Pickup — നിങ്ങൾ ഇപ്പോൾ എവിടെ?</label>
+    <button class="place-btn" id="pickupBtn" onclick="openPicker('pickup')">
+      <span class="place-icon">📍</span>
+      <span id="pickupLabel">സ്ഥലം തിരഞ്ഞെടുക്കൂ (Select pickup)</span>
+    </button>
+
+    <label class="label">🎯 Drop-off — എവിടെ പോകണം?</label>
+    <button class="place-btn" id="dropoffBtn" onclick="openPicker('dropoff')">
+      <span class="place-icon">🎯</span>
+      <span id="dropoffLabel">സ്ഥലം തിരഞ്ഞെടുക്കൂ (Select destination)</span>
+    </button>
+
+    <button class="btn btn-green" id="estimateBtn" onclick="getEstimate()" disabled>
+      💰 ഫെയർ കാണൂ (Get Fare Estimate)
+    </button>
+    <div id="placeErr" class="err-box"></div>
+  </div>
+
+  <!-- Place picker dropdown -->
+  <div id="pickerCard" class="card hidden">
+    <div class="card-title" id="pickerTitle">സ്ഥലം തിരഞ്ഞെടുക്കൂ</div>
+    <div style="margin-bottom:12px">
+      <input type="text" id="placeSearch" placeholder="ടൈപ്പ് ചെയ്ത് തിരയൂ..." oninput="filterPlaces(this.value)">
+    </div>
+    <div class="place-list" id="placeList"></div>
+    <button class="btn btn-outline" style="margin-top:10px" onclick="closePicker()">Cancel</button>
+  </div>
+
+  <!-- Fare estimate -->
+  <div id="estimateCard" class="card hidden">
+    <div class="fare-hero">
+      <div class="fare-label">Estimated Fare</div>
+      <div class="fare-amount" id="fareAmt">₹0</div>
+      <div class="fare-pills">
+        <span class="fare-pill" id="fareDist">— km</span>
+        <span class="fare-pill" id="fareDur">— min</span>
+        <span class="fare-pill">💵 Cash</span>
+      </div>
+    </div>
+    <div class="route-box">
+      <div class="route-row">
+        <span class="dot dot-green"></span>
+        <div><div class="route-lbl">PICKUP</div><div class="route-addr" id="estPickup"></div></div>
+      </div>
+      <div class="divider-line"></div>
+      <div class="route-row">
+        <span class="dot dot-red"></span>
+        <div><div class="route-lbl">DROP-OFF</div><div class="route-addr" id="estDropoff"></div></div>
+      </div>
+    </div>
+    <button class="btn btn-green" id="bookBtn" onclick="bookRide()">
+      🛺 ഓട്ടോ ബുക്ക് ചെയ്യൂ (Book Auto)
+    </button>
+    <button class="btn btn-outline" style="margin-top:10px" onclick="resetBooking()">← Back</button>
+    <div id="bookErr" class="err-box"></div>
+  </div>
+
+</div>
+
+<!-- ── ACTIVE RIDE ─────────────────────────────────────────────── -->
+<div id="rideScreen" class="screen hidden">
+  <div id="rideStatus" class="card">
+    <!-- dynamically filled -->
+  </div>
+  <button class="btn btn-outline" id="cancelBtn" onclick="cancelRide()" style="margin-bottom:16px">
+    ❌ Ride ക്യാൻസൽ ചെയ്യൂ (Cancel)
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const API = location.origin + '/api/v1';
+let token     = sessionStorage.getItem('ha_rider_token') || '';
+let riderInfo = null;
+let rideId    = null;
+let pollTimer = null;
+let pickupData   = null;
+let dropoffData  = null;
+let activePicker = null; // 'pickup' | 'dropoff'
+
+// ── Places DB ─────────────────────────────────────────────────────────────────
+const PLACES = [
+  { id:'bus',      name:'Bus Stand',                 ml:'ബസ് സ്റ്റാൻഡ്',         area:'Taliparamba',      lat:12.0352, lng:75.3605 },
+  { id:'hospital', name:'Govt Hospital',             ml:'ഗവ. ആശുപത്രി',           area:'Taliparamba',      lat:12.0389, lng:75.3622 },
+  { id:'rr',       name:'Rajarajeshwara Temple',     ml:'രാജരാജേശ്വര ക്ഷേത്രം',  area:'Taliparamba',      lat:12.0375, lng:75.3598 },
+  { id:'school',   name:'School Junction',           ml:'സ്കൂൾ ജംഗ്ഷൻ',          area:'Taliparamba',      lat:12.0361, lng:75.3589 },
+  { id:'court',    name:'Court Junction',            ml:'കോടതി ജംഗ്ഷൻ',          area:'Taliparamba',      lat:12.0358, lng:75.3602 },
+  { id:'manna',    name:'Manna Junction',            ml:'മണ്ണ ജംഗ്ഷൻ',            area:'Taliparamba',      lat:12.0428, lng:75.3548 },
+  { id:'trich',    name:'Trichambaram Temple',       ml:'തൃച്ചംബരം ക്ഷേത്രം',    area:'Trichambaram',     lat:12.0521, lng:75.3489 },
+  { id:'rail',     name:'Kannapuram Railway Station',ml:'കണ്ണപുരം Railway',        area:'Kannapuram',       lat:12.0155, lng:75.3728 },
+  { id:'paras',    name:'Parassinikkadavu Temple',   ml:'പറശ്ശിനിക്കടവ് ക്ഷേത്രം',area:'Parassinikkadavu', lat:11.9752, lng:75.3842 },
+  { id:'kutti',    name:'Kuttiyeri',                 ml:'കുറ്റിയേരി',              area:'Kuttiyeri',        lat:12.0681, lng:75.3832 },
+  { id:'town',     name:'Taliparamba Town Centre',   ml:'തളിപ്പറമ്പ് ടൗൺ',       area:'Taliparamba',      lat:12.0368, lng:75.3614 },
+];
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+async function api(method, path, body) {
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+    if (body)  opts.body = JSON.stringify(body);
+    const r = await fetch(API + path, opts);
+    return await r.json();
+  } catch (e) {
+    return { success: false, error: { message: 'Network error' } };
+  }
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function sendOtp() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  if (!/^\d{10}$/.test(phone)) { showErr('sendErr', '10-digit phone number ടൈപ്പ് ചെയ്യൂ'); return; }
+  const btn = document.getElementById('sendOtpBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  const d = await api('POST', '/auth/send-otp', { phone, role: 'RIDER' });
+  btn.disabled = false; btn.textContent = 'OTP അയക്കൂ (Send OTP)';
+  if (d.success) {
+    document.getElementById('phoneStep').classList.add('hidden');
+    document.getElementById('otpStep').classList.remove('hidden');
+    const hint = d.data?.otp ? ' (OTP: ' + d.data.otp + ')' : '';
+    document.getElementById('otpHint').textContent = '+91 ' + phone + ' ലേക്ക് OTP അയച്ചു' + hint;
+    document.getElementById('o0').focus();
+  } else {
+    showErr('sendErr', d.error?.message || 'Failed to send OTP');
+  }
+}
+function otpKey(el, idx) {
+  el.value = el.value.replace(/\D/g,'');
+  if (el.value && idx < 5) document.getElementById('o'+(idx+1)).focus();
+  if (idx === 5 && el.value) verifyOtp();
+}
+async function verifyOtp() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  const otp = [0,1,2,3,4,5].map(i => document.getElementById('o'+i).value).join('');
+  if (otp.length !== 6) { showErr('verifyErr', '6 digits ടൈപ്പ് ചെയ്യൂ'); return; }
+  const btn = document.getElementById('verifyBtn');
+  btn.disabled = true; btn.textContent = 'Verifying…';
+  const d = await api('POST', '/auth/verify-otp', { phone, otp, role: 'RIDER' });
+  btn.disabled = false; btn.textContent = 'Login ചെയ്യൂ (Verify & Login)';
+  if (d.success) {
+    token = d.data.tokens.accessToken;
+    riderInfo = d.data.user;
+    sessionStorage.setItem('ha_rider_token', token);
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('bookingScreen').classList.remove('hidden');
+    document.getElementById('userPill').classList.remove('hidden');
+    document.getElementById('userName').textContent = riderInfo.fullName || riderInfo.phone?.slice(-4) || 'Rider';
+    toast('ഹേ ഓട്ടോ ലോഗിൻ ആയി!');
+  } else {
+    showErr('verifyErr', d.error?.message || 'Invalid OTP');
+  }
+}
+
+// ── Place picker ──────────────────────────────────────────────────────────────
+function openPicker(type) {
+  activePicker = type;
+  document.getElementById('pickerTitle').textContent =
+    type === 'pickup' ? '📍 Pickup തിരഞ്ഞെടുക്കൂ' : '🎯 Drop-off തിരഞ്ഞെടുക്കൂ';
+  document.getElementById('placeSearch').value = '';
+  document.getElementById('placeStep').classList.add('hidden');
+  document.getElementById('estimateCard').classList.add('hidden');
+  document.getElementById('pickerCard').classList.remove('hidden');
+  renderPlaces(PLACES);
+  document.getElementById('placeSearch').focus();
+}
+function closePicker() {
+  document.getElementById('pickerCard').classList.add('hidden');
+  document.getElementById('placeStep').classList.remove('hidden');
+  if (pickupData && dropoffData) document.getElementById('estimateCard').classList.remove('hidden');
+}
+function filterPlaces(q) {
+  const lq = q.toLowerCase();
+  const filtered = PLACES.filter(p =>
+    p.name.toLowerCase().includes(lq) || p.ml.includes(q) || p.area.toLowerCase().includes(lq)
+  );
+  renderPlaces(filtered.length ? filtered : PLACES);
+}
+function renderPlaces(list) {
+  const el = document.getElementById('placeList');
+  el.innerHTML = list.map(p =>
+    `<div class="place-item" onclick="selectPlace('${p.id}')">
+      <div style="font-size:20px">${activePicker==='pickup'?'📍':'🎯'}</div>
+      <div><div class="place-name">${escHtml(p.ml)}</div>
+      <div class="place-area">${escHtml(p.name)} · ${escHtml(p.area)}</div></div>
+    </div>`
+  ).join('');
+}
+function selectPlace(id) {
+  const p = PLACES.find(x => x.id === id);
+  if (!p) return;
+  if (activePicker === 'pickup') {
+    pickupData = p;
+    document.getElementById('pickupBtn').className = 'place-btn filled';
+    document.getElementById('pickupLabel').textContent = p.ml + ' (' + p.name + ')';
+  } else {
+    dropoffData = p;
+    document.getElementById('dropoffBtn').className = 'place-btn filled';
+    document.getElementById('dropoffLabel').textContent = p.ml + ' (' + p.name + ')';
+  }
+  closePicker();
+  document.getElementById('estimateBtn').disabled = !(pickupData && dropoffData);
+}
+
+// ── Fare estimate ─────────────────────────────────────────────────────────────
+async function getEstimate() {
+  if (!pickupData || !dropoffData) return;
+  if (pickupData.id === dropoffData.id) { showErr('placeErr', 'Pickup, drop-off ഒരേ സ്ഥലം ആണ്!'); return; }
+  const btn = document.getElementById('estimateBtn');
+  btn.disabled = true; btn.textContent = 'Calculating…';
+
+  const d = await api('POST', '/rides/estimate', {
+    pickupLat:   pickupData.lat,  pickupLng:   pickupData.lng,
+    dropoffLat:  dropoffData.lat, dropoffLng:  dropoffData.lng,
+    city: 'taliparamba',
+  });
+  btn.disabled = false; btn.textContent = '💰 ഫെയർ കാണൂ (Get Fare Estimate)';
+
+  if (d.success) {
+    document.getElementById('fareAmt').textContent   = '₹' + d.data.totalFare;
+    document.getElementById('fareDist').textContent  = d.data.distanceKm.toFixed(1) + ' km';
+    document.getElementById('fareDur').textContent   = d.data.durationMin + ' min';
+    document.getElementById('estPickup').textContent  = pickupData.ml;
+    document.getElementById('estDropoff').textContent = dropoffData.ml;
+    document.getElementById('placeStep').classList.add('hidden');
+    document.getElementById('estimateCard').classList.remove('hidden');
+  } else {
+    showErr('placeErr', d.error?.message || 'Could not get estimate');
+  }
+}
+function resetBooking() {
+  document.getElementById('estimateCard').classList.add('hidden');
+  document.getElementById('placeStep').classList.remove('hidden');
+}
+
+// ── Book ride ─────────────────────────────────────────────────────────────────
+async function bookRide() {
+  const btn = document.getElementById('bookBtn');
+  btn.disabled = true; btn.textContent = 'Booking…';
+  const d = await api('POST', '/rides/request', {
+    pickupLat:      pickupData.lat,  pickupLng:      pickupData.lng,
+    pickupAddress:  pickupData.ml + ', ' + pickupData.area,
+    dropoffLat:     dropoffData.lat, dropoffLng:     dropoffData.lng,
+    dropoffAddress: dropoffData.ml + ', ' + dropoffData.area,
+    paymentMethod:  'CASH',
+    city: 'taliparamba',
+  });
+  btn.disabled = false; btn.textContent = '🛺 ഓട്ടോ ബുക്ക് ചെയ്യൂ (Book Auto)';
+  if (d.success) {
+    rideId = d.data.id;
+    document.getElementById('bookingScreen').classList.add('hidden');
+    document.getElementById('rideScreen').classList.remove('hidden');
+    renderRideStatus({ status: 'REQUESTED' });
+    startRidePoll();
+    toast('ഓട്ടോ ബുക്ക് ചെയ്തു! ഡ്രൈവർ തിരയുന്നു...');
+  } else {
+    showErr('bookErr', d.error?.message || 'Booking failed');
+  }
+}
+
+// ── Ride status polling ───────────────────────────────────────────────────────
+function startRidePoll() {
+  stopRidePoll();
+  pollTimer = setInterval(pollRide, 4000);
+}
+function stopRidePoll() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+async function pollRide() {
+  if (!rideId) return;
+  const d = await api('GET', '/rides/' + rideId);
+  if (!d.success) return;
+  renderRideStatus(d.data);
+  if (['COMPLETED','CANCELLED_RIDER','CANCELLED_DRIVER','NO_DRIVERS'].includes(d.data.status)) {
+    stopRidePoll();
+  }
+}
+
+function renderRideStatus(ride) {
+  const el = document.getElementById('rideStatus');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const status = ride.status;
+
+  const canCancel = ['REQUESTED','DRIVER_ASSIGNED','DRIVER_ARRIVED'].includes(status);
+  cancelBtn.style.display = canCancel ? 'flex' : 'none';
+
+  if (status === 'REQUESTED') {
+    el.innerHTML =
+      '<div class="status-banner status-searching">' +
+        '<span class="status-icon">⏳</span>' +
+        '<div><div class="status-title">ഡ്രൈവർ തിരയുന്നു...</div>' +
+        '<div class="status-sub">Searching for auto · Please wait</div></div>' +
+      '</div>' +
+      '<div style="text-align:center;padding:20px;color:var(--ink2)">ഒരു മിനിറ്റ് ദയവായി കാത്തിരിക്കൂ 🙏<br><small>Please wait a moment</small></div>';
+
+  } else if (status === 'DRIVER_ASSIGNED') {
+    const d = ride.driver || {};
+    const v = ride.vehicle || {};
+    el.innerHTML =
+      '<div class="status-banner status-assigned">' +
+        '<span class="status-icon">✅</span>' +
+        '<div><div class="status-title">ഓട്ടോ ലഭിച്ചു!</div>' +
+        '<div class="status-sub">Auto found · On the way</div></div>' +
+      '</div>' +
+      '<div class="driver-card">' +
+        '<div class="driver-icon">🧑‍✈️</div>' +
+        '<div><div class="driver-name">' + escHtml(d.fullName || 'Driver') + '</div>' +
+        '<div class="driver-sub">🛺 ' + escHtml(v.model || 'Auto') + ' · ' + escHtml(v.registrationNo || '') + '</div>' +
+        '<div class="driver-sub">📞 ' + escHtml(d.phone || '') + '</div></div>' +
+      '</div>';
+
+  } else if (status === 'DRIVER_ARRIVED') {
+    el.innerHTML =
+      '<div class="status-banner status-arrived">' +
+        '<span class="status-icon">🏁</span>' +
+        '<div><div class="status-title">ഓട്ടോ എത്തി!</div>' +
+        '<div class="status-sub">Auto has arrived at your location</div></div>' +
+      '</div>' +
+      '<div class="otp-display">' +
+        '<div class="lbl">ഡ്രൈവർക്ക് ഈ OTP കൊടുക്കൂ<br><small>(Give this OTP to driver)</small></div>' +
+        '<div class="code">' + (ride.rideOtp || '----') + '</div>' +
+      '</div>';
+
+  } else if (status === 'IN_PROGRESS' || status === 'OTP_VERIFIED') {
+    el.innerHTML =
+      '<div class="status-banner status-progress">' +
+        '<span class="status-icon">🚗</span>' +
+        '<div><div class="status-title">യാത്ര തുടരുന്നു!</div>' +
+        '<div class="status-sub">Ride in progress · Enjoy your trip 🙏</div></div>' +
+      '</div>' +
+      '<div style="text-align:center;padding:8px;color:var(--ink2);font-size:14px">' +
+        escHtml(dropoffData?.ml || ride.dropoffAddress || '') + ' ലേക്ക് പോകുന്നു' +
+      '</div>';
+
+  } else if (status === 'COMPLETED') {
+    el.innerHTML =
+      '<div class="completed-card">' +
+        '<div class="completed-icon">✅</div>' +
+        '<div class="card-title">യാത്ര പൂർത്തിയായി!</div>' +
+        '<div class="completed-fare">₹' + (ride.totalAmount || ride.actualFare || 0) + '</div>' +
+        '<div class="completed-sub">Cash payment · Thank you! 🛺</div>' +
+      '</div>';
+    setTimeout(() => {
+      document.getElementById('rideScreen').classList.add('hidden');
+      document.getElementById('bookingScreen').classList.remove('hidden');
+      resetBooking();
+      pickupData = dropoffData = null;
+      rideId = null;
+      document.getElementById('pickupBtn').className = 'place-btn';
+      document.getElementById('pickupLabel').textContent = 'സ്ഥലം തിരഞ്ഞെടുക്കൂ (Select pickup)';
+      document.getElementById('dropoffBtn').className = 'place-btn';
+      document.getElementById('dropoffLabel').textContent = 'സ്ഥലം തിരഞ്ഞെടുക്കൂ (Select destination)';
+      document.getElementById('estimateBtn').disabled = true;
+      toast('ഹേ ഓട്ടോ ഉപയോഗിച്ചതിന് നന്ദി! 🛺');
+    }, 5000);
+
+  } else if (status === 'CANCELLED_RIDER' || status === 'CANCELLED_DRIVER' || status === 'NO_DRIVERS') {
+    const msg = status === 'NO_DRIVERS'
+      ? 'ഇപ്പോൾ ഓട്ടോ ലഭ്യമല്ല 😔'
+      : status === 'CANCELLED_DRIVER'
+      ? 'ഡ്രൈവർ ക്യാൻസൽ ചെയ്തു ❌'
+      : 'ക്യാൻസൽ ആയി ❌';
+    el.innerHTML =
+      '<div style="text-align:center;padding:24px">' +
+        '<div style="font-size:48px;margin-bottom:10px">' + (status==='NO_DRIVERS'?'😔':'❌') + '</div>' +
+        '<div class="card-title">' + msg + '</div>' +
+        '<button class="btn btn-green" style="margin-top:16px" onclick="backToBooking()">← വീണ്ടും ശ്രമിക്കൂ</button>' +
+      '</div>';
+    cancelBtn.style.display = 'none';
+  }
+}
+
+function backToBooking() {
+  stopRidePoll(); rideId = null;
+  document.getElementById('rideScreen').classList.add('hidden');
+  document.getElementById('bookingScreen').classList.remove('hidden');
+}
+
+async function cancelRide() {
+  if (!rideId) return;
+  const d = await api('POST', '/rides/' + rideId + '/cancel', { reason: 'Cancelled by rider' });
+  if (d.success) {
+    stopRidePoll(); rideId = null;
+    backToBooking();
+    toast('Ride ക്യാൻസൽ ചെയ്തു');
+  } else {
+    toast('Cancel failed: ' + (d.error?.message || ''));
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+if (token) {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('bookingScreen').classList.remove('hidden');
+  document.getElementById('userPill').classList.remove('hidden');
+}
+</script>
+</body>
+</html>

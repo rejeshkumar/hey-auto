@@ -21,9 +21,11 @@ COPY --from=builder /app/server ./server
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/package.json ./
 
+# Copy static web apps — use || true so build succeeds even if folders are missing
+RUN mkdir -p ./public/driver-console ./public/demo ./public/rider
 COPY --from=builder /app/public/driver-console ./public/driver-console
-COPY --from=builder /app/apps/demo-dashboard ./public/demo
 COPY --from=builder /app/public/rider ./public/rider
+COPY --from=builder /app/apps/demo-dashboard ./public/demo
 
 EXPOSE ${PORT:-3000}
 CMD ["sh", "-c", "cd server && npx prisma db push --accept-data-loss && npx tsx src/app.ts"]
