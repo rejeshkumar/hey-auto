@@ -37,6 +37,11 @@ const envSchema = z.object({
 
   SENTRY_DSN: z.string().optional(),
 
+  WHATSAPP_VERIFY_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_API_VERSION: z.string().default('v19.0'),
+
   DRIVER_SEARCH_RADIUS_KM: z.coerce.number().default(3),
   RIDE_REQUEST_TIMEOUT_SEC: z.coerce.number().default(15),
   MAX_MATCHING_ROUNDS: z.coerce.number().default(3),

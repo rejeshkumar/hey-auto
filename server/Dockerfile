@@ -21,8 +21,9 @@ COPY --from=builder /app/server ./server
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/package.json ./
 
-COPY --from=builder /app/apps/driver-console ./public/driver-console
+COPY --from=builder /app/public/driver-console ./public/driver-console
 COPY --from=builder /app/apps/demo-dashboard ./public/demo
+COPY --from=builder /app/public/rider ./public/rider
 
 EXPOSE ${PORT:-3000}
 CMD ["sh", "-c", "cd server && npx prisma db push --accept-data-loss && npx tsx src/app.ts"]

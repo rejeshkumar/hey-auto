@@ -26,6 +26,7 @@ router.post('/go-online', driverController.goOnline);
 router.post('/go-offline', driverController.goOffline);
 router.put('/location', validate(updateLocationSchema), driverController.updateLocation);
 
+router.get('/ride-request', driverController.getPendingRideRequest);
 router.get('/earnings', driverController.getEarnings);
 
 export { router as driverRoutes };

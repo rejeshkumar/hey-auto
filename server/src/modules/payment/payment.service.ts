@@ -189,6 +189,59 @@ export class PaymentService {
       hasMore: skip + transactions.length < total,
     };
   }
+
+  async getSubscriptionPlans(city: string) {
+    return prisma.subscriptionPlan.findMany({
+      where: { isActive: true, OR: [{ city }, { city: null }] },
+      orderBy: { price: 'asc' },
+    });
+  }
+
+  async subscribeDriver(userId: string, planId: string) {
+    const driver = await prisma.driverProfile.findUnique({ where: { userId } });
+    if (!driver) throw new NotFoundError('Driver profile not found');
+
+    const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+    if (!plan || !plan.isActive) throw new NotFoundError('Subscription plan not found');
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
+
+    const payment = await prisma.payment.create({
+      data: {
+        payerId: userId,
+        amount: plan.price,
+        paymentMethod: 'CASH',
+        status: 'COMPLETED',
+      },
+    });
+
+    const subscription = await prisma.driverSubscription.create({
+      data: {
+        driverId: driver.id,
+        planId,
+        startsAt: now,
+        expiresAt,
+        paymentId: payment.id,
+        status: 'ACTIVE',
+      },
+      include: { plan: true },
+    });
+
+    logger.info({ driverId: driver.id, planId }, 'Driver subscribed');
+    return subscription;
+  }
+
+  async getCurrentSubscription(userId: string) {
+    const driver = await prisma.driverProfile.findUnique({ where: { userId } });
+    if (!driver) throw new NotFoundError('Driver profile not found');
+
+    return prisma.driverSubscription.findFirst({
+      where: { driverId: driver.id, status: 'ACTIVE', expiresAt: { gt: new Date() } },
+      include: { plan: true },
+      orderBy: { expiresAt: 'desc' },
+    });
+  }
 }
 
 export const paymentService = new PaymentService();

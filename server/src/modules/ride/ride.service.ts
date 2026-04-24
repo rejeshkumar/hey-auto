@@ -101,7 +101,7 @@ export class RideService {
         estimatedDurationMin: estimate.durationMin,
         baseFare: estimate.baseFare,
         perKmRate: estimate.ratePerKm,
-        perMinRate: estimate.timeFare / estimate.durationMin,
+        perMinRate: estimate.durationMin > 0 ? estimate.timeFare / estimate.durationMin : 1.5,
         estimatedFare: estimate.totalFare,
         nightSurcharge: estimate.nightSurcharge,
         paymentMethod: input.paymentMethod,
@@ -113,7 +113,19 @@ export class RideService {
 
     await redis.setex(`${ACTIVE_RIDE_PREFIX}${riderId}`, 3600, ride.id);
 
-    this.findDriver(ride.id, input.pickupLat, input.pickupLng, input.city);
+    this.findDriver(ride.id, input.pickupLat, input.pickupLng, input.city).catch(async (err) => {
+      logger.error({ err, rideId: ride.id }, 'findDriver crashed — reverting to NO_DRIVERS');
+      try {
+        await prisma.ride.update({ where: { id: ride.id }, data: { status: 'NO_DRIVERS' } });
+        await redis.del(`${ACTIVE_RIDE_PREFIX}${riderId}`);
+        await redis.publish(
+          'ride_events',
+          JSON.stringify({ type: 'ride:no_drivers', rideId: ride.id, riderId }),
+        );
+      } catch (fallbackErr) {
+        logger.error({ fallbackErr, rideId: ride.id }, 'findDriver fallback also failed');
+      }
+    });
 
     logger.info({ rideId: ride.id, riderId }, 'Ride requested');
 
@@ -210,6 +222,9 @@ export class RideService {
         if (ride?.status === 'DRIVER_ASSIGNED' && ride?.driverId === driverId) {
           clearTimeout(timeout);
           clearInterval(checkInterval);
+          // 500ms settling delay — lets the accept transaction fully commit before
+          // the next matching round inspects the ride row (prevents false re-dispatch)
+          await new Promise<void>((r) => setTimeout(r, 500));
           resolve(true);
         }
         if (ride?.status !== 'REQUESTED') {

@@ -82,50 +82,77 @@ export class AuthService {
 
     if (!user) {
       isNewUser = true;
-      user = await prisma.user.create({
-        data: {
-          phone,
-          fullName: '',
-          role: role as UserRole,
-          status: role === 'DRIVER' ? 'PENDING_VERIFICATION' : 'ACTIVE',
-        },
-      });
 
-      if (role === 'RIDER') {
-        await prisma.riderProfile.create({
-          data: { userId: user.id },
-        });
-        await prisma.wallet.create({
-          data: { userId: user.id },
-        });
-      } else {
-        const profile = await prisma.driverProfile.create({
+      // Guard: phone may already exist with a different role
+      const phoneOwner = await prisma.user.findFirst({ where: { phone } });
+      if (phoneOwner) {
+        throw new BadRequestError(
+          `This phone number is already registered as a ${phoneOwner.role}. Please use the correct login.`,
+          'PHONE_ROLE_MISMATCH',
+        );
+      }
+
+      try {
+        user = await prisma.user.create({
           data: {
-            userId: user.id,
-            licenseNumber: 'KL-' + Math.floor(1000 + Math.random() * 9000),
-            city: 'taliparamba',
-            verificationStatus: 'VERIFIED',
-            isOnline: false,
-            currentLat: 12.0368,
-            currentLng: 75.3614,
+            phone,
+            fullName: '',
+            role: role as UserRole,
+            status: role === 'DRIVER' ? 'PENDING_VERIFICATION' : 'ACTIVE',
           },
         });
-        await prisma.vehicle.create({
-          data: {
-            driverId: profile.id,
-            registrationNo: 'KL-63-J-' + Math.floor(1000 + Math.random() * 9000),
-            model: 'Bajaj RE',
-            color: 'Yellow-Green',
-            type: 'AUTO',
-            isActive: true,
-          },
-        });
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { fullName: 'Driver ' + phone.slice(-4), status: 'ACTIVE' },
-        });
-        user.fullName = 'Driver ' + phone.slice(-4);
-        user.status = 'ACTIVE' as any;
+      } catch (err: any) {
+        // P2002 = unique constraint — concurrent request already created the user
+        if (err?.code === 'P2002') {
+          const existing = await prisma.user.findFirst({ where: { phone, role: role as UserRole } });
+          if (!existing) throw new BadRequestError('Phone number already registered with a different role', 'PHONE_ROLE_MISMATCH');
+          user = existing;
+          isNewUser = false;
+        } else {
+          throw err;
+        }
+      }
+
+      if (isNewUser) {
+        if (role === 'RIDER') {
+          // Profiles may already exist if a prior attempt partially succeeded
+          const existingProfile = await prisma.riderProfile.findUnique({ where: { userId: user.id } });
+          if (!existingProfile) {
+            await prisma.riderProfile.create({ data: { userId: user.id } });
+            await prisma.wallet.create({ data: { userId: user.id } });
+          }
+        } else {
+          const existingProfile = await prisma.driverProfile.findUnique({ where: { userId: user.id } });
+          if (!existingProfile) {
+            const profile = await prisma.driverProfile.create({
+              data: {
+                userId: user.id,
+                licenseNumber: 'KL-' + Math.floor(1000 + Math.random() * 9000),
+                city: 'taliparamba',
+                verificationStatus: 'VERIFIED',
+                isOnline: false,
+                currentLat: 12.0368,
+                currentLng: 75.3614,
+              },
+            });
+            await prisma.vehicle.create({
+              data: {
+                driverId: profile.id,
+                registrationNo: 'KL-63-J-' + Math.floor(1000 + Math.random() * 9000),
+                model: 'Bajaj RE',
+                color: 'Yellow-Green',
+                vehicleType: 'AUTO',
+                isActive: true,
+              },
+            });
+          }
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { fullName: 'Driver ' + phone.slice(-4), status: 'ACTIVE' },
+          });
+          user.fullName = 'Driver ' + phone.slice(-4);
+          user.status = 'ACTIVE' as any;
+        }
       }
     }
 

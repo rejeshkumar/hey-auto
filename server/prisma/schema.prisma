@@ -12,31 +12,31 @@ datasource db {
 // ──────────────────────────────────────────
 
 model User {
-  id        String   @id @default(uuid()) @db.Uuid
-  phone     String   @unique @db.VarChar(15)
-  email     String?  @db.VarChar(255)
-  fullName  String   @map("full_name") @db.VarChar(100)
-  avatarUrl String?  @map("avatar_url")
-  language  String   @default("ml") @db.VarChar(5)
+  id        String     @id @default(uuid()) @db.Uuid
+  phone     String     @unique @db.VarChar(15)
+  email     String?    @db.VarChar(255)
+  fullName  String     @map("full_name") @db.VarChar(100)
+  avatarUrl String?    @map("avatar_url")
+  language  String     @default("ml") @db.VarChar(5)
   role      UserRole
   status    UserStatus @default(ACTIVE)
-  fcmToken  String?  @map("fcm_token")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  fcmToken  String?    @map("fcm_token")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
 
-  riderProfile     RiderProfile?
-  driverProfile    DriverProfile?
-  ridesAsRider     Ride[]              @relation("RiderRides")
-  ridesAsDriver    Ride[]              @relation("DriverRides")
-  paymentsMade     Payment[]           @relation("PayerPayments")
-  paymentsReceived Payment[]           @relation("PayeePayments")
-  ratingsGiven     Rating[]            @relation("RaterRatings")
-  ratingsReceived  Rating[]            @relation("RatedRatings")
-  savedPlaces      SavedPlace[]
+  riderProfile      RiderProfile?
+  driverProfile     DriverProfile?
+  ridesAsRider      Ride[]             @relation("RiderRides")
+  ridesAsDriver     Ride[]             @relation("DriverRides")
+  paymentsMade      Payment[]          @relation("PayerPayments")
+  paymentsReceived  Payment[]          @relation("PayeePayments")
+  ratingsGiven      Rating[]           @relation("RaterRatings")
+  ratingsReceived   Rating[]           @relation("RatedRatings")
+  savedPlaces       SavedPlace[]
   emergencyContacts EmergencyContact[]
-  notifications    Notification[]
-  wallet           Wallet?
-  refreshTokens    RefreshToken[]
+  notifications     Notification[]
+  wallet            Wallet?
+  refreshTokens     RefreshToken[]
 
   @@map("users")
 }
@@ -59,16 +59,16 @@ model RefreshToken {
 // ──────────────────────────────────────────
 
 model RiderProfile {
-  id          String  @id @default(uuid()) @db.Uuid
-  userId      String  @unique @map("user_id") @db.Uuid
-  homeLat     Float?  @map("home_lat")
-  homeLng     Float?  @map("home_lng")
-  homeAddress String? @map("home_address")
-  workLat     Float?  @map("work_lat")
-  workLng     Float?  @map("work_lng")
-  workAddress String? @map("work_address")
-  rating      Float   @default(5.0)
-  totalRides  Int     @default(0) @map("total_rides")
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @unique @map("user_id") @db.Uuid
+  homeLat     Float?   @map("home_lat")
+  homeLng     Float?   @map("home_lng")
+  homeAddress String?  @map("home_address")
+  workLat     Float?   @map("work_lat")
+  workLng     Float?   @map("work_lng")
+  workAddress String?  @map("work_address")
+  rating      Float    @default(5.0)
+  totalRides  Int      @default(0) @map("total_rides")
   createdAt   DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -81,24 +81,24 @@ model RiderProfile {
 // ──────────────────────────────────────────
 
 model DriverProfile {
-  id                  String             @id @default(uuid()) @db.Uuid
-  userId              String             @unique @map("user_id") @db.Uuid
-  licenseNumber       String             @map("license_number") @db.VarChar(20)
-  aadhaarNumber       String?            @map("aadhaar_number") @db.VarChar(12)
-  rating              Float              @default(5.0)
-  totalRides          Int                @default(0) @map("total_rides")
-  totalEarnings       Float              @default(0) @map("total_earnings")
-  isOnline            Boolean            @default(false) @map("is_online")
-  isOnRide            Boolean            @default(false) @map("is_on_ride")
-  currentLat          Float?             @map("current_lat")
-  currentLng          Float?             @map("current_lng")
-  city                String             @db.VarChar(50)
-  verificationStatus  VerificationStatus @default(PENDING) @map("verification_status")
-  verifiedAt          DateTime?          @map("verified_at")
-  acceptanceRate      Float              @default(100) @map("acceptance_rate")
-  createdAt           DateTime           @default(now()) @map("created_at")
+  id                 String             @id @default(uuid()) @db.Uuid
+  userId             String             @unique @map("user_id") @db.Uuid
+  licenseNumber      String             @map("license_number") @db.VarChar(20)
+  aadhaarNumber      String?            @map("aadhaar_number") @db.VarChar(12)
+  rating             Float              @default(5.0)
+  totalRides         Int                @default(0) @map("total_rides")
+  totalEarnings      Float              @default(0) @map("total_earnings")
+  isOnline           Boolean            @default(false) @map("is_online")
+  isOnRide           Boolean            @default(false) @map("is_on_ride")
+  currentLat         Float?             @map("current_lat")
+  currentLng         Float?             @map("current_lng")
+  city               String             @db.VarChar(50)
+  verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
+  verifiedAt         DateTime?          @map("verified_at")
+  acceptanceRate     Float              @default(100) @map("acceptance_rate")
+  createdAt          DateTime           @default(now()) @map("created_at")
 
-  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   vehicles      Vehicle[]
   documents     DriverDocument[]
   subscriptions DriverSubscription[]
@@ -160,19 +160,19 @@ model Ride {
   vehicleId String? @map("vehicle_id") @db.Uuid
 
   // Locations
-  pickupLat     Float  @map("pickup_lat")
-  pickupLng     Float  @map("pickup_lng")
-  pickupAddress String @map("pickup_address")
-  dropoffLat    Float  @map("dropoff_lat")
-  dropoffLng    Float  @map("dropoff_lng")
+  pickupLat      Float  @map("pickup_lat")
+  pickupLng      Float  @map("pickup_lng")
+  pickupAddress  String @map("pickup_address")
+  dropoffLat     Float  @map("dropoff_lat")
+  dropoffLng     Float  @map("dropoff_lng")
   dropoffAddress String @map("dropoff_address")
 
   // Route
-  estimatedDistanceKm Float? @map("estimated_distance_km")
-  actualDistanceKm    Float? @map("actual_distance_km")
-  estimatedDurationMin Int?  @map("estimated_duration_min")
-  actualDurationMin    Int?  @map("actual_duration_min")
-  routePolyline       String? @map("route_polyline")
+  estimatedDistanceKm  Float?  @map("estimated_distance_km")
+  actualDistanceKm     Float?  @map("actual_distance_km")
+  estimatedDurationMin Int?    @map("estimated_duration_min")
+  actualDurationMin    Int?    @map("actual_duration_min")
+  routePolyline        String? @map("route_polyline")
 
   // Fare
   baseFare       Float? @map("base_fare")
@@ -191,13 +191,13 @@ model Ride {
   rideOtp String? @map("ride_otp") @db.VarChar(4)
 
   // Timestamps
-  requestedAt       DateTime  @default(now()) @map("requested_at")
-  acceptedAt        DateTime? @map("accepted_at")
-  arrivedAt         DateTime? @map("arrived_at")
-  startedAt         DateTime? @map("started_at")
-  completedAt       DateTime? @map("completed_at")
-  cancelledAt       DateTime? @map("cancelled_at")
-  cancellationReason String?  @map("cancellation_reason")
+  requestedAt        DateTime  @default(now()) @map("requested_at")
+  acceptedAt         DateTime? @map("accepted_at")
+  arrivedAt          DateTime? @map("arrived_at")
+  startedAt          DateTime? @map("started_at")
+  completedAt        DateTime? @map("completed_at")
+  cancelledAt        DateTime? @map("cancelled_at")
+  cancellationReason String?   @map("cancellation_reason")
 
   // Payment
   paymentMethod PaymentMethod @default(CASH) @map("payment_method")
@@ -225,22 +225,22 @@ model Ride {
 // ──────────────────────────────────────────
 
 model Payment {
-  id              String        @id @default(uuid()) @db.Uuid
-  rideId          String?       @map("ride_id") @db.Uuid
-  payerId         String        @map("payer_id") @db.Uuid
-  payeeId         String?       @map("payee_id") @db.Uuid
-  amount          Float
-  currency        String        @default("INR") @db.VarChar(3)
-  paymentMethod   PaymentMethod @map("payment_method")
-  paymentGateway  String?       @map("payment_gateway") @db.VarChar(20)
-  gatewayTxnId    String?       @map("gateway_txn_id") @db.VarChar(100)
-  gatewayOrderId  String?       @map("gateway_order_id") @db.VarChar(100)
-  status          PaymentStatus @default(PENDING)
-  failureReason   String?       @map("failure_reason")
-  refundAmount    Float?        @map("refund_amount")
-  refundReason    String?       @map("refund_reason")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  id             String        @id @default(uuid()) @db.Uuid
+  rideId         String?       @map("ride_id") @db.Uuid
+  payerId        String        @map("payer_id") @db.Uuid
+  payeeId        String?       @map("payee_id") @db.Uuid
+  amount         Float
+  currency       String        @default("INR") @db.VarChar(3)
+  paymentMethod  PaymentMethod @map("payment_method")
+  paymentGateway String?       @map("payment_gateway") @db.VarChar(20)
+  gatewayTxnId   String?       @map("gateway_txn_id") @db.VarChar(100)
+  gatewayOrderId String?       @map("gateway_order_id") @db.VarChar(100)
+  status         PaymentStatus @default(PENDING)
+  failureReason  String?       @map("failure_reason")
+  refundAmount   Float?        @map("refund_amount")
+  refundReason   String?       @map("refund_reason")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
 
   ride  Ride? @relation(fields: [rideId], references: [id])
   payer User  @relation("PayerPayments", fields: [payerId], references: [id])
@@ -267,15 +267,15 @@ model Wallet {
 }
 
 model WalletTransaction {
-  id           String              @id @default(uuid()) @db.Uuid
-  walletId     String              @map("wallet_id") @db.Uuid
-  type         TransactionType
-  amount       Float
-  description  String?
-  referenceType String?            @map("reference_type") @db.VarChar(20)
-  referenceId  String?             @map("reference_id") @db.Uuid
-  balanceAfter Float               @map("balance_after")
-  createdAt    DateTime            @default(now()) @map("created_at")
+  id            String          @id @default(uuid()) @db.Uuid
+  walletId      String          @map("wallet_id") @db.Uuid
+  type          TransactionType
+  amount        Float
+  description   String?
+  referenceType String?         @map("reference_type") @db.VarChar(20)
+  referenceId   String?         @map("reference_id") @db.Uuid
+  balanceAfter  Float           @map("balance_after")
+  createdAt     DateTime        @default(now()) @map("created_at")
 
   wallet Wallet @relation(fields: [walletId], references: [id])
 
@@ -288,16 +288,16 @@ model WalletTransaction {
 // ──────────────────────────────────────────
 
 model SubscriptionPlan {
-  id            String  @id @default(uuid()) @db.Uuid
-  name          String  @db.VarChar(100)
-  nameMl        String? @map("name_ml") @db.VarChar(100)
-  durationDays  Int     @map("duration_days")
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String   @db.VarChar(100)
+  nameMl        String?  @map("name_ml") @db.VarChar(100)
+  durationDays  Int      @map("duration_days")
   price         Float
   description   String?
-  descriptionMl String? @map("description_ml")
-  maxRides      Int?    @map("max_rides")
-  city          String? @db.VarChar(50)
-  isActive      Boolean @default(true) @map("is_active")
+  descriptionMl String?  @map("description_ml")
+  maxRides      Int?     @map("max_rides")
+  city          String?  @db.VarChar(50)
+  isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
 
   subscriptions DriverSubscription[]
@@ -335,8 +335,8 @@ model Rating {
   review    String?
   createdAt DateTime @default(now()) @map("created_at")
 
-  ride       Ride @relation(fields: [rideId], references: [id])
-  rater      User @relation("RaterRatings", fields: [ratedBy], references: [id])
+  ride        Ride @relation(fields: [rideId], references: [id])
+  rater       User @relation("RaterRatings", fields: [ratedBy], references: [id])
   ratedPerson User @relation("RatedRatings", fields: [ratedUser], references: [id])
 
   @@unique([rideId, ratedBy])

@@ -23,6 +23,7 @@ import { paymentRoutes } from './modules/payment';
 import { notificationRoutes } from './modules/notification';
 import { adminRoutes } from './modules/admin';
 import { mapsRoutes } from './modules/maps/maps.routes';
+import { whatsappRoutes, whatsappService } from './modules/whatsapp';
 import { subscriptionRoutes } from './modules/payment/subscription.routes';
 
 const app = express();
@@ -94,6 +95,7 @@ app.use(`${apiPrefix}/subscription`, subscriptionRoutes);
 app.use(`${apiPrefix}/notifications`, notificationRoutes);
 app.use(`${apiPrefix}/admin`, adminRoutes);
 app.use(`${apiPrefix}/maps`, mapsRoutes);
+app.use(`${apiPrefix}/whatsapp`, whatsappRoutes);
 
 // Serve static web apps (demo dashboard, driver console)
 // In Docker: cwd is /app/server, public is at /app/public
@@ -126,6 +128,7 @@ app.use(errorHandler);
 setupSocketHandlers(io);
 
 // WhatsApp ride-event listener (separate Redis subscriber)
+whatsappService.setupRideEventListener();
 
 // Start server
 const PORT = env.PORT;

@@ -84,6 +84,15 @@ export class DriverController {
     }
   }
 
+  async getPendingRideRequest(req: Request, res: Response, next: NextFunction) {
+    try {
+      const request = await driverService.getPendingRideRequest(req.user!.userId);
+      res.json({ success: true, data: request });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getEarnings(req: Request, res: Response, next: NextFunction) {
     try {
       const period = (req.query.period as string) || 'today';
