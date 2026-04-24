@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../theme';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -23,46 +23,22 @@ const Tab = createBottomTabNavigator();
 
 function MainTabs() {
   const { t } = useTranslation();
-
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textLight,
-        tabBarStyle: {
-          borderTopColor: colors.borderLight,
-          paddingBottom: 8,
-          paddingTop: 8,
-          height: 64,
-        },
+        tabBarStyle: { borderTopColor: colors.borderLight, paddingBottom: 8, paddingTop: 8, height: 64 },
         tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
       }}
     >
-      <Tab.Screen
-        name="HomeTab"
-        component={HomeScreen}
-        options={{
-          tabBarLabel: t('home.whereTo'),
-          tabBarIcon: ({ color, size }) => <Icon name="home" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="HistoryTab"
-        component={HistoryScreen}
-        options={{
-          tabBarLabel: t('profile.myRides'),
-          tabBarIcon: ({ color, size }) => <Icon name="history" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="ProfileTab"
-        component={ProfileScreen}
-        options={{
-          tabBarLabel: t('profile.title'),
-          tabBarIcon: ({ color, size }) => <Icon name="account" size={size} color={color} />,
-        }}
-      />
+      <Tab.Screen name="HomeTab" component={HomeScreen}
+        options={{ tabBarLabel: t('home.whereTo'), tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="home" size={size} color={color} /> }} />
+      <Tab.Screen name="HistoryTab" component={HistoryScreen}
+        options={{ tabBarLabel: t('profile.myRides'), tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="history" size={size} color={color} /> }} />
+      <Tab.Screen name="ProfileTab" component={ProfileScreen}
+        options={{ tabBarLabel: t('profile.title'), tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="account" size={size} color={color} /> }} />
     </Tab.Navigator>
   );
 }
@@ -78,7 +54,6 @@ function AuthStack() {
 
 export function Navigation() {
   const { isAuthenticated, isLoading, isNewUser } = useAuthStore();
-
   if (isLoading) return null;
 
   return (

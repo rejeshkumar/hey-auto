@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { storage } from '../utils/storage';
 
-const SOCKET_URL = __DEV__ ? 'http://localhost:3000' : 'https://api.heyauto.in';
+const SOCKET_URL = __DEV__ ? 'http://192.168.1.3:3000' : 'https://api.heyauto.in';
 
 class SocketService {
   private socket: Socket | null = null;

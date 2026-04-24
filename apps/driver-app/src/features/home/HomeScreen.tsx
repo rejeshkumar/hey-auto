@@ -1,28 +1,33 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, PermissionsAndroid, Vibration } from 'react-native';
-import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
-import Geolocation from 'react-native-geolocation-service';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Vibration } from 'react-native';
+import MapView from 'react-native-maps';
+import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useDriverStore, IncomingRideRequest } from '../../hooks/useDriverStore';
 import { useLocationStore } from '../../hooks/useLocationStore';
 import { socketService } from '../../services/socket';
+import { storage } from '../../utils/storage';
 import { RideRequestCard } from './RideRequestCard';
 
 const TALIPARAMBA_CENTER = { latitude: 12.0368, longitude: 75.3614 };
 
 export function HomeScreen({ navigation }: any) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { phase, isOnline, earnings, incomingRequest, goOnline, goOffline, setIncomingRequest, setPhase, loadEarnings } = useDriverStore();
   const { currentLat, currentLng, setCurrentLocation, setPermission } = useLocationStore();
   const [toggling, setToggling] = useState(false);
+  const locationSubscription = React.useRef<Location.LocationSubscription | null>(null);
 
   useEffect(() => {
     requestLocationPermission();
     loadEarnings();
+    return () => {
+      locationSubscription.current?.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -44,24 +49,19 @@ export function HomeScreen({ navigation }: any) {
   }, []);
 
   const requestLocationPermission = async () => {
-    if (Platform.OS === 'android') {
-      const fine = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
-      const bg = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION);
-      if (fine === PermissionsAndroid.RESULTS.GRANTED) {
-        setPermission(true);
-        startWatchingLocation();
-      }
-    } else {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status === 'granted') {
       setPermission(true);
       startWatchingLocation();
+    } else {
+      setCurrentLocation(TALIPARAMBA_CENTER.latitude, TALIPARAMBA_CENTER.longitude);
     }
   };
 
-  const startWatchingLocation = () => {
-    Geolocation.watchPosition(
+  const startWatchingLocation = async () => {
+    locationSubscription.current = await Location.watchPositionAsync(
+      { accuracy: Location.Accuracy.High, distanceInterval: 10, timeInterval: 5000 },
       (pos) => setCurrentLocation(pos.coords.latitude, pos.coords.longitude),
-      () => setCurrentLocation(TALIPARAMBA_CENTER.latitude, TALIPARAMBA_CENTER.longitude),
-      { enableHighAccuracy: true, distanceFilter: 10, interval: 5000, fastestInterval: 3000 },
     );
   };
 
@@ -88,6 +88,12 @@ export function HomeScreen({ navigation }: any) {
     }
   };
 
+  const handleLanguageToggle = () => {
+    const newLang = i18n.language === 'ml' ? 'en' : 'ml';
+    i18n.changeLanguage(newLang);
+    storage.set('language', newLang);
+  };
+
   const mapRegion = {
     latitude: currentLat || TALIPARAMBA_CENTER.latitude,
     longitude: currentLng || TALIPARAMBA_CENTER.longitude,
@@ -97,20 +103,23 @@ export function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <MapView style={styles.map} provider={PROVIDER_GOOGLE} region={mapRegion} showsUserLocation showsMyLocationButton={false} />
+      <MapView style={styles.map} region={mapRegion} showsUserLocation showsMyLocationButton={false} />
 
-      {/* Top bar */}
       <View style={styles.topBar}>
         <View style={styles.statusRow}>
           <View style={[styles.statusDot, { backgroundColor: isOnline ? colors.online : colors.offline }]} />
           <Text style={styles.statusText}>{isOnline ? t('home.online') : t('home.offline')}</Text>
         </View>
-        <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('ProfileTab')}>
-          <Icon name="account-circle" size={36} color={colors.primary} />
-        </TouchableOpacity>
+        <View style={styles.topActions}>
+          <TouchableOpacity style={styles.langToggle} onPress={handleLanguageToggle}>
+            <Text style={styles.langToggleText}>{i18n.language === 'ml' ? 'EN' : 'മ'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('ProfileTab')}>
+            <Icon name="account-circle" size={36} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Earnings card (when online idle) */}
       {isOnline && phase === 'online_idle' && (
         <View style={styles.earningsCard}>
           <Text style={styles.earningsLabel}>{t('home.todayEarnings')}</Text>
@@ -130,12 +139,10 @@ export function HomeScreen({ navigation }: any) {
         </View>
       )}
 
-      {/* Incoming ride request overlay */}
       {phase === 'ride_request' && incomingRequest && (
         <RideRequestCard request={incomingRequest} navigation={navigation} />
       )}
 
-      {/* Go Online/Offline button */}
       <View style={styles.bottomArea}>
         <TouchableOpacity
           style={[styles.onlineBtn, isOnline ? styles.onlineBtnActive : styles.onlineBtnInactive]}
@@ -143,7 +150,7 @@ export function HomeScreen({ navigation }: any) {
           disabled={toggling}
           activeOpacity={0.8}
         >
-          <Icon name={isOnline ? 'power' : 'power'} size={28} color={colors.white} />
+          <Icon name="power" size={28} color={colors.white} />
           <Text style={styles.onlineBtnText}>{isOnline ? t('home.goOffline') : t('home.goOnline')}</Text>
         </TouchableOpacity>
       </View>
@@ -167,6 +174,21 @@ const styles = StyleSheet.create({
   },
   statusDot: { width: 10, height: 10, borderRadius: 5 },
   statusText: { ...typography.smallBold, color: colors.text },
+  topActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  langToggle: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    elevation: 2,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  langToggleText: { ...typography.smallBold, color: colors.primary },
   profileBtn: {
     width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white,
     alignItems: 'center', justifyContent: 'center', elevation: 3,

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert, TextInput, Platform, ScrollView } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 import { useTranslation } from 'react-i18next';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { Button } from '../../components';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useDriverStore } from '../../hooks/useDriverStore';
@@ -87,7 +87,7 @@ export function ActiveRideScreen({ navigation }: any) {
       if (dropoff && currentLat && currentLng) {
         fetchRoute({ lat: currentLat, lng: currentLng }, dropoff);
       }
-    } catch (err: any) {
+    } catch {
       setOtpError(t('ride.invalidOtp'));
     } finally {
       setLoading(false);
@@ -115,7 +115,6 @@ export function ActiveRideScreen({ navigation }: any) {
   };
 
   const handleCallRider = () => {
-    // In production, get rider phone from ride details
     Alert.alert(t('ride.callRider'), 'Opening phone dialer');
   };
 
@@ -138,7 +137,7 @@ export function ActiveRideScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <MapView style={styles.map} provider={PROVIDER_GOOGLE} region={mapCenter} showsUserLocation>
+      <MapView style={styles.map} region={mapCenter} showsUserLocation>
         {pickup && <Marker coordinate={{ latitude: pickup.lat, longitude: pickup.lng }} pinColor={colors.map.pickup} title={t('rideRequest.pickup')} />}
         {dropoff && <Marker coordinate={{ latitude: dropoff.lat, longitude: dropoff.lng }} pinColor={colors.map.dropoff} title={t('rideRequest.dropoff')} />}
         {routeCoords.length > 0 && (
@@ -146,7 +145,6 @@ export function ActiveRideScreen({ navigation }: any) {
         )}
       </MapView>
 
-      {/* Turn-by-turn banner */}
       {turnByTurn.length > 0 && currentStepIdx < turnByTurn.length && phase !== 'trip_completed' && (
         <View style={styles.navBanner}>
           <View style={styles.navIcon}>
@@ -160,7 +158,6 @@ export function ActiveRideScreen({ navigation }: any) {
       )}
 
       <View style={styles.bottomSheet}>
-        {/* HEADING TO PICKUP */}
         {phase === 'heading_to_pickup' && (
           <>
             <Text style={styles.phaseTitle}>{t('ride.headingToPickup')}</Text>
@@ -189,7 +186,6 @@ export function ActiveRideScreen({ navigation }: any) {
           </>
         )}
 
-        {/* ARRIVED AT PICKUP */}
         {phase === 'arrived_at_pickup' && (
           <>
             <Text style={styles.phaseTitle}>{t('ride.arrivedAtPickup')}</Text>
@@ -197,7 +193,7 @@ export function ActiveRideScreen({ navigation }: any) {
 
             <View style={styles.otpSection}>
               <TextInput
-                style={[styles.otpInput, otpError && styles.otpInputError]}
+                style={[styles.otpInput, otpError ? styles.otpInputError : null]}
                 placeholder="● ● ● ●"
                 placeholderTextColor={colors.textLight}
                 value={otpInput}
@@ -213,7 +209,6 @@ export function ActiveRideScreen({ navigation }: any) {
           </>
         )}
 
-        {/* ON TRIP */}
         {phase === 'on_trip' && (
           <>
             <Text style={styles.phaseTitle}>{t('ride.onTrip')}</Text>
@@ -233,7 +228,6 @@ export function ActiveRideScreen({ navigation }: any) {
           </>
         )}
 
-        {/* TRIP COMPLETED */}
         {phase === 'trip_completed' && (
           <View style={styles.completedSection}>
             <Icon name="check-circle" size={56} color={colors.success} />

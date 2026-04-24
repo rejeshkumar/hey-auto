@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Hey Auto Driver",
+    "slug": "hey-auto-driver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "heyautodriver",
+    "splash": {
+      "backgroundColor": "#1B5E20"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "in.heyauto.driver",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Hey Auto Driver needs your location to show your position and accept ride requests.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Hey Auto Driver tracks your location while you are online to match you with nearby riders."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1B5E20"
+      },
+      "package": "in.heyauto.driver",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Hey Auto Driver needs your location to accept ride requests.",
+          "locationAlwaysAndWhenInUsePermission": "Hey Auto Driver tracks your location while you are online."
+        }
+      ]
+    ]
+  }
+}

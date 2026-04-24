@@ -45,6 +45,8 @@ export default {
     nearbyAutos: 'Autos Nearby',
     busStand: 'Bus Stand',
     railwayStation: 'Railway Station',
+    hospital: 'Hospital',
+    temple: 'Trichambaram Temple',
   },
 
   booking: {

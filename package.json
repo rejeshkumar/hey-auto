@@ -4,7 +4,6 @@
   "private": true,
   "description": "Hey Auto - Zero-commission auto-rickshaw booking platform for Kerala",
   "workspaces": [
-    "apps/*",
     "packages/*",
     "server"
   ],

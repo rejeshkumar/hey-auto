@@ -7,8 +7,7 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #1a1a1a; }
-  
-  /* Auth screen */
+
   #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #1a1a2e; }
   .auth-card { background: white; border-radius: 16px; padding: 40px; width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
   .auth-logo { text-align: center; margin-bottom: 24px; }
@@ -17,6 +16,8 @@
   .auth-logo p { color: #666; font-size: 14px; }
   .form-group { margin-bottom: 16px; }
   .form-group label { display: block; font-size: 13px; font-weight: 500; color: #555; margin-bottom: 6px; }
+  .phone-row { display: flex; gap: 8px; }
+  .phone-prefix { padding: 12px 14px; border: 1.5px solid #e0e0e0; border-radius: 8px; background: #f9f9f9; font-weight: 600; font-size: 15px; color: #333; }
   .form-group input { width: 100%; padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 15px; outline: none; transition: border-color 0.2s; }
   .form-group input:focus { border-color: #e85d04; }
   .btn { width: 100%; padding: 13px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
@@ -26,7 +27,6 @@
   .hint { text-align: center; font-size: 12px; color: #999; margin-top: 12px; }
   .error-msg { background: #fff0f0; color: #c00; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
 
-  /* Main app */
   #app { display: none; }
   .topbar { background: #1a1a2e; color: white; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
   .topbar-left { display: flex; align-items: center; gap: 12px; }
@@ -37,47 +37,47 @@
   .logout-btn { background: transparent; border: 1px solid #444; color: #aaa; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
   .logout-btn:hover { border-color: #e85d04; color: white; }
 
-  /* Nav tabs */
   .nav { background: white; border-bottom: 1px solid #e0e0e0; padding: 0 24px; display: flex; gap: 4px; }
-  .nav-tab { padding: 14px 18px; font-size: 14px; font-weight: 500; color: #666; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .nav-tab { padding: 14px 18px; font-size: 14px; font-weight: 500; color: #666; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; }
   .nav-tab:hover { color: #e85d04; }
   .nav-tab.active { color: #e85d04; border-bottom-color: #e85d04; }
   .nav-badge { background: #e85d04; color: white; font-size: 10px; padding: 1px 6px; border-radius: 99px; margin-left: 4px; }
 
-  /* Content */
   .content { padding: 24px; max-width: 1200px; margin: 0 auto; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
 
-  /* Stats grid */
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
   .stat-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e0e0e0; }
   .stat-val { font-size: 32px; font-weight: 700; color: #1a1a2e; }
   .stat-label { font-size: 13px; color: #888; margin-top: 4px; }
+  .stat-sub { font-size: 12px; color: #bbb; margin-top: 2px; }
   .stat-card.green .stat-val { color: #2a8a4a; }
   .stat-card.orange .stat-val { color: #e85d04; }
   .stat-card.blue .stat-val { color: #1565c0; }
   .stat-card.red .stat-val { color: #c62828; }
 
-  /* Tables */
   .card { background: white; border-radius: 12px; border: 1px solid #e0e0e0; overflow: hidden; margin-bottom: 24px; }
-  .card-header { padding: 16px 20px; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-between; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
   .card-title { font-size: 15px; font-weight: 600; }
-  .card-actions { display: flex; gap: 8px; align-items: center; }
-  .search-input { padding: 7px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; width: 200px; outline: none; }
+  .card-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .search-input { padding: 7px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; width: 180px; outline: none; }
   .search-input:focus { border-color: #e85d04; }
+  select.filter-select { padding: 7px 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; outline: none; }
+  select.filter-select:focus { border-color: #e85d04; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #888; background: #fafafa; text-transform: uppercase; letter-spacing: 0.05em; }
+  th { padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #888; background: #fafafa; text-transform: uppercase; letter-spacing: 0.05em; }
   td { padding: 12px 16px; border-top: 1px solid #f0f0f0; vertical-align: middle; }
   tr:hover td { background: #fafafa; }
-  
-  /* Badges */
+
   .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; }
   .badge-green { background: #e8f5e9; color: #2e7d32; }
   .badge-red { background: #ffebee; color: #c62828; }
   .badge-amber { background: #fff8e1; color: #f57f17; }
   .badge-blue { background: #e3f2fd; color: #1565c0; }
   .badge-gray { background: #f5f5f5; color: #666; }
+  .badge-purple { background: #f3e5f5; color: #6a1b9a; }
 
-  /* Action buttons */
   .action-btn { padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
   .btn-verify { background: #e8f5e9; color: #2e7d32; }
   .btn-verify:hover { background: #2e7d32; color: white; }
@@ -85,45 +85,52 @@
   .btn-reject:hover { background: #c62828; color: white; }
   .btn-view { background: #e3f2fd; color: #1565c0; }
   .btn-view:hover { background: #1565c0; color: white; }
-  .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 5px; cursor: pointer; border: none; font-weight: 500; }
+  .btn-add { background: #e85d04; color: white; }
+  .btn-add:hover { background: #c94d00; }
 
-  /* Loading */
   .loading { text-align: center; padding: 40px; color: #999; font-size: 14px; }
-  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #e0e0e0; border-top-color: #e85d04; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #e0e0e0; border-top-color: #e85d04; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Modal */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
   .modal-overlay.show { display: flex; }
-  .modal { background: white; border-radius: 16px; padding: 28px; width: 480px; max-height: 80vh; overflow-y: auto; }
+  .modal { background: white; border-radius: 16px; padding: 28px; width: 520px; max-height: 85vh; overflow-y: auto; }
   .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
   .modal-field { margin-bottom: 14px; }
-  .modal-field label { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
+  .modal-field label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
   .modal-field p { font-size: 14px; color: #1a1a2e; }
+  .modal-field input, .modal-field select { width: 100%; padding: 9px 12px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; }
+  .modal-field input:focus, .modal-field select:focus { border-color: #e85d04; }
   .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
   .modal-actions button { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
   .btn-modal-verify { background: #2e7d32; color: white; }
+  .btn-modal-verify:hover { background: #1b5e20; }
   .btn-modal-reject { background: #c62828; color: white; }
+  .btn-modal-reject:hover { background: #b71c1c; }
   .btn-modal-close { background: #f5f5f5; color: #666; }
+  .modal-divider { border: none; border-top: 1px solid #eee; margin: 16px 0; }
 
-  /* Alert */
-  .alert { position: fixed; top: 70px; right: 24px; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; z-index: 2000; display: none; animation: slideIn 0.3s ease; }
+  .doc-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5f5f5; }
+  .doc-row:last-child { border-bottom: none; }
+  .doc-name { font-size: 13px; font-weight: 500; }
+  .doc-actions { display: flex; gap: 6px; }
+
+  .alert { position: fixed; top: 70px; right: 24px; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; z-index: 2000; display: none; animation: slideIn 0.3s ease; max-width: 320px; }
   .alert-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
   .alert-error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
   @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-  /* Empty state */
   .empty { text-align: center; padding: 40px; color: #999; }
   .empty-icon { font-size: 40px; margin-bottom: 8px; }
 
-  /* Tab content */
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
+  .fare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 480px; }
+  .fare-grid .modal-field input { margin-top: 4px; }
+  .current-fare { background: #f9f9f9; border-radius: 10px; padding: 16px; margin-bottom: 20px; font-size: 13px; color: #555; line-height: 1.8; }
 
-  /* Add vehicle form */
-  .inline-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .inline-form input, .inline-form select { padding: 7px 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; outline: none; }
-  .inline-form input:focus, .inline-form select:focus { border-color: #e85d04; }
+  .add-driver-form { padding: 20px; background: #fafafa; border-radius: 10px; margin-bottom: 16px; }
+  .add-driver-form h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #333; }
+  .form-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .form-row .modal-field { flex: 1; min-width: 140px; margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -140,19 +147,22 @@
     <div id="otp-step">
       <div class="form-group">
         <label>Admin Phone Number</label>
-        <input type="tel" id="phone-input" placeholder="10-digit number" maxlength="10" />
+        <div class="phone-row">
+          <span class="phone-prefix">+91</span>
+          <input type="tel" id="phone-input" placeholder="10-digit number" maxlength="10" style="flex:1" />
+        </div>
       </div>
       <button class="btn btn-primary" onclick="sendOtp()">Send OTP</button>
     </div>
     <div id="verify-step" style="display:none">
       <div class="form-group">
-        <label>Enter OTP</label>
-        <input type="text" id="otp-input" placeholder="123456" maxlength="6" />
+        <label>Enter OTP sent to +91<span id="otp-phone-hint"></span></label>
+        <input type="text" id="otp-input" placeholder="123456" maxlength="6" style="letter-spacing:8px;font-size:20px;font-weight:700;text-align:center" />
       </div>
       <button class="btn btn-primary" onclick="verifyOtp()">Login</button>
-      <p style="text-align:center;margin-top:10px;font-size:13px;color:#999;cursor:pointer" onclick="document.getElementById('otp-step').style.display='';document.getElementById('verify-step').style.display='none'">← Change number</p>
+      <p style="text-align:center;margin-top:10px;font-size:13px;color:#999;cursor:pointer" onclick="backToPhone()">← Change number</p>
     </div>
-    <p class="hint">Demo mode: Any number • OTP: 123456</p>
+    <p class="hint">Admin: 9000000099 · OTP: 123456</p>
   </div>
 </div>
 
@@ -171,37 +181,65 @@
   </div>
 
   <div class="nav">
-    <div class="nav-tab active" onclick="showTab('dashboard')">📊 Dashboard</div>
-    <div class="nav-tab" onclick="showTab('drivers')">🚗 Drivers <span class="nav-badge" id="pending-count" style="display:none">0</span></div>
-    <div class="nav-tab" onclick="showTab('rides')">🛺 Rides</div>
-    <div class="nav-tab" onclick="showTab('subscriptions')">💳 Subscriptions</div>
-    <div class="nav-tab" onclick="showTab('fare')">₹ Fare Config</div>
+    <div class="nav-tab active" data-tab="dashboard" onclick="showTab('dashboard',this)">📊 Dashboard</div>
+    <div class="nav-tab" data-tab="drivers" onclick="showTab('drivers',this)">🚗 Drivers <span class="nav-badge" id="pending-count" style="display:none">0</span></div>
+    <div class="nav-tab" data-tab="rides" onclick="showTab('rides',this)">🛺 Rides</div>
+    <div class="nav-tab" data-tab="fare" onclick="showTab('fare',this)">₹ Fare Config</div>
   </div>
 
-  <!-- Dashboard Tab -->
+  <!-- Dashboard -->
   <div class="tab-content active" id="tab-dashboard">
     <div class="content">
       <div class="stats-grid" id="stats-grid">
         <div class="loading"><span class="spinner"></span> Loading stats...</div>
       </div>
+      <div id="recent-rides-section"></div>
     </div>
   </div>
 
-  <!-- Drivers Tab -->
+  <!-- Drivers -->
   <div class="tab-content" id="tab-drivers">
     <div class="content">
+      <!-- Add Driver -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Add New Driver</span>
+        </div>
+        <div style="padding:20px">
+          <div class="form-row">
+            <div class="modal-field">
+              <label>Phone Number</label>
+              <div class="phone-row">
+                <span class="phone-prefix" style="padding:9px 12px;font-size:14px">+91</span>
+                <input type="tel" id="new-driver-phone" placeholder="10-digit number" maxlength="10" style="flex:1" />
+              </div>
+            </div>
+            <div class="modal-field">
+              <label>Full Name</label>
+              <input type="text" id="new-driver-name" placeholder="Driver's full name" />
+            </div>
+            <div class="modal-field" style="flex:0">
+              <label>&nbsp;</label>
+              <button class="btn btn-primary" style="width:auto;padding:9px 20px" onclick="addDriver()">+ Register Driver</button>
+            </div>
+          </div>
+          <p style="font-size:12px;color:#999;margin-top:8px">Registers the phone number as a DRIVER. They can then log in via the driver app to complete their profile.</p>
+        </div>
+      </div>
+
+      <!-- Driver List -->
       <div class="card">
         <div class="card-header">
           <span class="card-title">All Drivers</span>
           <div class="card-actions">
-            <select id="driver-status-filter" onchange="loadDrivers()" style="padding:7px 10px;border:1px solid #e0e0e0;border-radius:6px;font-size:13px;outline:none;">
+            <select class="filter-select" id="driver-status-filter" onchange="loadDrivers()">
               <option value="">All Status</option>
               <option value="PENDING">Pending</option>
               <option value="VERIFIED">Verified</option>
               <option value="REJECTED">Rejected</option>
             </select>
-            <input class="search-input" id="driver-search" placeholder="Search phone..." onkeyup="loadDrivers()" />
-            <button class="action-btn btn-verify" onclick="loadDrivers()">↻ Refresh</button>
+            <input class="search-input" id="driver-search" placeholder="Search name or phone..." oninput="debounceDriverSearch()" />
+            <button class="action-btn btn-view" onclick="loadDrivers()">↻ Refresh</button>
           </div>
         </div>
         <div id="drivers-table">
@@ -211,21 +249,23 @@
     </div>
   </div>
 
-  <!-- Rides Tab -->
+  <!-- Rides -->
   <div class="tab-content" id="tab-rides">
     <div class="content">
       <div class="card">
         <div class="card-header">
           <span class="card-title">All Rides</span>
           <div class="card-actions">
-            <select id="ride-status-filter" onchange="loadRides()" style="padding:7px 10px;border:1px solid #e0e0e0;border-radius:6px;font-size:13px;outline:none;">
+            <select class="filter-select" id="ride-status-filter" onchange="loadRides()">
               <option value="">All Status</option>
               <option value="REQUESTED">Requested</option>
+              <option value="DRIVER_ASSIGNED">Driver Assigned</option>
               <option value="IN_PROGRESS">In Progress</option>
               <option value="COMPLETED">Completed</option>
               <option value="CANCELLED_RIDER">Cancelled</option>
+              <option value="NO_DRIVERS">No Drivers</option>
             </select>
-            <button class="action-btn btn-verify" onclick="loadRides()">↻ Refresh</button>
+            <button class="action-btn btn-view" onclick="loadRides()">↻ Refresh</button>
           </div>
         </div>
         <div id="rides-table">
@@ -235,58 +275,45 @@
     </div>
   </div>
 
-  <!-- Subscriptions Tab -->
-  <div class="tab-content" id="tab-subscriptions">
-    <div class="content">
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Driver Subscriptions</span>
-          <div class="card-actions">
-            <button class="action-btn btn-verify" onclick="loadSubscriptions()">↻ Refresh</button>
-          </div>
-        </div>
-        <div id="subscriptions-table">
-          <div class="loading"><span class="spinner"></span> Loading...</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Fare Config Tab -->
+  <!-- Fare Config -->
   <div class="tab-content" id="tab-fare">
     <div class="content">
       <div class="card">
         <div class="card-header">
-          <span class="card-title">Fare Configuration — Taliparamba</span>
+          <span class="card-title">Fare Configuration — Taliparamba Auto</span>
         </div>
         <div style="padding:24px">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:500px">
+          <div class="current-fare" id="current-fare-display">
+            Loading current fare config...
+          </div>
+          <div class="fare-grid">
             <div class="modal-field">
               <label>Base Fare (₹)</label>
-              <input type="number" id="fare-base" value="30" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:14px;" />
+              <input type="number" id="fare-base" value="30" min="0" />
             </div>
             <div class="modal-field">
               <label>Base Distance (km)</label>
-              <input type="number" id="fare-base-dist" value="1.5" step="0.1" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:14px;" />
+              <input type="number" id="fare-base-dist" value="1.5" step="0.1" min="0" />
             </div>
             <div class="modal-field">
               <label>Per KM Rate (₹)</label>
-              <input type="number" id="fare-per-km" value="15" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:14px;" />
+              <input type="number" id="fare-per-km" value="15" min="0" />
             </div>
             <div class="modal-field">
               <label>Per Min Rate (₹)</label>
-              <input type="number" id="fare-per-min" value="1" step="0.5" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:14px;" />
+              <input type="number" id="fare-per-min" value="1" step="0.5" min="0" />
             </div>
             <div class="modal-field">
               <label>Minimum Fare (₹)</label>
-              <input type="number" id="fare-min" value="30" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:14px;" />
+              <input type="number" id="fare-min" value="30" min="0" />
             </div>
             <div class="modal-field">
-              <label>Night Multiplier</label>
-              <input type="number" id="fare-night" value="1.25" step="0.05" style="width:100%;padding:8px 12px;border:1px solid #e0e0e0;border-radius:6px;font-size:14px;" />
+              <label>Night Surcharge Multiplier</label>
+              <input type="number" id="fare-night" value="1.25" step="0.05" min="1" />
             </div>
           </div>
-          <button class="btn btn-primary" style="width:200px;margin-top:16px" onclick="saveFareConfig()">Save Fare Config</button>
+          <div style="margin-top:8px;font-size:12px;color:#999">Night hours: 10 PM – 6 AM</div>
+          <button class="btn btn-primary" style="width:200px;margin-top:20px" onclick="saveFareConfig()">Save Fare Config</button>
         </div>
       </div>
     </div>
@@ -294,13 +321,13 @@
 </div>
 
 <!-- Driver Detail Modal -->
-<div class="modal-overlay" id="driver-modal">
+<div class="modal-overlay" id="driver-modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
-    <h3>Driver Details</h3>
+    <h3 id="modal-title">Driver Details</h3>
     <div id="driver-modal-content"></div>
-    <div class="modal-actions">
-      <button class="btn-modal-verify" id="modal-verify-btn" onclick="verifyDriverFromModal('APPROVE')">✓ Verify Driver</button>
-      <button class="btn-modal-reject" id="modal-reject-btn" onclick="verifyDriverFromModal('REJECT')">✗ Reject</button>
+    <div class="modal-actions" id="modal-action-btns">
+      <button class="btn-modal-verify" onclick="verifyDriverFromModal('verify')">✓ Verify Driver</button>
+      <button class="btn-modal-reject" onclick="verifyDriverFromModal('reject')">✗ Reject</button>
       <button class="btn-modal-close" onclick="closeModal()">Close</button>
     </div>
   </div>
@@ -310,40 +337,41 @@
 <div class="alert" id="alert"></div>
 
 <script>
-const API = 'https://hey-auto-server-production.up.railway.app/api/v1';
+// ── Config ────────────────────────────────────
+const API = 'http://localhost:3000/api/v1';
 let token = localStorage.getItem('admin_token');
-let currentDriverId = null;
 let adminPhone = localStorage.getItem('admin_phone');
+let currentDriverUserId = null;
+let driverSearchTimer = null;
 
 // ── Init ──────────────────────────────────────
-if (token) {
-  showApp();
-} 
+if (token) showApp();
 
 // ── Auth ──────────────────────────────────────
 async function sendOtp() {
   const phone = document.getElementById('phone-input').value.trim();
   if (phone.length !== 10) { showError('Enter a valid 10-digit number'); return; }
-  
+
   const btn = document.querySelector('#otp-step .btn');
   btn.disabled = true; btn.textContent = 'Sending...';
-  
+
   try {
     const res = await fetch(`${API}/auth/send-otp`, {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({phone})
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: '+91' + phone, role: 'ADMIN' })
     });
     const data = await res.json();
-    if (data.success) {
+    if (data.success || data.data?.otp) {
       document.getElementById('otp-step').style.display = 'none';
       document.getElementById('verify-step').style.display = '';
+      document.getElementById('otp-phone-hint').textContent = phone;
+      if (data.data?.otp) showAlert('Dev OTP: ' + data.data.otp, 'success');
       document.getElementById('otp-input').focus();
-      localStorage.setItem('admin_phone', '+91' + phone);
     } else {
       showError(data.error?.message || 'Failed to send OTP');
     }
-  } catch(e) { showError('Server error. Check connection.'); }
+  } catch (e) { showError('Cannot connect to server at ' + API); }
   btn.disabled = false; btn.textContent = 'Send OTP';
 }
 
@@ -351,16 +379,15 @@ async function verifyOtp() {
   const phone = document.getElementById('phone-input').value.trim();
   const otp = document.getElementById('otp-input').value.trim();
   if (!otp) { showError('Enter OTP'); return; }
-  
+
   const btn = document.querySelector('#verify-step .btn');
   btn.disabled = true; btn.textContent = 'Verifying...';
-  
+
   try {
-    // Try DRIVER role (admin will be handled by user role in DB)
     const res = await fetch(`${API}/auth/verify-otp`, {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({phone, otp, role: 'DRIVER'})
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: '+91' + phone, otp, role: 'ADMIN' })
     });
     const data = await res.json();
     if (data.success) {
@@ -372,14 +399,20 @@ async function verifyOtp() {
     } else {
       showError(data.error?.message || 'Invalid OTP');
     }
-  } catch(e) { showError('Server error.'); }
+  } catch (e) { showError('Server error.'); }
   btn.disabled = false; btn.textContent = 'Login';
+}
+
+function backToPhone() {
+  document.getElementById('otp-step').style.display = '';
+  document.getElementById('verify-step').style.display = 'none';
+  document.getElementById('otp-input').value = '';
 }
 
 function showError(msg) {
   const el = document.getElementById('auth-error');
   el.textContent = msg; el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 4000);
+  setTimeout(() => el.style.display = 'none', 5000);
 }
 
 function logout() {
@@ -388,6 +421,9 @@ function logout() {
   token = null;
   document.getElementById('app').style.display = 'none';
   document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('phone-input').value = '';
+  document.getElementById('otp-input').value = '';
+  backToPhone();
 }
 
 function showApp() {
@@ -398,186 +434,297 @@ function showApp() {
 }
 
 // ── API helper ────────────────────────────────
-async function api(path, options = {}) {
-  const res = await fetch(`${API}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...(options.headers || {})
-    }
-  });
-  const data = await res.json();
-  if (res.status === 401) { logout(); return null; }
-  return data;
+async function apiCall(path, options = {}) {
+  try {
+    const res = await fetch(`${API}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...(options.headers || {})
+      }
+    });
+    const data = await res.json();
+    if (res.status === 401) { logout(); return null; }
+    return data;
+  } catch (e) {
+    console.error('API error:', path, e);
+    return null;
+  }
 }
 
 // ── Tabs ──────────────────────────────────────
-function showTab(name) {
+function showTab(name, el) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
-  event.target.classList.add('active');
-  
+  el.classList.add('active');
   if (name === 'dashboard') loadDashboard();
   if (name === 'drivers') loadDrivers();
   if (name === 'rides') loadRides();
-  if (name === 'subscriptions') loadSubscriptions();
+  if (name === 'fare') loadFareConfig();
 }
 
 // ── Dashboard ─────────────────────────────────
 async function loadDashboard() {
-  const data = await api('/admin/dashboard');
   const grid = document.getElementById('stats-grid');
-  
+  grid.innerHTML = '<div class="loading"><span class="spinner"></span> Loading stats...</div>';
+
+  const data = await apiCall('/admin/dashboard');
+
   if (!data?.success) {
-    // Build stats from drivers and rides
-    const [driversData, ridesData] = await Promise.all([
-      api('/admin/drivers?limit=100'),
-      api('/admin/rides?limit=100')
-    ]);
-    
-    const drivers = driversData?.data || [];
-    const rides = ridesData?.data || [];
-    const pending = drivers.filter(d => d.verificationStatus === 'PENDING').length;
-    const verified = drivers.filter(d => d.verificationStatus === 'VERIFIED').length;
-    const activeRides = rides.filter(r => r.status === 'IN_PROGRESS').length;
-    const completedToday = rides.filter(r => r.status === 'COMPLETED').length;
-    
-    if (pending > 0) {
-      document.getElementById('pending-count').textContent = pending;
-      document.getElementById('pending-count').style.display = '';
-    }
-    
-    grid.innerHTML = `
-      <div class="stat-card orange"><div class="stat-val">${drivers.length}</div><div class="stat-label">Total Drivers</div></div>
-      <div class="stat-card green"><div class="stat-val">${verified}</div><div class="stat-label">Verified Drivers</div></div>
-      <div class="stat-card red"><div class="stat-val">${pending}</div><div class="stat-label">Pending Verification</div></div>
-      <div class="stat-card blue"><div class="stat-val">${completedToday}</div><div class="stat-label">Total Rides</div></div>
-    `;
+    grid.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Failed to load — check server is running</div>';
     return;
   }
 
   const s = data.data;
+  const pending = s.drivers?.pendingVerifications || 0;
+
+  if (pending > 0) {
+    document.getElementById('pending-count').textContent = pending;
+    document.getElementById('pending-count').style.display = '';
+  } else {
+    document.getElementById('pending-count').style.display = 'none';
+  }
+
   grid.innerHTML = `
-    <div class="stat-card orange"><div class="stat-val">${s.totalDrivers||0}</div><div class="stat-label">Total Drivers</div></div>
-    <div class="stat-card green"><div class="stat-val">${s.activeDrivers||0}</div><div class="stat-label">Online Now</div></div>
-    <div class="stat-card blue"><div class="stat-val">${s.totalRides||0}</div><div class="stat-label">Total Rides</div></div>
-    <div class="stat-card red"><div class="stat-val">${s.pendingVerifications||0}</div><div class="stat-label">Pending Verification</div></div>
-    <div class="stat-card green"><div class="stat-val">₹${s.todayRevenue||0}</div><div class="stat-label">Today's Revenue</div></div>
-    <div class="stat-card blue"><div class="stat-val">${s.activeRides||0}</div><div class="stat-label">Active Rides</div></div>
+    <div class="stat-card orange">
+      <div class="stat-val">${s.drivers?.total || 0}</div>
+      <div class="stat-label">Total Drivers</div>
+      <div class="stat-sub">${s.drivers?.verified || 0} verified · ${s.drivers?.online || 0} online now</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-val">${s.riders?.total || 0}</div>
+      <div class="stat-label">Total Riders</div>
+    </div>
+    <div class="stat-card${pending > 0 ? ' red' : ' green'}">
+      <div class="stat-val">${pending}</div>
+      <div class="stat-label">Pending Verification</div>
+      <div class="stat-sub">${pending > 0 ? 'Action needed' : 'All clear'}</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-val">${s.rides?.today || 0}</div>
+      <div class="stat-label">Rides Today</div>
+      <div class="stat-sub">${s.rides?.completedToday || 0} completed · ${s.rides?.active || 0} live</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-val">₹${s.revenue?.today || 0}</div>
+      <div class="stat-label">Revenue Today</div>
+    </div>
   `;
+
+  // Recent rides
+  const ridesData = await apiCall('/admin/rides?limit=5');
+  const section = document.getElementById('recent-rides-section');
+  if (ridesData?.success && ridesData.data?.length) {
+    section.innerHTML = `
+      <div class="card">
+        <div class="card-header"><span class="card-title">Recent Rides</span></div>
+        <table>
+          <thead><tr><th>Time</th><th>Rider</th><th>Driver</th><th>Fare</th><th>Status</th></tr></thead>
+          <tbody>
+            ${ridesData.data.map(r => `
+              <tr>
+                <td>${fmtTime(r.createdAt)}</td>
+                <td>${r.rider?.phone || '-'}</td>
+                <td>${r.driver?.phone || '<em style="color:#bbb">Unassigned</em>'}</td>
+                <td>₹${r.estimatedFare || 0}</td>
+                <td>${rideBadge(r.status)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } else {
+    section.innerHTML = '';
+  }
 }
 
 // ── Drivers ───────────────────────────────────
+function debounceDriverSearch() {
+  clearTimeout(driverSearchTimer);
+  driverSearchTimer = setTimeout(loadDrivers, 400);
+}
+
 async function loadDrivers() {
   const status = document.getElementById('driver-status-filter')?.value || '';
   const search = document.getElementById('driver-search')?.value || '';
   const table = document.getElementById('drivers-table');
   table.innerHTML = '<div class="loading"><span class="spinner"></span> Loading...</div>';
-  
-  const data = await api(`/admin/drivers?status=${status}&search=${search}&limit=50`);
-  if (!data?.success) { table.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Failed to load drivers</div>'; return; }
-  
-  const drivers = data.data || [];
-  if (!drivers.length) { table.innerHTML = '<div class="empty"><div class="empty-icon">🚗</div>No drivers found</div>'; return; }
 
-  // Update pending badge
-  const pending = drivers.filter(d => d.verificationStatus === 'PENDING').length;
-  if (pending > 0) {
-    document.getElementById('pending-count').textContent = pending;
-    document.getElementById('pending-count').style.display = '';
+  const params = new URLSearchParams({ limit: '100' });
+  if (status) params.set('status', status);
+  if (search) params.set('search', search);
+
+  const data = await apiCall(`/admin/drivers?${params}`);
+  if (!data?.success) {
+    table.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Failed to load drivers</div>';
+    return;
+  }
+
+  const drivers = data.data || [];
+
+  const pending = drivers.filter(d => d.profile?.verificationStatus === 'PENDING').length;
+  document.getElementById('pending-count').textContent = pending;
+  document.getElementById('pending-count').style.display = pending > 0 ? '' : 'none';
+
+  if (!drivers.length) {
+    table.innerHTML = '<div class="empty"><div class="empty-icon">🚗</div>No drivers found</div>';
+    return;
   }
 
   table.innerHTML = `
     <table>
       <thead><tr>
-        <th>Phone</th><th>Name</th><th>City</th><th>Status</th><th>Online</th><th>Rides</th><th>Rating</th><th>Actions</th>
+        <th>Phone</th><th>Name</th><th>Verification</th><th>Online</th>
+        <th>Vehicle</th><th>Docs</th><th>Joined</th><th>Actions</th>
       </tr></thead>
       <tbody>
-        ${drivers.map(d => `
+        ${drivers.map(d => {
+          const profile = d.profile || {};
+          const vehicle = profile.vehicles?.[0];
+          const docCount = profile.documents?.length || 0;
+          const pendingDocs = profile.documents?.filter(doc => doc.status === 'PENDING').length || 0;
+          return `
           <tr>
             <td><strong>${d.phone}</strong></td>
-            <td>${d.fullName || '<em style="color:#999">Not set</em>'}</td>
-            <td>${d.city || 'taliparamba'}</td>
-            <td>${statusBadge(d.verificationStatus)}</td>
-            <td>${d.isOnline ? '<span class="badge badge-green">● Online</span>' : '<span class="badge badge-gray">Offline</span>'}</td>
-            <td>${d.totalRides || 0}</td>
-            <td>⭐ ${(d.rating||5).toFixed(1)}</td>
-            <td style="display:flex;gap:6px;flex-wrap:wrap">
-              <button class="action-btn btn-view" onclick="viewDriver('${d.driverProfileId}','${d.phone}','${d.fullName||''}','${d.verificationStatus}','${d.city||'taliparamba'}')">View</button>
-              ${d.verificationStatus === 'PENDING' ? `<button class="action-btn btn-verify" onclick="quickVerify('${d.driverProfileId}','APPROVE')">✓ Verify</button>` : ''}
-              ${d.verificationStatus !== 'VERIFIED' ? '' : `<button class="action-btn btn-reject" onclick="quickVerify('${d.driverProfileId}','REJECT')" style="background:#fff0f0;color:#c00">Suspend</button>`}
+            <td>${d.fullName || '<em style="color:#bbb">Not set</em>'}</td>
+            <td>${verifBadge(profile.verificationStatus)}</td>
+            <td>${profile.isOnline ? '<span class="badge badge-green">● Online</span>' : '<span class="badge badge-gray">Offline</span>'}</td>
+            <td>${vehicle ? vehicle.registrationNo : '<em style="color:#bbb">None</em>'}</td>
+            <td>${docCount > 0 ? `${docCount} docs${pendingDocs > 0 ? ` <span class="badge badge-amber">${pendingDocs} pending</span>` : ''}` : '<em style="color:#bbb">None</em>'}</td>
+            <td>${fmtDate(d.createdAt)}</td>
+            <td style="display:flex;gap:4px;flex-wrap:wrap">
+              <button class="action-btn btn-view" onclick="viewDriver('${d.id}','${esc(d.phone)}','${esc(d.fullName||'')}','${esc(profile.verificationStatus||'PENDING')}','${esc(profile.city||'taliparamba')}','${esc(vehicle?.registrationNo||'')}',${JSON.stringify(profile.documents||[])})">View</button>
+              ${profile.verificationStatus !== 'VERIFIED' ? `<button class="action-btn btn-verify" onclick="quickAction('${d.id}','verify')">✓ Verify</button>` : ''}
+              ${profile.verificationStatus === 'VERIFIED' ? `<button class="action-btn btn-reject" onclick="quickAction('${d.id}','reject')">Suspend</button>` : ''}
             </td>
-          </tr>
-        `).join('')}
+          </tr>`;
+        }).join('')}
       </tbody>
     </table>
   `;
 }
 
-function statusBadge(status) {
-  const map = {
-    VERIFIED: 'badge-green', PENDING: 'badge-amber',
-    REJECTED: 'badge-red', IN_REVIEW: 'badge-blue'
-  };
-  return `<span class="badge ${map[status]||'badge-gray'}">${status||'PENDING'}</span>`;
+function verifBadge(status) {
+  const map = { VERIFIED: 'badge-green', PENDING: 'badge-amber', REJECTED: 'badge-red', IN_REVIEW: 'badge-blue' };
+  return `<span class="badge ${map[status] || 'badge-gray'}">${status || 'PENDING'}</span>`;
 }
 
-async function quickVerify(driverProfileId, action) {
-  const data = await api(`/admin/drivers/${driverProfileId}/verify`, {
+async function quickAction(userId, action) {
+  const data = await apiCall(`/admin/drivers/${userId}/verify`, {
     method: 'PUT',
-    body: JSON.stringify({action})
+    body: JSON.stringify({ action })
   });
   if (data?.success) {
-    showAlert(action === 'APPROVE' ? '✓ Driver verified!' : 'Driver rejected', action === 'APPROVE' ? 'success' : 'error');
+    showAlert(action === 'verify' ? '✓ Driver verified!' : 'Driver suspended', action === 'verify' ? 'success' : 'error');
+    loadDrivers();
+    loadDashboard();
+  } else {
+    showAlert(data?.error?.message || 'Action failed', 'error');
+  }
+}
+
+function viewDriver(userId, phone, name, status, city, vehicleReg, docs) {
+  currentDriverUserId = userId;
+  const docsHtml = docs.length > 0 ? docs.map(doc => `
+    <div class="doc-row">
+      <div>
+        <div class="doc-name">${doc.docType}</div>
+        ${verifBadge(doc.status)}
+      </div>
+      <div class="doc-actions">
+        ${doc.status === 'PENDING' ? `
+          <button class="action-btn btn-verify" onclick="verifyDoc('${doc.id}','verify')">✓</button>
+          <button class="action-btn btn-reject" onclick="verifyDoc('${doc.id}','reject')">✗</button>
+        ` : ''}
+      </div>
+    </div>
+  `).join('') : '<p style="color:#999;font-size:13px">No documents uploaded yet</p>';
+
+  document.getElementById('modal-title').textContent = 'Driver — ' + phone;
+  document.getElementById('driver-modal-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="modal-field"><label>Phone</label><p>${phone}</p></div>
+      <div class="modal-field"><label>Name</label><p>${name || 'Not set'}</p></div>
+      <div class="modal-field"><label>City</label><p>${city}</p></div>
+      <div class="modal-field"><label>Vehicle</label><p>${vehicleReg || 'Not added'}</p></div>
+    </div>
+    <div class="modal-field"><label>Verification Status</label><p style="margin-top:4px">${verifBadge(status)}</p></div>
+    <hr class="modal-divider">
+    <div class="modal-field">
+      <label>Documents</label>
+      <div style="margin-top:8px">${docsHtml}</div>
+    </div>
+  `;
+
+  const btns = document.getElementById('modal-action-btns');
+  if (status === 'VERIFIED') {
+    btns.innerHTML = `
+      <button class="btn-modal-reject" onclick="verifyDriverFromModal('reject')">Suspend Driver</button>
+      <button class="btn-modal-close" onclick="closeModal()">Close</button>`;
+  } else {
+    btns.innerHTML = `
+      <button class="btn-modal-verify" onclick="verifyDriverFromModal('verify')">✓ Verify Driver</button>
+      <button class="btn-modal-reject" onclick="verifyDriverFromModal('reject')">✗ Reject</button>
+      <button class="btn-modal-close" onclick="closeModal()">Close</button>`;
+  }
+
+  document.getElementById('driver-modal').classList.add('show');
+}
+
+async function verifyDriverFromModal(action) {
+  if (!currentDriverUserId) return;
+  await quickAction(currentDriverUserId, action);
+  closeModal();
+}
+
+async function verifyDoc(docId, action) {
+  let rejectionReason = undefined;
+  if (action === 'reject') {
+    rejectionReason = prompt('Reason for rejection:');
+    if (!rejectionReason) return;
+  }
+  const data = await apiCall(`/admin/documents/${docId}/verify`, {
+    method: 'PUT',
+    body: JSON.stringify({ action, rejectionReason })
+  });
+  if (data?.success) {
+    showAlert(action === 'verify' ? '✓ Document verified' : 'Document rejected', action === 'verify' ? 'success' : 'error');
+    closeModal();
     loadDrivers();
   } else {
     showAlert(data?.error?.message || 'Failed', 'error');
   }
 }
 
-function viewDriver(id, phone, name, status, city) {
-  currentDriverId = id;
-  document.getElementById('driver-modal-content').innerHTML = `
-    <div class="modal-field"><label>Phone</label><p>${phone}</p></div>
-    <div class="modal-field"><label>Name</label><p>${name || 'Not set'}</p></div>
-    <div class="modal-field"><label>City</label><p>${city}</p></div>
-    <div class="modal-field"><label>Status</label><p>${statusBadge(status)}</p></div>
-    <hr style="margin:16px 0;border:none;border-top:1px solid #eee">
-    <div class="modal-field"><label>Add Vehicle (for testing)</label>
-      <div class="inline-form" style="margin-top:6px">
-        <input id="vehicle-reg" placeholder="KL 13 AB 1234" style="flex:1" />
-        <select id="vehicle-fuel">
-          <option value="PETROL">Petrol</option>
-          <option value="CNG">CNG</option>
-          <option value="ELECTRIC">Electric</option>
-        </select>
-        <button class="action-btn btn-verify" onclick="addVehicle()">+ Add</button>
-      </div>
-    </div>
-  `;
-  document.getElementById('driver-modal').classList.add('show');
-}
-
-async function verifyDriverFromModal(action) {
-  if (!currentDriverId) return;
-  await quickVerify(currentDriverId, action);
-  closeModal();
-}
-
-async function addVehicle() {
-  const reg = document.getElementById('vehicle-reg').value.trim();
-  const fuel = document.getElementById('vehicle-fuel').value;
-  if (!reg) { showAlert('Enter registration number', 'error'); return; }
-  
-  // Use driver routes to add vehicle - need driver token
-  showAlert('Vehicle added (use driver app for full flow)', 'success');
-}
-
 function closeModal() {
   document.getElementById('driver-modal').classList.remove('show');
-  currentDriverId = null;
+  currentDriverUserId = null;
+}
+
+// ── Add Driver ────────────────────────────────
+async function addDriver() {
+  const phone = document.getElementById('new-driver-phone').value.trim();
+  const name = document.getElementById('new-driver-name').value.trim();
+  if (phone.length !== 10) { showAlert('Enter a valid 10-digit phone number', 'error'); return; }
+  if (!name) { showAlert('Enter driver name', 'error'); return; }
+
+  // Send OTP first to register the phone as DRIVER role
+  const otpRes = await apiCall('/auth/send-otp', {
+    method: 'POST',
+    body: JSON.stringify({ phone: '+91' + phone, role: 'DRIVER' })
+  });
+
+  if (!otpRes?.success) {
+    showAlert(otpRes?.error?.message || 'Failed to register driver', 'error');
+    return;
+  }
+
+  showAlert(`✓ Driver +91${phone} registered! OTP: ${otpRes.data?.otp || '(sent)'}. They can now log in via the driver app.`, 'success');
+  document.getElementById('new-driver-phone').value = '';
+  document.getElementById('new-driver-name').value = '';
+  setTimeout(loadDrivers, 1000);
 }
 
 // ── Rides ─────────────────────────────────────
@@ -585,27 +732,38 @@ async function loadRides() {
   const status = document.getElementById('ride-status-filter')?.value || '';
   const table = document.getElementById('rides-table');
   table.innerHTML = '<div class="loading"><span class="spinner"></span> Loading...</div>';
-  
-  const data = await api(`/admin/rides?status=${status}&limit=50`);
-  if (!data?.success) { table.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Failed to load rides</div>'; return; }
-  
+
+  const params = new URLSearchParams({ limit: '50' });
+  if (status) params.set('status', status);
+
+  const data = await apiCall(`/admin/rides?${params}`);
+  if (!data?.success) {
+    table.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>Failed to load rides</div>';
+    return;
+  }
+
   const rides = data.data || [];
-  if (!rides.length) { table.innerHTML = '<div class="empty"><div class="empty-icon">🛺</div>No rides yet</div>'; return; }
+  if (!rides.length) {
+    table.innerHTML = '<div class="empty"><div class="empty-icon">🛺</div>No rides found</div>';
+    return;
+  }
 
   table.innerHTML = `
     <table>
       <thead><tr>
-        <th>Time</th><th>Rider</th><th>Driver</th><th>From</th><th>To</th><th>Fare</th><th>Status</th>
+        <th>Time</th><th>Rider</th><th>Driver</th><th>Pickup</th><th>Dropoff</th>
+        <th>Dist</th><th>Fare</th><th>Status</th>
       </tr></thead>
       <tbody>
         ${rides.map(r => `
           <tr>
-            <td>${new Date(r.requestedAt||r.createdAt).toLocaleTimeString()}</td>
-            <td>${r.rider?.phone||'-'}</td>
-            <td>${r.driver?.phone||'<em style="color:#999">Unassigned</em>'}</td>
-            <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.pickupAddress||'-'}</td>
-            <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.dropoffAddress||'-'}</td>
-            <td>₹${r.estimatedFare||0}</td>
+            <td style="white-space:nowrap">${fmtTime(r.createdAt)}</td>
+            <td>${r.rider?.phone || '-'}</td>
+            <td>${r.driver?.phone || '<em style="color:#bbb">—</em>'}</td>
+            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${r.pickupAddress || '-'}</td>
+            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${r.dropoffAddress || '-'}</td>
+            <td>${r.estimatedDistanceKm ? r.estimatedDistanceKm + ' km' : '-'}</td>
+            <td>₹${r.totalAmount || r.estimatedFare || 0}</td>
             <td>${rideBadge(r.status)}</td>
           </tr>
         `).join('')}
@@ -616,45 +774,35 @@ async function loadRides() {
 
 function rideBadge(status) {
   const map = {
-    COMPLETED:'badge-green', IN_PROGRESS:'badge-blue',
-    REQUESTED:'badge-amber', CANCELLED_RIDER:'badge-red',
-    CANCELLED_DRIVER:'badge-red', NO_DRIVERS:'badge-gray'
+    COMPLETED: 'badge-green', IN_PROGRESS: 'badge-blue', OTP_VERIFIED: 'badge-blue',
+    DRIVER_ASSIGNED: 'badge-purple', DRIVER_ARRIVED: 'badge-purple',
+    REQUESTED: 'badge-amber', CANCELLED_RIDER: 'badge-red',
+    CANCELLED_DRIVER: 'badge-red', NO_DRIVERS: 'badge-gray'
   };
-  return `<span class="badge ${map[status]||'badge-gray'}">${(status||'').replace(/_/g,' ')}</span>`;
-}
-
-// ── Subscriptions ─────────────────────────────
-async function loadSubscriptions() {
-  const table = document.getElementById('subscriptions-table');
-  table.innerHTML = '<div class="loading"><span class="spinner"></span> Loading...</div>';
-  
-  // Get drivers and check their subscriptions
-  const data = await api('/admin/drivers?limit=100');
-  if (!data?.success) { table.innerHTML = '<div class="empty">Failed to load</div>'; return; }
-  
-  const drivers = data.data || [];
-  
-  table.innerHTML = `
-    <table>
-      <thead><tr>
-        <th>Driver Phone</th><th>Name</th><th>Active Plan</th><th>Expires</th><th>Status</th>
-      </tr></thead>
-      <tbody>
-        ${drivers.map(d => `
-          <tr>
-            <td>${d.phone}</td>
-            <td>${d.fullName||'-'}</td>
-            <td>${d.activeSubscription ? d.activeSubscription.plan?.name || 'Daily Plan' : '<em style="color:#999">None</em>'}</td>
-            <td>${d.activeSubscription ? new Date(d.activeSubscription.expiresAt).toLocaleString() : '-'}</td>
-            <td>${d.activeSubscription ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Not paid</span>'}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
+  return `<span class="badge ${map[status] || 'badge-gray'}">${(status || '').replace(/_/g, ' ')}</span>`;
 }
 
 // ── Fare Config ───────────────────────────────
+async function loadFareConfig() {
+  // Show current fare from a test estimate call
+  const el = document.getElementById('current-fare-display');
+  el.textContent = 'Fetching current config...';
+  const data = await apiCall('/rides/estimate', {
+    method: 'POST',
+    body: JSON.stringify({ pickupLat: 12.0368, pickupLng: 75.3614, dropoffLat: 11.9462, dropoffLng: 75.4928 })
+  });
+  if (data?.success) {
+    const f = data.data;
+    el.innerHTML = `
+      <strong>Current active config</strong> (sample: ~9km ride)<br>
+      Base fare: ₹${f.baseFare} &nbsp;|&nbsp; Rate: ₹${f.ratePerKm}/km &nbsp;|&nbsp;
+      Distance fare: ₹${f.distanceFare} &nbsp;|&nbsp; <strong>Total: ₹${f.totalFare}</strong>
+    `;
+  } else {
+    el.textContent = 'Could not load current fare.';
+  }
+}
+
 async function saveFareConfig() {
   const config = {
     city: 'taliparamba',
@@ -667,32 +815,52 @@ async function saveFareConfig() {
     nightMultiplier: parseFloat(document.getElementById('fare-night').value),
     effectiveFrom: new Date().toISOString(),
   };
-  
-  const data = await api('/admin/fare-config', {
+
+  const data = await apiCall('/admin/fare-config', {
     method: 'POST',
     body: JSON.stringify(config)
   });
-  
+
   if (data?.success) {
     showAlert('✓ Fare config saved!', 'success');
+    loadFareConfig();
   } else {
     showAlert(data?.error?.message || 'Failed to save', 'error');
   }
 }
 
-// ── Alert ─────────────────────────────────────
+// ── Helpers ───────────────────────────────────
+function fmtTime(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) + ' ' +
+    d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtDate(iso) {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function esc(str) {
+  return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
 function showAlert(msg, type = 'success') {
   const el = document.getElementById('alert');
   el.textContent = msg;
   el.className = `alert alert-${type}`;
   el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 3000);
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.style.display = 'none', 4000);
 }
 
 // ── Keyboard shortcuts ────────────────────────
-document.getElementById('phone-input')?.addEventListener('keydown', e => { if(e.key==='Enter') sendOtp(); });
-document.getElementById('otp-input')?.addEventListener('keydown', e => { if(e.key==='Enter') verifyOtp(); });
-document.getElementById('driver-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+document.getElementById('phone-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendOtp(); });
+document.getElementById('otp-input').addEventListener('keydown', e => { if (e.key === 'Enter') verifyOtp(); });
 </script>
 </body>
 </html>

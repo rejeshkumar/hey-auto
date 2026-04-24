@@ -23,12 +23,15 @@ interface VerifyOtpResponse {
   isNewUser: boolean;
 }
 
+const normalizePhone = (phone: string) =>
+  phone.startsWith('+91') ? phone : `+91${phone}`;
+
 export const authApi = {
   sendOtp: (phone: string) =>
-    api.post<ApiResponse<SendOtpResponse>>('/auth/send-otp', { phone, role: 'RIDER' }),
+    api.post<ApiResponse<SendOtpResponse>>('/auth/send-otp', { phone: normalizePhone(phone), role: 'RIDER' }),
 
   verifyOtp: (phone: string, otp: string, deviceId?: string) =>
-    api.post<ApiResponse<VerifyOtpResponse>>('/auth/verify-otp', { phone, otp, role: 'RIDER', deviceId }),
+    api.post<ApiResponse<VerifyOtpResponse>>('/auth/verify-otp', { phone: normalizePhone(phone), otp, role: 'RIDER', deviceId }),
 
   refreshToken: (refreshToken: string) =>
     api.post<ApiResponse<{ tokens: { accessToken: string; refreshToken: string } }>>('/auth/refresh-token', { refreshToken }),

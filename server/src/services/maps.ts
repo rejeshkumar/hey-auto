@@ -129,7 +129,7 @@ class MapsService {
    */
   async searchPlaces(query: string, sessionToken?: string): Promise<PlacePrediction[]> {
     if (!this.isConfigured) {
-      return this.searchLocalPlaces(query);
+      return this.searchNominatim(query);
     }
 
     try {
@@ -148,7 +148,7 @@ class MapsService {
       const data = await this.fetch<any>(url);
 
       if (data.status !== 'OK') {
-        return this.searchLocalPlaces(query);
+        return this.searchNominatim(query);
       }
 
       return data.predictions.map((p: any) => ({
@@ -159,7 +159,7 @@ class MapsService {
       }));
     } catch (err) {
       logger.error({ err }, 'Places Autocomplete failed');
-      return this.searchLocalPlaces(query);
+      return this.searchNominatim(query);
     }
   }
 
@@ -167,7 +167,9 @@ class MapsService {
    * Get place details (coordinates) from a place ID.
    */
   async getPlaceDetails(placeId: string, sessionToken?: string): Promise<PlaceDetails | null> {
-    if (!this.isConfigured) return null;
+    if (!this.isConfigured) {
+      return this.getNominatimDetails(placeId);
+    }
 
     try {
       const url =
@@ -275,6 +277,91 @@ class MapsService {
 
   // ── Fallback methods (no API key needed) ──
 
+  private async searchNominatim(query: string): Promise<PlacePrediction[]> {
+    try {
+      const url =
+        `https://nominatim.openstreetmap.org/search` +
+        `?q=${encodeURIComponent(query)}` +
+        `&countrycodes=in` +
+        `&format=json` +
+        `&addressdetails=1` +
+        `&limit=8` +
+        `&accept-language=en`;
+
+      const response = await globalThis.fetch(url, {
+        headers: { 'User-Agent': 'HeyAutoApp/1.0 (heyauto.in)' },
+      });
+      if (!response.ok) return [];
+
+      const results: any[] = await response.json();
+      return results.map((r) => {
+        const addr = r.address || {};
+        const mainText =
+          r.name ||
+          addr.road ||
+          addr.neighbourhood ||
+          addr.suburb ||
+          addr.village ||
+          addr.town ||
+          addr.city ||
+          r.display_name.split(',')[0];
+        const secondary = r.display_name
+          .split(',')
+          .slice(1)
+          .join(',')
+          .trim();
+        return {
+          placeId: `osm_${r.osm_type}_${r.osm_id}`,
+          description: r.display_name,
+          mainText,
+          secondaryText: secondary,
+        };
+      });
+    } catch (err) {
+      logger.error({ err }, 'Nominatim search failed');
+      return [];
+    }
+  }
+
+  private async getNominatimDetails(placeId: string): Promise<PlaceDetails | null> {
+    try {
+      // placeId format: osm_<type>_<id>  e.g. osm_way_12345
+      const parts = placeId.split('_');
+      if (parts.length < 3 || parts[0] !== 'osm') return null;
+      const osmType = parts[1]; // node/way/relation
+      const osmId = parts[2];
+
+      const typeChar = osmType === 'node' ? 'N' : osmType === 'way' ? 'W' : 'R';
+      const url =
+        `https://nominatim.openstreetmap.org/lookup` +
+        `?osm_ids=${typeChar}${osmId}` +
+        `&format=json` +
+        `&addressdetails=1` +
+        `&accept-language=en`;
+
+      const response = await globalThis.fetch(url, {
+        headers: { 'User-Agent': 'HeyAutoApp/1.0 (heyauto.in)' },
+      });
+      if (!response.ok) return null;
+
+      const results: any[] = await response.json();
+      if (!results.length) return null;
+
+      const r = results[0];
+      const name = r.name || r.display_name.split(',')[0];
+      return {
+        placeId,
+        name,
+        address: r.display_name,
+        lat: parseFloat(r.lat),
+        lng: parseFloat(r.lon),
+      };
+    } catch (err) {
+      logger.error({ err }, 'Nominatim lookup failed');
+      return null;
+    }
+  }
+
   private estimateRoute(origin: LatLng, destination: LatLng): RouteInfo {
     const distKm = this.haversineDistance(origin, destination);
     const roadFactor = 1.35;
@@ -298,29 +385,6 @@ class MapsService {
       startAddress: `${origin.lat.toFixed(4)}, ${origin.lng.toFixed(4)}`,
       endAddress: `${destination.lat.toFixed(4)}, ${destination.lng.toFixed(4)}`,
     };
-  }
-
-  private searchLocalPlaces(query: string): PlacePrediction[] {
-    const TALIPARAMBA_PLACES = [
-      { id: 'tp_bus', name: 'Taliparamba Bus Stand', ml: 'തളിപ്പറമ്പ് ബസ് സ്റ്റാൻഡ്' },
-      { id: 'tp_kannapuram', name: 'Kannapuram Railway Station', ml: 'കണ്ണപുരം റെയിൽവേ സ്റ്റേഷൻ' },
-      { id: 'tp_trichambaram', name: 'Trichambaram Temple', ml: 'തൃച്ചംബരം ക്ഷേത്രം' },
-      { id: 'tp_rajarajeshwara', name: 'Rajarajeshwara Temple', ml: 'രാജരാജേശ്വര ക്ഷേത്രം' },
-      { id: 'tp_hospital', name: 'Govt Hospital Taliparamba', ml: 'താലൂക്ക് ആശുപത്രി' },
-      { id: 'tp_manna', name: 'Manna Junction', ml: 'മണ്ണ ജംഗ്ഷൻ' },
-      { id: 'tp_parassinikadavu', name: 'Parassinikkadavu Temple', ml: 'പറശ്ശിനിക്കടവ് ക്ഷേത്രം' },
-      { id: 'tp_kuttiyeri', name: 'Kuttiyeri Hanging Bridge', ml: 'കുറ്റിയേരി തൂക്കുപാലം' },
-    ];
-
-    const q = query.toLowerCase();
-    return TALIPARAMBA_PLACES
-      .filter((p) => p.name.toLowerCase().includes(q) || p.ml.includes(query))
-      .map((p) => ({
-        placeId: p.id,
-        description: `${p.name}, Taliparamba, Kannur`,
-        mainText: p.name,
-        secondaryText: 'Taliparamba, Kannur District',
-      }));
   }
 
   private haversineDistance(a: LatLng, b: LatLng): number {

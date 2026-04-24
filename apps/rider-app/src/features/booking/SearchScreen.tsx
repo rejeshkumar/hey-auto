@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useRideStore } from '../../hooks/useRideStore';
 import { mapsApi, PlacePrediction } from '../../services/maps';
@@ -13,6 +13,7 @@ export function SearchScreen({ navigation }: any) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<PlacePrediction[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { setDropoff, setPhase } = useRideStore();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -28,13 +29,18 @@ export function SearchScreen({ navigation }: any) {
 
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
+      setError(null);
       try {
         const { data } = await mapsApi.searchPlaces(text, SESSION_TOKEN);
         if (data.success) {
           setResults(data.data);
+        } else {
+          setError(data.error?.message || 'Search failed');
         }
-      } catch (err) {
-        console.error('Search error:', err);
+      } catch (err: any) {
+        const msg = err?.response?.data?.error?.message || err?.message || 'Network error';
+        setError(msg);
+        console.error('Search error:', msg, err?.response?.status);
       } finally {
         setLoading(false);
       }
@@ -90,6 +96,10 @@ export function SearchScreen({ navigation }: any) {
 
       {loading && <ActivityIndicator size="small" color={colors.primary} style={styles.loader} />}
 
+      {error && (
+        <Text style={styles.errorText}>{error}</Text>
+      )}
+
       <FlatList
         data={results}
         keyExtractor={(item) => item.placeId}
@@ -107,7 +117,7 @@ export function SearchScreen({ navigation }: any) {
           </TouchableOpacity>
         )}
         ListEmptyComponent={
-          query.length >= 2 && !loading ? (
+          query.length >= 2 && !loading && !error ? (
             <Text style={styles.empty}>No places found</Text>
           ) : null
         }
@@ -147,4 +157,5 @@ const styles = StyleSheet.create({
   placeName: { ...typography.bodyBold, color: colors.text },
   placeNameEn: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
   empty: { ...typography.body, color: colors.textLight, textAlign: 'center', marginTop: spacing.xxl },
+  errorText: { ...typography.small, color: colors.error, textAlign: 'center', margin: spacing.md },
 });

@@ -45,6 +45,8 @@ export default {
     nearbyAutos: 'സമീപത്തുള്ള ഓട്ടോകൾ',
     busStand: 'ബസ് സ്റ്റാൻഡ്',
     railwayStation: 'റെയിൽവേ സ്റ്റേഷൻ',
+    hospital: 'ആശുപത്രി',
+    temple: 'തൃച്ചംബരം ക്ഷേത്രം',
   },
 
   booking: {
