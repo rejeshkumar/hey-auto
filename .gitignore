@@ -34,9 +34,14 @@ npm-debug.log*
 # Testing
 coverage/
 
-# React Native
+# React Native / Expo
 apps/rider-app/ios/Pods/
 apps/driver-app/ios/Pods/
+apps/rider-app/.expo/
+apps/driver-app/.expo/
+apps/driver-app/HeyAutoDriver/
+hey-auto/
+scrape/
 *.jks
 *.p8
 *.p12
