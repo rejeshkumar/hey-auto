@@ -7,6 +7,7 @@ import { Button } from '../../components';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useRideStore } from '../../hooks/useRideStore';
 import { rideApi } from '../../services/ride';
+import { riderApi } from '../../services/rider';
 import { socketService } from '../../services/socket';
 
 export function ActiveRideScreen({ navigation }: any) {
@@ -59,8 +60,21 @@ export function ActiveRideScreen({ navigation }: any) {
   };
 
   const handleSOS = () => {
-    Alert.alert(t('safety.sosActivated'), t('safety.sosSub'));
-    Linking.openURL('tel:112');
+    Alert.alert(
+      '🚨 ' + t('safety.sosActivated'),
+      t('safety.sosSub'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: 'Call 112 & Alert Contacts',
+          style: 'destructive',
+          onPress: () => {
+            riderApi.triggerSOS(currentRide?.id).catch(() => {});
+            Linking.openURL('tel:112');
+          },
+        },
+      ],
+    );
   };
 
   const mapCenter = driverLocation || (pickup ? { lat: pickup.lat, lng: pickup.lng } : { lat: 11.9462, lng: 75.4928 });

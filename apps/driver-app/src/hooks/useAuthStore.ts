@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { storage } from '../utils/storage';
 import { authApi, User } from '../services/auth';
 import { socketService } from '../services/socket';
+import { registerPushToken } from '../services/pushNotifications';
 
 interface AuthState {
   user: User | null;
@@ -43,6 +44,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     set({ user, isAuthenticated: true, isNewUser });
     socketService.connect();
+    registerPushToken();
   },
 
   completeProfile: async (profileData) => {
@@ -75,6 +77,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         const user = JSON.parse(userStr) as User;
         set({ user, isAuthenticated: true, isLoading: false });
         socketService.connect();
+        registerPushToken();
       } catch {
         set({ isLoading: false });
       }

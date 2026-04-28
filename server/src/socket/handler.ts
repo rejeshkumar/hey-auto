@@ -91,6 +91,8 @@ export function setupSocketHandlers(io: Server) {
             dropoffAddress: event.dropoffAddress,
             estimatedFare: event.estimatedFare,
             distance: event.distance,
+            riderName: event.riderName,
+            riderPhone: event.riderPhone,
             timeoutSec: 15,
           });
           break;

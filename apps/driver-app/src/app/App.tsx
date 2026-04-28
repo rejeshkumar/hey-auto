@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { View, ActivityIndicator } from 'react-native';
+import * as Notifications from 'expo-notifications';
 
 import '../i18n';
 import i18n from '../i18n';
@@ -17,6 +18,8 @@ const queryClient = new QueryClient({
 export default function App() {
   const [storageReady, setStorageReady] = useState(false);
   const loadSession = useAuthStore((s) => s.loadSession);
+  const notificationListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription>();
 
   useEffect(() => {
     preloadStorage().then(({ getString }) => {
@@ -27,6 +30,25 @@ export default function App() {
       loadSession();
       setStorageReady(true);
     });
+
+    // Foreground notification — vibrate to alert driver even while app is open
+    notificationListener.current = Notifications.addNotificationReceivedListener(() => {
+      // Socket already handles the in-app UI; this just ensures sound/vibration fires
+    });
+
+    // User tapped a notification — app was backgrounded
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data as any;
+      if (data?.type === 'ride:new_request') {
+        // Socket will have already delivered the request if driver comes back online.
+        // Nothing to navigate — the HomeScreen is already the root tab.
+      }
+    });
+
+    return () => {
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
+    };
   }, []);
 
   if (!storageReady) {

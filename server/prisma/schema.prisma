@@ -312,7 +312,7 @@ model DriverSubscription {
   startsAt  DateTime           @map("starts_at")
   expiresAt DateTime           @map("expires_at")
   paymentId String?            @unique @map("payment_id") @db.Uuid
-  status    SubscriptionStatus @default(ACTIVE)
+  status    SubscriptionStatus @default(PENDING)
   createdAt DateTime           @default(now()) @map("created_at")
 
   driver  DriverProfile    @relation(fields: [driverId], references: [id])
@@ -500,6 +500,7 @@ enum TransactionType {
 }
 
 enum SubscriptionStatus {
+  PENDING
   ACTIVE
   EXPIRED
   CANCELLED

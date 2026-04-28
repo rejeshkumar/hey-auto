@@ -63,9 +63,9 @@ export function ProfileScreen({ navigation }: any) {
 
         <View style={styles.menuSection}>
           <MenuItem icon="history" label={t('profile.myRides')} onPress={() => navigation.navigate('History')} />
-          <MenuItem icon="map-marker-star" label={t('profile.savedPlaces')} onPress={() => {}} />
-          <MenuItem icon="credit-card" label={t('profile.paymentMethods')} onPress={() => {}} />
-          <MenuItem icon="phone-alert" label={t('profile.emergencyContacts')} onPress={() => {}} />
+          <MenuItem icon="map-marker-star" label={t('profile.savedPlaces')} onPress={() => navigation.navigate('SavedPlaces')} />
+          <MenuItem icon="credit-card" label={t('profile.paymentMethods')} onPress={() => navigation.navigate('PaymentMethods')} />
+          <MenuItem icon="phone-alert" label={t('profile.emergencyContacts')} onPress={() => navigation.navigate('EmergencyContacts')} />
         </View>
 
         <View style={styles.menuSection}>

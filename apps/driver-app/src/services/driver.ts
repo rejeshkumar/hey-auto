@@ -100,4 +100,27 @@ export const driverApi = {
 
   completeRide: (rideId: string) =>
     api.post<ApiResponse<any>>(`/rides/${rideId}/complete`),
+
+  rateRide: (rideId: string, rating: number) =>
+    api.post<ApiResponse<any>>(`/rides/${rideId}/rate`, { rating }),
+
+  getSubscriptionStatus: () =>
+    api.get<ApiResponse<any>>('/subscription/status'),
+
+  getSubscriptionPlans: () =>
+    api.get<ApiResponse<any>>('/subscription/plans'),
+
+  verifySubscriptionUTR: (data: { utrNumber: string; planId: string; amount: number }) =>
+    api.post<ApiResponse<any>>('/subscription/verify-utr', data),
+
+  uploadDocument: (data: { docType: string; docUrl: string; docNumber?: string }) =>
+    api.post<ApiResponse<any>>('/driver/documents', data),
+
+  uploadDocumentFile: (formData: FormData) =>
+    api.post<ApiResponse<any>>('/driver/documents', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
+  getDocuments: () =>
+    api.get<ApiResponse<any>>('/driver/documents'),
 };

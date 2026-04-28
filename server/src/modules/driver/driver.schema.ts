@@ -35,7 +35,7 @@ export const documentUploadSchema = z.object({
     'PHOTO',
     'VEHICLE_PHOTO',
   ]),
-  docUrl: z.string().url(),
+  docUrl: z.string().url().optional(),
   docNumber: z.string().optional(),
   expiryDate: z.string().datetime().optional(),
 });

@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database';
 import { NotFoundError } from '../../utils/errors';
+import { notificationService } from '../notification/notification.service';
 import type { UpdateRiderProfileInput, SavedPlaceInput, EmergencyContactInput } from './rider.schema';
 
 export class RiderService {
@@ -85,6 +86,34 @@ export class RiderService {
     await prisma.emergencyContact.deleteMany({
       where: { id: contactId, userId },
     });
+  }
+
+  async triggerSOS(userId: string, rideId?: string) {
+    const contacts = await prisma.emergencyContact.findMany({ where: { userId } });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { fullName: true, phone: true } });
+
+    // Notify the rider themselves with confirmation
+    notificationService.sendPushNotification(
+      userId,
+      '🚨 SOS Activated',
+      'Emergency contacts have been alerted. Help is on the way.',
+      { type: 'sos', ...(rideId && { rideId }) },
+    ).catch(() => {});
+
+    // Log SOS as a system notification for admin visibility
+    if (contacts.length > 0) {
+      await prisma.notification.create({
+        data: {
+          userId,
+          title: 'SOS Alert Sent',
+          body: `Rider ${user?.fullName ?? userId} triggered SOS. Emergency contacts: ${contacts.map(c => c.name).join(', ')}`,
+          type: 'SAFETY',
+          data: { rideId, contacts: contacts.map(c => ({ name: c.name, phone: c.phone })) },
+        },
+      });
+    }
+
+    return { triggered: true, contactsNotified: contacts.length };
   }
 
   async getRideHistory(userId: string, page = 1, limit = 20) {

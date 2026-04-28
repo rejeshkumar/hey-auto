@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Vibration } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Vibration, Alert } from 'react-native';
 import MapView from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
@@ -81,8 +81,23 @@ export function HomeScreen({ navigation }: any) {
         });
       }
       loadEarnings();
-    } catch (err) {
-      console.error('Toggle online error:', err);
+    } catch (err: any) {
+      const code = err?.response?.data?.code;
+      if (code === 'SUBSCRIPTION_REQUIRED') {
+        const msg = i18n.language === 'ml'
+          ? err.response.data.messageMl
+          : err.response.data.message;
+        Alert.alert(
+          'Subscription Required',
+          msg || 'Pay ₹25 to go online today',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Subscribe Now', onPress: () => navigation.navigate('Subscription') },
+          ],
+        );
+      } else {
+        Alert.alert('Error', err?.response?.data?.message || 'Something went wrong');
+      }
     } finally {
       setToggling(false);
     }

@@ -19,6 +19,7 @@ router.get('/emergency-contacts', riderController.getEmergencyContacts);
 router.post('/emergency-contacts', validate(emergencyContactSchema), riderController.addEmergencyContact);
 router.delete('/emergency-contacts/:id', riderController.deleteEmergencyContact);
 
+router.post('/sos', riderController.triggerSOS);
 router.get('/rides/history', riderController.getRideHistory);
 
 export { router as riderRoutes };

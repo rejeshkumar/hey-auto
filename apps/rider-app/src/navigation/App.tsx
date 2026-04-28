@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { View, ActivityIndicator } from 'react-native';
+import * as Notifications from 'expo-notifications';
 
 import '../i18n';
 import i18n from '../i18n';
@@ -17,6 +18,8 @@ const queryClient = new QueryClient({
 export default function App() {
   const [storageReady, setStorageReady] = useState(false);
   const loadSession = useAuthStore((s) => s.loadSession);
+  const notificationListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription>();
 
   useEffect(() => {
     preloadStorage().then(({ getString }) => {
@@ -27,6 +30,19 @@ export default function App() {
       loadSession();
       setStorageReady(true);
     });
+
+    notificationListener.current = Notifications.addNotificationReceivedListener(() => {
+      // Foreground: sound/vibration fires; socket handles in-app UI updates
+    });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(_response => {
+      // Rider tapped a notification — app opens to foreground automatically
+    });
+
+    return () => {
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
+    };
   }, []);
 
   if (!storageReady) {

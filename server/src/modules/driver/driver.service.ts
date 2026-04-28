@@ -136,7 +136,7 @@ export class DriverService {
       data: {
         driverId: profile.id,
         docType: input.docType,
-        docUrl: input.docUrl,
+        docUrl: input.docUrl!,
         docNumber: input.docNumber,
         expiryDate: input.expiryDate ? new Date(input.expiryDate) : undefined,
       },

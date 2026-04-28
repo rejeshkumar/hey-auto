@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert, TextInput, Platform, ScrollView } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,9 @@ export function ActiveRideScreen({ navigation }: any) {
   const [otpError, setOtpError] = useState('');
   const [loading, setLoading] = useState(false);
   const [completedFare, setCompletedFare] = useState<number | null>(null);
+  const [riderRating, setRiderRating] = useState(5);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const completedRideId = useRef<string | null>(null);
   const [routeCoords, setRouteCoords] = useState<{ latitude: number; longitude: number }[]>([]);
   const [turnByTurn, setTurnByTurn] = useState<RouteStep[]>([]);
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
@@ -100,6 +103,7 @@ export function ActiveRideScreen({ navigation }: any) {
     try {
       const { data } = await driverApi.completeRide(currentRideId);
       setCompletedFare(data.data?.totalAmount || incomingRequest?.estimatedFare || 0);
+      completedRideId.current = currentRideId;
       setPhase('trip_completed');
       loadEarnings();
     } catch (err) {
@@ -109,13 +113,25 @@ export function ActiveRideScreen({ navigation }: any) {
     }
   };
 
+  const handleSubmitRating = async () => {
+    if (ratingSubmitted || !completedRideId.current) return;
+    setRatingSubmitted(true);
+    try {
+      await driverApi.rateRide(completedRideId.current, riderRating);
+    } catch {}
+    resetRide();
+    navigation.replace('MainTabs');
+  };
+
   const handleDone = () => {
     resetRide();
     navigation.replace('MainTabs');
   };
 
   const handleCallRider = () => {
-    Alert.alert(t('ride.callRider'), 'Opening phone dialer');
+    if (incomingRequest?.riderPhone) {
+      Linking.openURL(`tel:${incomingRequest.riderPhone}`);
+    }
   };
 
   const handleNavigate = () => {
@@ -234,7 +250,30 @@ export function ActiveRideScreen({ navigation }: any) {
             <Text style={styles.completedTitle}>{t('ride.rideCompleted')}</Text>
             <Text style={styles.completedFare}>₹{Math.round(completedFare || 0)}</Text>
             <Text style={styles.completedLabel}>{t('ride.fareCollected')}</Text>
-            <Button title={t('common.done')} onPress={handleDone} style={{ marginTop: spacing.xl }} />
+
+            {incomingRequest && (
+              <View style={styles.rateRiderSection}>
+                <Text style={styles.rateRiderLabel}>Rate your rider</Text>
+                <Text style={styles.rateRiderName}>{incomingRequest.riderName}</Text>
+                <View style={styles.ratingStars}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity key={star} onPress={() => setRiderRating(star)} disabled={ratingSubmitted}>
+                      <Icon
+                        name={star <= riderRating ? 'star' : 'star-outline'}
+                        size={36}
+                        color={star <= riderRating ? colors.rating : colors.border}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            <Button
+              title={ratingSubmitted ? t('common.done') : 'Submit & Done'}
+              onPress={handleSubmitRating}
+              style={{ marginTop: spacing.lg }}
+            />
           </View>
         )}
       </View>
@@ -298,6 +337,10 @@ const styles = StyleSheet.create({
   completedTitle: { ...typography.h2, color: colors.text, marginTop: spacing.base },
   completedFare: { fontSize: 48, fontWeight: '800', color: colors.earnings, marginTop: spacing.sm },
   completedLabel: { ...typography.body, color: colors.textSecondary, marginTop: spacing.xs },
+  rateRiderSection: { alignItems: 'center', marginTop: spacing.xl, width: '100%', backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.lg },
+  rateRiderLabel: { ...typography.label, color: colors.textSecondary },
+  rateRiderName: { ...typography.bodyBold, color: colors.text, marginTop: spacing.xs, marginBottom: spacing.md },
+  ratingStars: { flexDirection: 'row', gap: spacing.sm },
   navBanner: {
     position: 'absolute', top: Platform.OS === 'ios' ? 55 : 35,
     left: spacing.base, right: spacing.base,

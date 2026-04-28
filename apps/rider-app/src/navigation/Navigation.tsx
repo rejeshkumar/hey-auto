@@ -16,6 +16,10 @@ import { BookingConfirmScreen } from '../features/booking/BookingConfirmScreen';
 import { ActiveRideScreen } from '../features/ride/ActiveRideScreen';
 import { RideCompleteScreen } from '../features/ride/RideCompleteScreen';
 import { ProfileScreen } from '../features/profile/ProfileScreen';
+import { EditProfileScreen } from '../features/profile/EditProfileScreen';
+import { SavedPlacesScreen } from '../features/profile/SavedPlacesScreen';
+import { EmergencyContactsScreen } from '../features/profile/EmergencyContactsScreen';
+import { PaymentMethodsScreen } from '../features/profile/PaymentMethodsScreen';
 import { HistoryScreen } from '../features/history/HistoryScreen';
 
 const Stack = createNativeStackNavigator();
@@ -71,6 +75,10 @@ export function Navigation() {
             <Stack.Screen name="ActiveRide" component={ActiveRideScreen} options={{ gestureEnabled: false }} />
             <Stack.Screen name="RideComplete" component={RideCompleteScreen} options={{ gestureEnabled: false }} />
             <Stack.Screen name="History" component={HistoryScreen} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            <Stack.Screen name="SavedPlaces" component={SavedPlacesScreen} />
+            <Stack.Screen name="EmergencyContacts" component={EmergencyContactsScreen} />
+            <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
           </>
         )}
       </Stack.Navigator>

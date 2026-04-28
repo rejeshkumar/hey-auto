@@ -56,4 +56,7 @@ export const riderApi = {
 
   getRideHistory: (page = 1) =>
     api.get(`/rider/rides/history?page=${page}&limit=20`),
+
+  triggerSOS: (rideId?: string) =>
+    api.post('/rider/sos', { rideId }),
 };

@@ -42,11 +42,10 @@ export class SubscriptionService {
       include: {
         subscriptions: {
           where: {
-            status: 'ACTIVE',
-            expiresAt: { gt: new Date() },
+            status: { in: ['ACTIVE', 'PENDING'] },
           },
           include: { plan: true },
-          orderBy: { expiresAt: 'desc' },
+          orderBy: { createdAt: 'desc' },
           take: 1,
         },
       },
@@ -54,16 +53,25 @@ export class SubscriptionService {
 
     if (!profile) throw new NotFoundError('Driver not found');
 
-    const active = profile.subscriptions[0];
+    const latest = profile.subscriptions[0];
 
-    if (active) {
+    if (latest?.status === 'PENDING') {
+      return {
+        hasActiveSubscription: false,
+        pendingApproval: true,
+        message: 'Payment submitted. Waiting for admin approval (2–4 hrs).',
+        messageMl: 'പേയ്‌മൻ്റ് സമർപ്പിച്ചു. അഡ്മിൻ അംഗീകാരം കാത്തിരിക്കുന്നു.',
+      };
+    }
+
+    if (latest?.status === 'ACTIVE' && latest.expiresAt > new Date()) {
       const hoursLeft = Math.ceil(
-        (active.expiresAt.getTime() - Date.now()) / 3600000
+        (latest.expiresAt.getTime() - Date.now()) / 3600000
       );
       return {
         hasActiveSubscription: true,
-        plan: active.plan.nameMl ?? active.plan.name,
-        expiresAt: active.expiresAt,
+        plan: latest.plan.nameMl ?? latest.plan.name,
+        expiresAt: latest.expiresAt,
         hoursLeft,
       };
     }
@@ -142,20 +150,20 @@ export class SubscriptionService {
       istMidnight.setUTCDate(istMidnight.getUTCDate() + 1);
     }
 
-    // Create payment record (UTR as transaction ID — for record keeping)
+    // Create payment record — PENDING until admin approves
     const payment = await prisma.payment.create({
       data: {
         payerId: userId,
-        payeeId: userId, // platform receives it
+        payeeId: userId,
         amount: DAILY_PLAN_AMOUNT,
         paymentMethod: 'UPI',
         paymentGateway: 'upi_manual',
-        gatewayTxnId: utr, // store UTR here
-        status: 'COMPLETED',
+        gatewayTxnId: utr,
+        status: 'PENDING',
       },
     });
 
-    // Create active subscription
+    // Create subscription in PENDING state — admin verifies UTR and approves
     await prisma.driverSubscription.create({
       data: {
         driverId: profile.id,
@@ -163,18 +171,17 @@ export class SubscriptionService {
         paymentId: payment.id,
         startsAt,
         expiresAt: istMidnight,
-        status: 'ACTIVE',
+        status: 'PENDING',
       },
     });
 
-    logger.info({ userId, utr, expiresAt: istMidnight }, 'Driver subscription activated via UTR');
+    logger.info({ userId, utr }, 'Driver subscription UTR submitted — pending admin approval');
 
     return {
       success: true,
-      message: 'Payment verified! You can now go online.',
-      messageMl: 'പേയ്‌മൻ്റ് സ്ഥിരീകരിച്ചു! ഇപ്പോൾ ഓൺലൈൻ ആകൂ.',
-      expiresAt: istMidnight,
-      hoursLeft: Math.ceil((istMidnight.getTime() - Date.now()) / 3600000),
+      message: 'Payment submitted! Admin will verify your UTR within 2–4 hours.',
+      messageMl: 'പേയ്‌മൻ്റ് സമർപ്പിച്ചു! 2–4 മണിക്കൂറിനുള്ളിൽ അഡ്മിൻ UTR പരിശോധിക്കും.',
+      pendingApproval: true,
     };
   }
 

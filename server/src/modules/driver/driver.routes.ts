@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { driverController } from './driver.controller';
 import { authenticate, authorize } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
+import { upload } from '../../services/upload';
 import {
   updateDriverProfileSchema,
   vehicleSchema,
@@ -19,7 +20,7 @@ router.put('/profile', validate(updateDriverProfileSchema), driverController.upd
 router.post('/vehicle', validate(vehicleSchema), driverController.addVehicle);
 router.put('/vehicle/:id', driverController.updateVehicle);
 
-router.post('/documents', validate(documentUploadSchema), driverController.uploadDocument);
+router.post('/documents', upload.single('file'), validate(documentUploadSchema), driverController.uploadDocument);
 router.get('/documents', driverController.getDocuments);
 
 router.post('/go-online', driverController.goOnline);

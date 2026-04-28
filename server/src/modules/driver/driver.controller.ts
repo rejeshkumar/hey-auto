@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { driverService } from './driver.service';
+import { uploadFileToStorage } from '../../services/upload';
 
 export class DriverController {
   async getProfile(req: Request, res: Response, next: NextFunction) {
@@ -41,7 +42,23 @@ export class DriverController {
 
   async uploadDocument(req: Request, res: Response, next: NextFunction) {
     try {
-      const doc = await driverService.uploadDocument(req.user!.userId, req.body);
+      let docUrl: string | undefined = req.body.docUrl;
+
+      if (req.file) {
+        docUrl = await uploadFileToStorage(
+          req.file.buffer,
+          req.file.originalname,
+          req.file.mimetype,
+          'documents',
+        );
+      }
+
+      if (!docUrl) {
+        res.status(400).json({ success: false, error: { code: 'MISSING_FILE', message: 'No file uploaded' } });
+        return;
+      }
+
+      const doc = await driverService.uploadDocument(req.user!.userId, { ...req.body, docUrl });
       res.status(201).json({ success: true, data: doc });
     } catch (err) {
       next(err);

@@ -7,6 +7,7 @@ import { BadRequestError, NotFoundError } from '../../utils/errors';
 import { haversineDistance, isNightTime, roundToRupee, generateRideOTP } from '../../utils/helpers';
 import { driverService } from '../driver/driver.service';
 import { mapsService } from '../../services/maps';
+import { notificationService } from '../notification/notification.service';
 import type { FareEstimateInput, RequestRideInput, CancelRideInput, RateRideInput } from './ride.schema';
 
 const ACTIVE_RIDE_PREFIX = 'active_ride:';
@@ -162,6 +163,12 @@ export class RideService {
       });
       await redis.del(`${ACTIVE_RIDE_PREFIX}${ride.riderId}`);
       await redis.publish('ride_events', JSON.stringify({ type: 'ride:no_drivers', rideId, riderId: ride.riderId }));
+      notificationService.sendPushNotification(
+        ride.riderId,
+        '😔 No Drivers Available',
+        'No drivers nearby right now. Please try again in a few minutes.',
+        { type: 'ride:no_drivers', rideId },
+      ).catch(() => {});
       return;
     }
 
@@ -174,6 +181,11 @@ export class RideService {
         0.1 * Math.random(),
     }));
     scored.sort((a, b) => b.score - a.score);
+
+    const riderUser = await prisma.user.findUnique({
+      where: { id: ride.riderId },
+      select: { fullName: true, phone: true },
+    });
 
     for (let round = 0; round < Math.min(scored.length, env.MAX_MATCHING_ROUNDS); round++) {
       const driver = scored[round];
@@ -196,8 +208,18 @@ export class RideService {
           dropoffAddress: ride.dropoffAddress,
           estimatedFare: ride.estimatedFare,
           distance: driver.distance,
+          riderName: riderUser?.fullName,
+          riderPhone: riderUser?.phone,
         }),
       );
+
+      // Push to driver if app is backgrounded
+      notificationService.sendPushNotification(
+        driver.userId,
+        '🛺 New Ride Request',
+        `${ride.pickupAddress} → ${ride.dropoffAddress} · ₹${ride.estimatedFare}`,
+        { type: 'ride:new_request', rideId },
+      ).catch(() => {});
 
       const accepted = await this.waitForDriverResponse(rideId, driver.userId);
       if (accepted) return;
@@ -209,6 +231,12 @@ export class RideService {
     });
     await redis.del(`${ACTIVE_RIDE_PREFIX}${ride.riderId}`);
     await redis.publish('ride_events', JSON.stringify({ type: 'ride:no_drivers', rideId, riderId: ride.riderId }));
+    notificationService.sendPushNotification(
+      ride.riderId,
+      '😔 No Drivers Available',
+      'All nearby drivers are busy. Please try again shortly.',
+      { type: 'ride:no_drivers', rideId },
+    ).catch(() => {});
   }
 
   private async waitForDriverResponse(rideId: string, driverId: string): Promise<boolean> {
@@ -289,6 +317,13 @@ export class RideService {
       }),
     );
 
+    notificationService.sendPushNotification(
+      ride.riderId,
+      '✅ Driver Found!',
+      `${driverUser?.fullName || 'Your driver'} is on the way · ${vehicle.registrationNo}`,
+      { type: 'ride:driver_assigned', rideId },
+    ).catch(() => {});
+
     logger.info({ rideId, driverId }, 'Ride accepted by driver');
     return updatedRide;
   }
@@ -325,6 +360,13 @@ export class RideService {
       riderId: ride.riderId,
       rideOtp: ride.rideOtp,
     }));
+
+    notificationService.sendPushNotification(
+      ride.riderId,
+      '📍 Driver Arrived',
+      `Your driver is waiting. Show OTP: ${ride.rideOtp}`,
+      { type: 'ride:driver_arrived', rideId },
+    ).catch(() => {});
 
     return updated;
   }
@@ -434,6 +476,13 @@ export class RideService {
       paymentMethod: ride.paymentMethod,
     }));
 
+    notificationService.sendPushNotification(
+      ride.riderId,
+      '🏁 Ride Completed',
+      `Total fare: ₹${totalAmount} · ${actualDistanceKm.toFixed(1)} km · ${actualDurationMin} min`,
+      { type: 'ride:completed', rideId },
+    ).catch(() => {});
+
     logger.info({ rideId, driverId, totalAmount }, 'Ride completed');
     return updated;
   }
@@ -475,6 +524,23 @@ export class RideService {
       cancelledBy: role,
       reason: input.reason,
     }));
+
+    // Notify the other party
+    if (role === 'RIDER' && ride.driverId) {
+      notificationService.sendPushNotification(
+        ride.driverId,
+        '❌ Ride Cancelled',
+        `Rider cancelled the ride`,
+        { type: 'ride:cancelled', rideId },
+      ).catch(() => {});
+    } else if (role === 'DRIVER') {
+      notificationService.sendPushNotification(
+        ride.riderId,
+        '❌ Ride Cancelled',
+        `Driver cancelled. We'll find you another driver.`,
+        { type: 'ride:cancelled', rideId },
+      ).catch(() => {});
+    }
 
     logger.info({ rideId, cancelledBy: role }, 'Ride cancelled');
     return updated;

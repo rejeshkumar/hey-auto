@@ -97,6 +97,9 @@ app.use(`${apiPrefix}/admin`, adminRoutes);
 app.use(`${apiPrefix}/maps`, mapsRoutes);
 app.use(`${apiPrefix}/whatsapp`, whatsappRoutes);
 
+// Serve uploaded files (local fallback when S3 is not configured)
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
+
 // Serve static web apps (demo dashboard, driver console)
 // In Docker: cwd is /app/server, public is at /app/public
 // Locally: cwd is /project/server, public would be at /project/public
@@ -107,6 +110,7 @@ app.use('/rider', express.static(path.join(publicDir, 'rider')));
 // Legacy /demo → serves apps/demo-dashboard directly
 const appsDir = path.resolve(process.cwd(), '..', 'apps');
 app.use('/demo', express.static(path.join(appsDir, 'demo-dashboard')));
+app.get('/admin', (_req, res) => res.sendFile(path.join(appsDir, 'demo-dashboard', 'admin.html')));
 
 // Root redirect
 app.get('/', (_req, res) => {

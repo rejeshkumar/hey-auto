@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hey Auto — Admin Console</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #F5C800;
+      --primary-light: #FFFBDE;
+      --primary-dark: #D4AC00;
+      --green: #10B981;
+      --green-light: #D1FAE5;
+      --red: #EF4444;
+      --red-light: #FEE2E2;
+      --yellow: #F59E0B;
+      --yellow-light: #FEF3C7;
+      --blue: #3B82F6;
+      --blue-light: #DBEAFE;
+      --purple: #8B5CF6;
+      --purple-light: #EDE9FE;
+      --text: #1A1A2E;
+      --text2: #6B7280;
+      --text3: #9CA3AF;
+      --bg: #F3F4F6;
+      --card: #FFFFFF;
+      --border: #E5E7EB;
+      --sidebar-w: 240px;
+    }
+
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── LAYOUT ── */
+    .app { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: var(--sidebar-w); background: var(--text); color: white;
+      position: fixed; top: 0; left: 0; height: 100vh;
+      display: flex; flex-direction: column; z-index: 200;
+      transition: transform 0.3s;
+    }
+    .sidebar-logo { padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-logo h1 { font-size: 20px; color: var(--primary); font-weight: 800; }
+    .sidebar-logo span { font-size: 11px; color: rgba(255,255,255,0.4); display: block; margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+    .nav-section { padding: 8px 20px 4px; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); letter-spacing: 1px; text-transform: uppercase; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      cursor: pointer; font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.6);
+      transition: all 0.15s; border-left: 3px solid transparent;
+    }
+    .nav-item:hover { color: white; background: rgba(255,255,255,0.06); }
+    .nav-item.active { color: var(--primary); background: rgba(245,200,0,0.12); border-left-color: var(--primary); }
+    .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+    .nav-badge { margin-left: auto; background: var(--red); color: white; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+    .sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .admin-pill { display: flex; align-items: center; gap: 10px; }
+    .admin-avatar { width: 32px; height: 32px; border-radius: 16px; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .admin-info { flex: 1; }
+    .admin-info .name { font-size: 13px; font-weight: 600; color: white; }
+    .admin-info .role { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .logout-btn { font-size: 18px; cursor: pointer; opacity: 0.5; transition: opacity 0.15s; }
+    .logout-btn:hover { opacity: 1; }
+
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: var(--card); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .topbar-title { font-size: 18px; font-weight: 700; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .refresh-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; color: var(--text2); }
+    .refresh-btn:hover { background: var(--bg); }
+    .page-content { padding: 24px 28px; flex: 1; }
+
+    /* ── LOGIN ── */
+    #loginPage { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--text); }
+    .login-card { background: var(--card); border-radius: 16px; padding: 40px; width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .login-logo { text-align: center; margin-bottom: 28px; }
+    .login-logo .emoji { font-size: 40px; }
+    .login-logo h2 { font-size: 22px; font-weight: 800; margin-top: 8px; }
+    .login-logo p { color: var(--text2); font-size: 14px; margin-top: 4px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text2); }
+    .phone-row { display: flex; gap: 8px; }
+    .prefix { padding: 11px 14px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; font-weight: 700; font-size: 15px; color: var(--text2); }
+    input[type=tel], input[type=text] { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; outline: none; color: var(--text); transition: border-color 0.15s; }
+    input:focus { border-color: var(--primary); }
+    .otp-row { display: flex; gap: 8px; justify-content: center; margin: 12px 0; }
+    .otp-row input { width: 44px; height: 52px; text-align: center; font-size: 20px; font-weight: 700; padding: 0; }
+    .btn { padding: 12px 20px; border-radius: 10px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #1A1A2E; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+    .btn-sm { padding: 7px 14px; font-size: 13px; width: auto; border-radius: 8px; }
+    .btn-green { background: var(--green); color: white; }
+    .btn-green:hover { background: #059669; }
+    .btn-red { background: var(--red); color: white; }
+    .btn-red:hover { background: #DC2626; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--bg); }
+    .btn-ghost { background: transparent; border: none; color: var(--text2); padding: 7px 12px; font-size: 13px; width: auto; }
+    .btn-ghost:hover { color: var(--text); background: var(--bg); }
+    .err-msg { background: var(--red-light); color: var(--red); padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
+
+    /* ── MOBILE ── */
+    .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 6px; font-size: 22px; color: var(--text); line-height: 1; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 190; }
+    .sidebar-overlay.visible { display: block; }
+    .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); z-index: 150; padding: 6px 0 env(safe-area-inset-bottom, 6px); }
+    .bottom-nav-inner { display: flex; justify-content: space-around; }
+    .bnav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 12px; cursor: pointer; border-radius: 10px; min-width: 56px; position: relative; }
+    .bnav-item .bicon { font-size: 20px; }
+    .bnav-item .blabel { font-size: 10px; font-weight: 600; color: var(--text2); }
+    .bnav-item.active .blabel { color: var(--primary); }
+    .bnav-item .bdot { position: absolute; top: 4px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--red); display: none; border: 2px solid var(--card); }
+    .bnav-item .bdot.visible { display: block; }
+
+    @media (max-width: 768px) {
+      .hamburger { display: flex; align-items: center; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.3); }
+      .main { margin-left: 0; }
+      .topbar { padding: 12px 16px; }
+      .topbar-title { font-size: 16px; }
+      .refresh-btn span { display: none; }
+      .refresh-btn { padding: 7px 10px; }
+      .page-content { padding: 16px; padding-bottom: 80px; }
+      .login-card { width: 100%; max-width: 380px; padding: 28px 20px; margin: 16px; border-radius: 20px; }
+      .bottom-nav { display: block; }
+      .table-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .table-filters { width: 100%; }
+      .search-input { width: 100%; }
+      table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .modal { width: calc(100% - 32px); max-height: 90vh; overflow-y: auto; }
+      .modal-overlay { align-items: flex-end; padding: 0; }
+      .modal { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-radius: 20px 20px 0 0; }
+      .fare-form-actions { flex-direction: column; }
+    }
+
+    /* ── STATS GRID ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
+    @media (max-width: 400px)  { .stats-grid { grid-template-columns: 1fr 1fr; } }
+    .stat-card { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid var(--border); }
+    .stat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .stat-value { font-size: 28px; font-weight: 800; color: var(--text); }
+    .stat-label { font-size: 13px; color: var(--text2); margin-top: 3px; }
+    .stat-sub { font-size: 12px; color: var(--text3); margin-top: 6px; }
+
+    /* ── TABLES ── */
+    .table-card { background: var(--card); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid var(--border); overflow: hidden; }
+    .table-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: gap; gap: 12px; }
+    .table-header h3 { font-size: 15px; font-weight: 700; }
+    .table-filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .search-input { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; width: 200px; }
+    .search-input:focus { border-color: var(--primary); }
+    select.filter-select { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; background: var(--card); color: var(--text); cursor: pointer; }
+    select.filter-select:focus { border-color: var(--primary); }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 11px 16px; text-align: left; font-size: 12px; font-weight: 700; color: var(--text2); background: var(--bg); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
+    td { padding: 13px 16px; font-size: 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #FAFAFA; }
+    .table-empty { text-align: center; padding: 48px; color: var(--text3); font-size: 14px; }
+    .table-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--text2); }
+    .pagination { display: flex; gap: 6px; }
+    .page-btn { padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); font-size: 13px; cursor: pointer; }
+    .page-btn:hover { background: var(--bg); }
+    .page-btn.active { background: var(--primary); color: #1A1A2E; border-color: var(--primary); }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── BADGES ── */
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .badge-green { background: var(--green-light); color: #065F46; }
+    .badge-red { background: var(--red-light); color: #991B1B; }
+    .badge-yellow { background: var(--yellow-light); color: #92400E; }
+    .badge-blue { background: var(--blue-light); color: #1E40AF; }
+    .badge-purple { background: var(--purple-light); color: #5B21B6; }
+    .badge-gray { background: var(--bg); color: var(--text2); }
+
+    /* ── USER CELL ── */
+    .user-cell { display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 34px; height: 34px; border-radius: 17px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--primary); flex-shrink: 0; }
+    .user-name { font-weight: 600; font-size: 14px; }
+    .user-phone { font-size: 12px; color: var(--text2); }
+
+    /* ── DOC CARD ── */
+    .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; padding: 20px; }
+    .doc-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; padding: 18px; }
+    .doc-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+    .doc-driver { display: flex; align-items: center; gap: 10px; }
+    .doc-type-badge { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--purple-light); color: var(--purple); }
+    .doc-meta { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+    .doc-meta span { display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; }
+    .doc-actions { display: flex; gap: 8px; }
+    .doc-number { font-size: 12px; font-family: monospace; background: var(--bg); padding: 4px 8px; border-radius: 6px; color: var(--text2); margin-bottom: 10px; }
+
+    /* ── RIDE ROW ── */
+    .route-mini { font-size: 13px; }
+    .route-mini .from { color: var(--green); font-weight: 500; }
+    .route-mini .arrow { color: var(--text3); margin: 0 4px; }
+    .route-mini .to { color: var(--red); font-weight: 500; }
+
+    /* ── FARE CONFIG ── */
+    .fare-form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 20px; }
+    @media (max-width: 768px) { .fare-form { grid-template-columns: 1fr; } .fare-form-actions { grid-column: 1; } }
+    .fare-form-group { }
+    .fare-form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+    .fare-form-group input, .fare-form-group select { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; }
+    .fare-form-group input:focus, .fare-form-group select:focus { border-color: var(--primary); }
+    .fare-form-group .hint { font-size: 12px; color: var(--text3); margin-top: 4px; }
+    .fare-form-actions { grid-column: span 2; display: flex; justify-content: flex-end; gap: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+
+    /* ── MODAL ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal { background: var(--card); border-radius: 16px; width: 520px; max-width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 90vh; display: flex; flex-direction: column; }
+    .modal-body { overflow-y: auto; flex: 1; }
+    .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-header h3 { font-size: 16px; font-weight: 700; }
+    .modal-close { font-size: 20px; cursor: pointer; color: var(--text2); background: none; border: none; }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+    .detail-row { display: flex; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .detail-row:last-child { border: none; }
+    .detail-label { color: var(--text2); width: 140px; flex-shrink: 0; }
+    .detail-value { font-weight: 500; }
+    .doc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .doc-chip { padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+    .reject-reason { width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; margin-top: 8px; resize: vertical; min-height: 70px; }
+    .reject-reason:focus { border-color: var(--red); }
+
+    /* ── TOAST ── */
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+    .toast { padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.15); animation: slideUp 0.3s ease; display: flex; align-items: center; gap: 8px; max-width: 320px; }
+    .toast-success { background: var(--green); color: white; }
+    .toast-error { background: var(--red); color: white; }
+    .toast-info { background: var(--text); color: white; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    /* ── LOADING ── */
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-row td { text-align: center; padding: 32px; color: var(--text3); }
+
+    .hidden { display: none !important; }
+    .text-right { text-align: right; }
+    .font-mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; }
+    .text-green { color: var(--green); }
+    .text-red { color: var(--red); }
+    .text-yellow { color: var(--yellow); }
+    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+    /* ── SUBSCRIPTION CARD ── */
+    .sub-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; padding: 18px; }
+    .sub-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+    .sub-driver { display: flex; align-items: center; gap: 10px; }
+    .sub-meta { font-size: 13px; color: var(--text2); margin-bottom: 12px; }
+    .sub-meta span { display: inline-flex; align-items: center; gap: 4px; margin-right: 14px; }
+    .sub-utr { font-size: 12px; font-family: monospace; background: var(--bg); padding: 6px 10px; border-radius: 8px; color: var(--text); margin-bottom: 12px; letter-spacing: 1px; font-weight: 700; border: 1px solid var(--border); word-break: break-all; }
+    .sub-actions { display: flex; gap: 8px; }
+    .sub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; padding: 20px; }
+    .sub-tabs { display: flex; gap: 4px; padding: 16px 20px 0; border-bottom: 1px solid var(--border); }
+    .sub-tab { padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text2); }
+    .sub-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* ── DOC IMAGE PREVIEW ── */
+    .doc-img-wrap { width: 100%; height: 140px; background: var(--bg); border-radius: 8px; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); cursor: pointer; position: relative; }
+    .doc-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .doc-img-wrap .doc-no-img { font-size: 32px; color: var(--text3); }
+    .doc-img-wrap .doc-img-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; color: white; font-size: 13px; font-weight: 600; gap: 6px; }
+    .doc-img-wrap:hover .doc-img-overlay { opacity: 1; }
+
+    /* ── LIGHTBOX ── */
+    #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 2000; display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
+    #lightbox img { max-width: 92vw; max-height: 88vh; border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position: absolute; top: 16px; right: 20px; font-size: 28px; color: white; cursor: pointer; line-height: 1; }
+
+    /* ── DASHBOARD LIVE ── */
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; animation: pulse 2s infinite; margin-right: 6px; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .rides-live-list { padding: 0 20px 16px; max-height: 320px; overflow-y: auto; }
+    .ride-live-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .ride-live-item:last-child { border: none; }
+    .ride-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<!-- ══ LOGIN PAGE ══ -->
+<div id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="emoji">🛺</div>
+      <h2>Admin Console</h2>
+      <p>Hey Auto — Taliparamba Operations</p>
+    </div>
+    <div id="phoneStep">
+      <div class="form-group">
+        <label>Admin Phone Number</label>
+        <div class="phone-row">
+          <span class="prefix">+91</span>
+          <input type="tel" id="loginPhone" placeholder="9000000099" maxlength="10" value="9000000099">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="sendOtpBtn" onclick="sendOtp()">Send OTP</button>
+      <div id="sendErr" class="err-msg"></div>
+      <p style="margin-top:12px;font-size:12px;color:var(--text3);text-align:center">Dev mode: any phone · OTP: 123456</p>
+    </div>
+    <div id="otpStep" class="hidden">
+      <div class="form-group">
+        <label id="otpLabel">OTP sent</label>
+        <div class="otp-row">
+          <input type="text" maxlength="1" oninput="otpNav(this,0)" id="o0">
+          <input type="text" maxlength="1" oninput="otpNav(this,1)" id="o1">
+          <input type="text" maxlength="1" oninput="otpNav(this,2)" id="o2">
+          <input type="text" maxlength="1" oninput="otpNav(this,3)" id="o3">
+          <input type="text" maxlength="1" oninput="otpNav(this,4)" id="o4">
+          <input type="text" maxlength="1" oninput="otpNav(this,5)" id="o5">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="verifyOtpBtn" onclick="verifyOtp()">Login to Admin</button>
+      <div id="verifyErr" class="err-msg"></div>
+      <button class="btn-ghost btn" style="margin-top:8px" onclick="backToPhone()">← Change number</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="appPage" class="app hidden">
+
+  <!-- Mobile sidebar overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- Bottom nav (mobile only) -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <div class="bnav-item active" id="bnav-dashboard" onclick="showTab('dashboard')">
+        <span class="bicon">📊</span><span class="blabel">Dashboard</span>
+      </div>
+      <div class="bnav-item" id="bnav-drivers" onclick="showTab('drivers')">
+        <span class="bicon">🧑‍✈️</span><span class="blabel">Drivers</span>
+      </div>
+      <div class="bnav-item" id="bnav-documents" onclick="showTab('documents')">
+        <span class="bicon">📄</span><span class="blabel">Docs</span>
+        <span class="bdot" id="bnavDocDot"></span>
+      </div>
+      <div class="bnav-item" id="bnav-subscriptions" onclick="showTab('subscriptions')">
+        <span class="bicon">💳</span><span class="blabel">Subs</span>
+        <span class="bdot" id="bnavSubDot"></span>
+      </div>
+      <div class="bnav-item" id="bnav-rides" onclick="showTab('rides')">
+        <span class="bicon">🚗</span><span class="blabel">Rides</span>
+      </div>
+      <div class="bnav-item" id="bnav-fare" onclick="showTab('fare')">
+        <span class="bicon">💰</span><span class="blabel">Fares</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <h1>🛺 Hey Auto</h1>
+      <span>Admin Console</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Overview</div>
+      <div class="nav-item active" onclick="showTab('dashboard')" id="nav-dashboard">
+        <span class="icon">📊</span> Dashboard
+      </div>
+
+      <div class="nav-section" style="margin-top:8px">Users</div>
+      <div class="nav-item" onclick="showTab('drivers')" id="nav-drivers">
+        <span class="icon">🧑‍✈️</span> Drivers
+      </div>
+      <div class="nav-item" onclick="showTab('riders')" id="nav-riders">
+        <span class="icon">👥</span> Riders
+      </div>
+      <div class="nav-item" onclick="showTab('documents')" id="nav-documents">
+        <span class="icon">📄</span> Documents
+        <span class="nav-badge hidden" id="docBadge">0</span>
+      </div>
+
+      <div class="nav-item" onclick="showTab('subscriptions')" id="nav-subscriptions">
+        <span class="icon">💳</span> Subscriptions
+        <span class="nav-badge hidden" id="subBadge">0</span>
+      </div>
+
+      <div class="nav-section" style="margin-top:8px">Rides</div>
+      <div class="nav-item" onclick="showTab('rides')" id="nav-rides">
+        <span class="icon">🚗</span> Ride History
+      </div>
+
+      <div class="nav-section" style="margin-top:8px">Config</div>
+      <div class="nav-item" onclick="showTab('fare')" id="nav-fare">
+        <span class="icon">💰</span> Fare Config
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="admin-pill">
+        <div class="admin-avatar">👤</div>
+        <div class="admin-info">
+          <div class="name" id="sidebarName">Admin</div>
+          <div class="role">Administrator</div>
+        </div>
+        <span class="logout-btn" onclick="logout()" title="Logout">⏏</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+        <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      </div>
+      <div class="topbar-right">
+        <span style="font-size:13px;color:var(--text2)"><span class="live-dot"></span>Live</span>
+        <button class="refresh-btn" onclick="refreshCurrent()">↻ <span>Refresh</span></button>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- ── DASHBOARD ── -->
+      <div id="tab-dashboard">
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card"><div class="stat-header"><div><div class="stat-value" id="s-riders">—</div><div class="stat-label">Total Riders</div></div><div class="stat-icon" style="background:var(--blue-light);font-size:20px">👥</div></div><div class="stat-sub" id="s-riders-sub"></div></div>
+          <div class="stat-card"><div class="stat-header"><div><div class="stat-value" id="s-drivers">—</div><div class="stat-label">Total Drivers</div></div><div class="stat-icon" style="background:var(--green-light);font-size:20px">🧑‍✈️</div></div><div class="stat-sub" id="s-drivers-sub"></div></div>
+          <div class="stat-card"><div class="stat-header"><div><div class="stat-value" id="s-rides">—</div><div class="stat-label">Rides Today</div></div><div class="stat-icon" style="background:var(--primary-light);font-size:20px">🛺</div></div><div class="stat-sub" id="s-rides-sub"></div></div>
+          <div class="stat-card"><div class="stat-header"><div><div class="stat-value" id="s-revenue">—</div><div class="stat-label">Revenue Today</div></div><div class="stat-icon" style="background:var(--yellow-light);font-size:20px">💰</div></div><div class="stat-sub" id="s-revenue-sub"></div></div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <h3><span class="live-dot"></span>Active Rides</h3>
+            <span id="activeRideCount" style="font-size:13px;color:var(--text2)"></span>
+          </div>
+          <div id="activeRidesBody">
+            <div class="table-empty">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DRIVERS ── -->
+      <div id="tab-drivers" class="hidden">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Drivers</h3>
+            <div class="table-filters">
+              <button class="btn btn-primary btn-sm" onclick="openAddDriverModal()">➕ Add Driver</button>
+              <input class="search-input" id="driverSearch" placeholder="Search name or phone…" oninput="debouncedDriverSearch()" />
+              <select class="filter-select" id="driverStatusFilter" onchange="loadDrivers(1)">
+                <option value="">All Status</option>
+                <option value="PENDING">Pending</option>
+                <option value="VERIFIED">Verified</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Driver</th>
+              <th>City</th>
+              <th>Status</th>
+              <th>Vehicle</th>
+              <th>Documents</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody id="driversBody"><tr class="loading-row"><td colspan="7">Loading drivers…</td></tr></tbody>
+          </table>
+          <div class="table-footer">
+            <span id="driversMeta"></span>
+            <div class="pagination" id="driversPagination"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DOCUMENTS ── -->
+      <div id="tab-documents" class="hidden">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Document Verifications</h3>
+            <div style="display:flex;align-items:center;gap:12px">
+              <select class="filter-select" id="docStatusFilter" onchange="loadDocuments(1)">
+                <option value="PENDING">Pending Review</option>
+                <option value="VERIFIED">Verified</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+              <span id="docsMeta" style="font-size:13px;color:var(--text2)"></span>
+            </div>
+          </div>
+          <div id="docsGrid" class="doc-grid">
+            <div class="table-empty" style="grid-column:1/-1">Loading documents…</div>
+          </div>
+          <div class="table-footer">
+            <span id="docsFooterMeta"></span>
+            <div class="pagination" id="docsPagination"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SUBSCRIPTIONS ── -->
+      <div id="tab-subscriptions" class="hidden">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Subscriptions</h3>
+            <span id="subMeta" style="font-size:13px;color:var(--text2)"></span>
+          </div>
+          <div class="sub-tabs">
+            <div class="sub-tab active" id="subTabPending" onclick="switchSubTab('pending')">⏳ Pending Verification</div>
+            <div class="sub-tab" id="subTabAll" onclick="switchSubTab('all')">📋 All Subscriptions</div>
+          </div>
+          <div id="subGrid" class="sub-grid">
+            <div class="table-empty" style="grid-column:1/-1">Loading…</div>
+          </div>
+          <div class="table-footer">
+            <span id="subFooterMeta"></span>
+            <div class="pagination" id="subPagination"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RIDES ── -->
+      <div id="tab-rides" class="hidden">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Ride History</h3>
+            <div class="table-filters">
+              <select class="filter-select" id="rideStatusFilter" onchange="loadRides(1)">
+                <option value="">All Status</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="REQUESTED">Requested</option>
+                <option value="CANCELLED_RIDER">Cancelled (Rider)</option>
+                <option value="CANCELLED_DRIVER">Cancelled (Driver)</option>
+                <option value="NO_DRIVERS">No Drivers</option>
+              </select>
+              <input type="date" class="filter-select" id="rideDateFrom" onchange="loadRides(1)">
+              <input type="date" class="filter-select" id="rideDateTo" onchange="loadRides(1)">
+            </div>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Ride</th>
+              <th>Route</th>
+              <th>Rider</th>
+              <th>Driver</th>
+              <th>Fare</th>
+              <th>Status</th>
+              <th>Time</th>
+            </tr></thead>
+            <tbody id="ridesBody"><tr class="loading-row"><td colspan="7">Loading rides…</td></tr></tbody>
+          </table>
+          <div class="table-footer">
+            <span id="ridesMeta"></span>
+            <div class="pagination" id="ridesPagination"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RIDERS ── -->
+      <div id="tab-riders" class="hidden">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Riders</h3>
+            <div class="table-filters">
+              <input class="search-input" id="riderSearch" placeholder="Search name or phone…" oninput="debouncedRiderSearch()" />
+            </div>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Rider</th>
+              <th>Status</th>
+              <th>Rating</th>
+              <th>Total Rides</th>
+              <th>Joined</th>
+            </tr></thead>
+            <tbody id="ridersBody"><tr class="loading-row"><td colspan="5">Loading riders…</td></tr></tbody>
+          </table>
+          <div class="table-footer">
+            <span id="ridersMeta"></span>
+            <div class="pagination" id="ridersPagination"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FARE CONFIG ── -->
+      <div id="tab-fare" class="hidden">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Fare Configuration</h3>
+            <span style="font-size:13px;color:var(--text2)">Changes take effect immediately</span>
+          </div>
+          <form class="fare-form" onsubmit="saveFareConfig(event)">
+            <div class="fare-form-group">
+              <label>City</label>
+              <input type="text" id="fc-city" value="Taliparamba" required>
+            </div>
+            <div class="fare-form-group">
+              <label>Vehicle Type</label>
+              <select id="fc-type">
+                <option value="AUTO">Auto Rickshaw</option>
+                <option value="E_AUTO">E-Auto</option>
+              </select>
+            </div>
+            <div class="fare-form-group">
+              <label>Base Fare (₹)</label>
+              <input type="number" id="fc-base" value="30" min="0" step="0.5" required>
+              <div class="hint">Covers the first base distance</div>
+            </div>
+            <div class="fare-form-group">
+              <label>Base Distance (km)</label>
+              <input type="number" id="fc-basedist" value="1.5" min="0" step="0.1" required>
+            </div>
+            <div class="fare-form-group">
+              <label>Per Km Rate (₹)</label>
+              <input type="number" id="fc-perkm" value="15" min="0" step="0.5" required>
+            </div>
+            <div class="fare-form-group">
+              <label>Per Min Rate (₹)</label>
+              <input type="number" id="fc-permin" value="1" min="0" step="0.1" required>
+              <div class="hint">Waiting / traffic charge</div>
+            </div>
+            <div class="fare-form-group">
+              <label>Minimum Fare (₹)</label>
+              <input type="number" id="fc-min" value="30" min="0" step="0.5" required>
+            </div>
+            <div class="fare-form-group">
+              <label>Night Surcharge Multiplier</label>
+              <input type="number" id="fc-night" value="1.25" min="1" max="3" step="0.05" required>
+              <div class="hint">e.g. 1.25 = 25% surcharge (10 PM – 5 AM)</div>
+            </div>
+            <div class="fare-form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" id="fareSubmitBtn">💾 Save Fare Config</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADD DRIVER MODAL ══ -->
+<div class="modal-overlay hidden" id="addDriverModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add New Driver</h3>
+      <button class="modal-close" onclick="closeModal('addDriverModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="addDriverForm">
+        <div class="fare-form-group" style="grid-column:span 2">
+          <label>Phone Number</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-weight:700;color:var(--text2);white-space:nowrap">+91</span>
+            <input type="tel" id="ad-phone" placeholder="9876543210" maxlength="10">
+          </div>
+        </div>
+        <div class="fare-form-group" style="grid-column:span 2">
+          <label>Full Name</label>
+          <input type="text" id="ad-name" placeholder="e.g. Rajan K">
+        </div>
+        <div class="fare-form-group">
+          <label>City</label>
+          <input type="text" id="ad-city" value="Taliparamba">
+        </div>
+        <div class="fare-form-group">
+          <label>License Number</label>
+          <input type="text" id="ad-license" placeholder="KL13 20240001">
+        </div>
+        <div class="fare-form-group">
+          <label>Vehicle Make</label>
+          <input type="text" id="ad-make" placeholder="Bajaj">
+        </div>
+        <div class="fare-form-group">
+          <label>Vehicle Model</label>
+          <input type="text" id="ad-model" placeholder="RE">
+        </div>
+        <div class="fare-form-group">
+          <label>Registration Plate</label>
+          <input type="text" id="ad-plate" placeholder="KL 13 AB 1234">
+        </div>
+        <div class="fare-form-group">
+          <label>Vehicle Type</label>
+          <select id="ad-vtype" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+            <option value="AUTO">Auto Rickshaw</option>
+            <option value="E_AUTO">E-Auto</option>
+          </select>
+        </div>
+        <div class="fare-form-group" style="grid-column:span 2">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="ad-verify" checked style="width:16px;height:16px;accent-color:var(--green)">
+            Auto-verify driver (mark as Verified immediately)
+          </label>
+        </div>
+      </div>
+      <div id="addDriverErr" class="err-msg"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('addDriverModal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="addDriverBtn" onclick="submitAddDriver()">➕ Add Driver</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DRIVER DETAIL MODAL ══ -->
+<div class="modal-overlay hidden" id="driverModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Driver Details</h3>
+      <button class="modal-close" onclick="closeModal('driverModal')">✕</button>
+    </div>
+    <div class="modal-body" id="driverModalBody"></div>
+    <div class="modal-footer" id="driverModalFooter"></div>
+  </div>
+</div>
+
+<!-- ══ REJECT REASON MODAL ══ -->
+<div class="modal-overlay hidden" id="rejectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="rejectModalTitle">Reject</h3>
+      <button class="modal-close" onclick="closeModal('rejectModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--text2);margin-bottom:8px">Please provide a reason for rejection:</p>
+      <textarea class="reject-reason" id="rejectReasonInput" placeholder="e.g. Document is blurry, expired, or doesn't match details..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('rejectModal')">Cancel</button>
+      <button class="btn btn-red btn-sm" id="rejectConfirmBtn">Confirm Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LIGHTBOX ══ -->
+<div id="lightbox" class="hidden" onclick="closeLightbox()">
+  <span class="lb-close" onclick="closeLightbox()">✕</span>
+  <img id="lightboxImg" src="" alt="Document">
+</div>
+
+<!-- ══ TOAST CONTAINER ══ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const API = window.location.origin + '/api/v1';
+let token = '';
+let adminUser = null;
+let currentTab = 'dashboard';
+let driverPage = 1, ridePage = 1, docPage = 1, subPage = 1, riderPage = 1;
+let dashboardInterval = null;
+let rejectCallback = null;
+let searchDebounce = null;
+let currentSubTab = 'pending';
+
+// ─── MOBILE SIDEBAR ──────────────────────────────────────────────
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const open = sidebar.classList.toggle('open');
+  overlay.classList.toggle('visible', open);
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('visible');
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────
+
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  const json = await res.json();
+  if (!json.success && json.error?.code === 'UNAUTHORIZED') { logout(); }
+  return json;
+}
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = 'toast toast-' + type;
+  el.innerHTML = (type === 'success' ? '✓ ' : type === 'error' ? '✕ ' : 'ℹ ') + msg;
+  const c = document.getElementById('toastContainer');
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 5000);
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function fmtTime(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtMoney(n) {
+  if (!n && n !== 0) return '—';
+  return '₹' + parseFloat(n).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function initials(name) {
+  if (!name) return '?';
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function statusBadge(status) {
+  const map = {
+    VERIFIED:        ['badge-green', '● Verified'],
+    PENDING:         ['badge-yellow', '○ Pending'],
+    IN_REVIEW:       ['badge-blue', '◎ In Review'],
+    REJECTED:        ['badge-red', '✕ Rejected'],
+    ACTIVE:          ['badge-green', '● Active'],
+    SUSPENDED:       ['badge-red', '⊘ Suspended'],
+    COMPLETED:       ['badge-green', '✓ Completed'],
+    IN_PROGRESS:     ['badge-blue', '▶ In Progress'],
+    REQUESTED:       ['badge-yellow', '⌛ Requested'],
+    DRIVER_ASSIGNED: ['badge-blue', '🔀 Assigned'],
+    DRIVER_ARRIVED:  ['badge-blue', '📍 Arrived'],
+    OTP_VERIFIED:    ['badge-blue', '🔑 OTP Done'],
+    CANCELLED_RIDER: ['badge-red', '✕ Cancelled'],
+    CANCELLED_DRIVER:['badge-red', '✕ Cancelled'],
+    NO_DRIVERS:      ['badge-gray', 'No Drivers'],
+  };
+  const [cls, label] = map[status] || ['badge-gray', status];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function docTypeName(t) {
+  const m = { LICENSE:'Driving License', VEHICLE_RC:'Vehicle RC', INSURANCE:'Insurance', PERMIT:'Permit', AADHAAR:'Aadhaar', PHOTO:'Driver Photo', VEHICLE_PHOTO:'Vehicle Photo' };
+  return m[t] || t;
+}
+
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function openRejectModal(title, cb) {
+  document.getElementById('rejectModalTitle').textContent = title;
+  document.getElementById('rejectReasonInput').value = '';
+  rejectCallback = cb;
+  document.getElementById('rejectModal').classList.remove('hidden');
+  document.getElementById('rejectConfirmBtn').onclick = () => {
+    const reason = document.getElementById('rejectReasonInput').value.trim();
+    if (!reason) { toast('Please enter a rejection reason', 'error'); return; }
+    closeModal('rejectModal');
+    cb(reason);
+  };
+}
+
+function renderPagination(containerId, currentPage, total, limit, onPage) {
+  const totalPages = Math.ceil(total / limit) || 1;
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  if (totalPages <= 1) return;
+
+  const prev = document.createElement('button');
+  prev.className = 'page-btn';
+  prev.textContent = '←';
+  prev.disabled = currentPage <= 1;
+  prev.onclick = () => onPage(currentPage - 1);
+  el.appendChild(prev);
+
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+    btn.textContent = i;
+    btn.onclick = () => onPage(i);
+    el.appendChild(btn);
+  }
+
+  const next = document.createElement('button');
+  next.className = 'page-btn';
+  next.textContent = '→';
+  next.disabled = currentPage >= totalPages;
+  next.onclick = () => onPage(currentPage + 1);
+  el.appendChild(next);
+}
+
+// ─── AUTH ────────────────────────────────────────────────────────
+
+async function sendOtp() {
+  const phone = document.getElementById('loginPhone').value.trim();
+  if (phone.length !== 10 || !/^\d+$/.test(phone)) { showErr('sendErr', 'Enter a valid 10-digit number'); return; }
+  const btn = document.getElementById('sendOtpBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Sending…';
+  const data = await api('POST', '/auth/send-otp', { phone, role: 'ADMIN' });
+  btn.disabled = false; btn.textContent = 'Send OTP';
+  if (data.success) {
+    document.getElementById('phoneStep').classList.add('hidden');
+    document.getElementById('otpStep').classList.remove('hidden');
+    const hint = data.data?.otp ? ` (OTP: ${data.data.otp})` : '';
+    document.getElementById('otpLabel').textContent = `OTP sent to +91 ${phone}${hint}`;
+    document.getElementById('o0').focus();
+  } else {
+    showErr('sendErr', data.error?.message || 'Failed to send OTP');
+  }
+}
+
+function otpNav(el, idx) {
+  el.value = el.value.replace(/[^0-9]/g, '');
+  if (el.value && idx < 5) document.getElementById('o' + (idx + 1)).focus();
+  if (idx === 5 && el.value) verifyOtp();
+}
+
+function backToPhone() {
+  document.getElementById('otpStep').classList.add('hidden');
+  document.getElementById('phoneStep').classList.remove('hidden');
+}
+
+async function verifyOtp() {
+  const phone = document.getElementById('loginPhone').value.trim();
+  const otp = [0,1,2,3,4,5].map(i => document.getElementById('o' + i).value).join('');
+  if (otp.length !== 6) { showErr('verifyErr', 'Enter all 6 digits'); return; }
+  const btn = document.getElementById('verifyOtpBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Verifying…';
+  const data = await api('POST', '/auth/verify-otp', { phone, otp, role: 'ADMIN' });
+  btn.disabled = false; btn.textContent = 'Login to Admin';
+  if (data.success) {
+    token = data.data.tokens.accessToken;
+    adminUser = data.data.user;
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('appPage').classList.remove('hidden');
+    document.getElementById('sidebarName').textContent = adminUser.fullName || 'Admin';
+    initApp();
+  } else {
+    showErr('verifyErr', data.error?.message || 'Invalid OTP');
+  }
+}
+
+function logout() {
+  token = ''; adminUser = null;
+  if (dashboardInterval) { clearInterval(dashboardInterval); dashboardInterval = null; }
+  document.getElementById('appPage').classList.add('hidden');
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('phoneStep').classList.remove('hidden');
+  document.getElementById('otpStep').classList.add('hidden');
+  [0,1,2,3,4,5].forEach(i => document.getElementById('o'+i).value = '');
+}
+
+// ─── APP INIT ────────────────────────────────────────────────────
+
+function initApp() {
+  showTab('dashboard');
+  loadDocBadge();
+  loadSubBadge();
+}
+
+function showTab(tab) {
+  ['dashboard','drivers','riders','documents','subscriptions','rides','fare'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
+    document.getElementById('nav-' + t).classList.toggle('active', t === tab);
+    const bn = document.getElementById('bnav-' + t);
+    if (bn) bn.classList.toggle('active', t === tab);
+  });
+  const titles = { dashboard:'Dashboard', drivers:'Drivers', riders:'Riders', documents:'Document Verifications', subscriptions:'Subscriptions', rides:'Ride History', fare:'Fare Configuration' };
+  document.getElementById('topbarTitle').textContent = titles[tab] || tab;
+  currentTab = tab;
+  closeSidebar();
+
+  if (dashboardInterval) { clearInterval(dashboardInterval); dashboardInterval = null; }
+
+  if (tab === 'dashboard') { loadDashboard(); dashboardInterval = setInterval(loadDashboard, 30000); }
+  else if (tab === 'drivers') loadDrivers(1);
+  else if (tab === 'riders') loadRiders(1);
+  else if (tab === 'documents') loadDocuments(1);
+  else if (tab === 'subscriptions') loadSubscriptions(1);
+  else if (tab === 'rides') loadRides(1);
+}
+
+function refreshCurrent() { showTab(currentTab); }
+
+// ─── DASHBOARD ───────────────────────────────────────────────────
+
+async function loadDashboard() {
+  const data = await api('GET', '/admin/dashboard');
+  if (!data.success) return;
+  const d = data.data;
+
+  document.getElementById('s-riders').textContent = (d.riders.total || 0).toLocaleString();
+  document.getElementById('s-riders-sub').textContent = 'registered riders';
+
+  document.getElementById('s-drivers').textContent = (d.drivers.total || 0).toLocaleString();
+  document.getElementById('s-drivers-sub').innerHTML =
+    `<span class="text-green">${d.drivers.verified} verified</span> · <span style="color:var(--blue)">${d.drivers.online} online</span>` +
+    (d.drivers.pendingVerifications > 0 ? ` · <span class="text-yellow">${d.drivers.pendingVerifications} pending</span>` : '');
+
+  document.getElementById('s-rides').textContent = (d.rides.today || 0).toLocaleString();
+  document.getElementById('s-rides-sub').innerHTML =
+    `<span class="text-green">${d.rides.completedToday} completed</span>` +
+    (d.rides.active > 0 ? ` · <span class="text-blue">${d.rides.active} active now</span>` : '');
+
+  document.getElementById('s-revenue').textContent = fmtMoney(d.revenue.today);
+  document.getElementById('s-revenue-sub').textContent = 'today\'s completed ride revenue';
+
+  loadActiveRides(d.rides.active);
+}
+
+async function loadActiveRides(count) {
+  document.getElementById('activeRideCount').textContent = count > 0 ? `${count} active` : 'No active rides';
+  const data = await api('GET', '/admin/rides?status=IN_PROGRESS&limit=10');
+  const el = document.getElementById('activeRidesBody');
+  if (!data.success || !data.data?.length) {
+    el.innerHTML = '<div class="table-empty">No active rides right now</div>';
+    return;
+  }
+  el.innerHTML = `<table style="width:100%">
+    <thead><tr><th>Rider</th><th>Driver</th><th>Route</th><th>Fare</th><th>Started</th></tr></thead>
+    <tbody>
+      ${data.data.map(r => `
+        <tr>
+          <td>${r.rider ? `<div class="user-cell"><div class="avatar">${initials(r.rider.fullName)}</div><div><div class="user-name">${r.rider.fullName || '—'}</div></div></div>` : '—'}</td>
+          <td>${r.driver ? `<div class="user-name">${r.driver.fullName || '—'}</div>` : '—'}</td>
+          <td><div class="route-mini"><span class="from">${truncate(r.pickupAddress, 22)}</span><span class="arrow">→</span><span class="to">${truncate(r.dropoffAddress, 22)}</span></div></td>
+          <td>${fmtMoney(r.estimatedFare)}</td>
+          <td>${fmtTime(r.startedAt)}</td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function truncate(s, n) { return s && s.length > n ? s.slice(0, n) + '…' : (s || '—'); }
+
+// ─── DRIVERS ────────────────────────────────────────────────────
+
+async function loadDrivers(page) {
+  driverPage = page;
+  const search = document.getElementById('driverSearch').value.trim();
+  const status = document.getElementById('driverStatusFilter').value;
+  let qs = `?page=${page}&limit=15`;
+  if (search) qs += '&search=' + encodeURIComponent(search);
+  if (status) qs += '&status=' + status;
+
+  const tbody = document.getElementById('driversBody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Loading…</td></tr>';
+
+  const data = await api('GET', '/admin/drivers' + qs);
+  if (!data.success) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Failed to load</td></tr>'; return; }
+
+  const { data: drivers, total } = data;
+  if (!drivers?.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7">No drivers found</td></tr>'; return; }
+
+  tbody.innerHTML = drivers.map(d => {
+    const profile = d.profile || {};
+    const vehicles = profile.vehicles || [];
+    const docs = profile.documents || [];
+    const verifiedDocs = docs.filter(x => x.status === 'VERIFIED').length;
+    const vehicleStr = vehicles[0] ? `${vehicles[0].make || ''} ${vehicles[0].model || ''} · ${vehicles[0].plateNumber || ''}`.trim() : '—';
+    return `<tr>
+      <td><div class="user-cell"><div class="avatar">${initials(d.fullName)}</div><div><div class="user-name">${d.fullName || 'Unnamed'}</div><div class="user-phone">${d.phone}</div></div></div></td>
+      <td>${profile.city || '—'}</td>
+      <td>${statusBadge(profile.verificationStatus || 'PENDING')}</td>
+      <td style="font-size:13px">${vehicleStr}</td>
+      <td><span class="badge ${verifiedDocs === docs.length && docs.length > 0 ? 'badge-green' : 'badge-yellow'}">${verifiedDocs}/${docs.length} docs</span></td>
+      <td style="font-size:13px;color:var(--text2)">${fmtDate(d.createdAt)}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-outline" onclick="openDriverModal('${d.id}')">View</button>
+          ${profile.verificationStatus === 'PENDING' || profile.verificationStatus === 'IN_REVIEW' ? `
+            <button class="btn btn-sm btn-green" onclick="verifyDriver('${d.id}','verify')">✓</button>
+            <button class="btn btn-sm btn-red" onclick="promptRejectDriver('${d.id}')">✕</button>
+          ` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('driversMeta').textContent = `Showing ${(page-1)*15 + 1}–${Math.min(page*15, total)} of ${total}`;
+  renderPagination('driversPagination', page, total, 15, loadDrivers);
+}
+
+function debouncedDriverSearch() {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => loadDrivers(1), 350);
+}
+
+// ─── RIDERS ─────────────────────────────────────────────────────
+
+async function loadRiders(page) {
+  riderPage = page;
+  const search = document.getElementById('riderSearch').value.trim();
+  let qs = `?page=${page}&limit=20`;
+  if (search) qs += '&search=' + encodeURIComponent(search);
+
+  const tbody = document.getElementById('ridersBody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Loading…</td></tr>';
+
+  const data = await api('GET', '/admin/riders' + qs);
+  if (!data.success) { tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Failed to load</td></tr>'; return; }
+
+  const { data: riders, total, hasMore } = data;
+  if (!riders?.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="5">No riders found</td></tr>'; return; }
+
+  tbody.innerHTML = riders.map(r => `
+    <tr>
+      <td>
+        <div class="user-cell">
+          <div class="avatar">${initials(r.fullName)}</div>
+          <div><div class="user-name">${r.fullName}</div><div class="user-phone">${r.phone}</div></div>
+        </div>
+      </td>
+      <td><span class="badge ${r.status === 'ACTIVE' ? 'badge-green' : r.status === 'SUSPENDED' ? 'badge-red' : 'badge-gray'}">${r.status}</span></td>
+      <td>⭐ ${r.rating.toFixed(1)}</td>
+      <td>${r.totalRides}</td>
+      <td>${fmtDate(r.createdAt)}</td>
+    </tr>`).join('');
+
+  document.getElementById('ridersMeta').textContent = `${total} rider${total !== 1 ? 's' : ''}`;
+  renderPagination('ridersPagination', page, total, 20, loadRiders);
+}
+
+function debouncedRiderSearch() {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => loadRiders(1), 350);
+}
+
+async function openDriverModal(userId) {
+  document.getElementById('driverModalBody').innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3)">Loading…</div>';
+  document.getElementById('driverModalFooter').innerHTML = '';
+  document.getElementById('driverModal').classList.remove('hidden');
+
+  const data = await api('GET', '/admin/drivers/' + userId);
+  if (!data.success) {
+    document.getElementById('driverModalBody').innerHTML = `<div style="text-align:center;padding:32px;color:var(--red)">${data.error?.message || 'Driver not found'}</div>`;
+    return;
+  }
+  const driver = data.data;
+  const profile = driver.profile || {};
+  const docs = profile.documents || [];
+  const vehicle = (profile.vehicles || [])[0];
+  const vs = profile.verificationStatus || 'PENDING';
+
+  // ── Validation checks ──
+  const REQUIRED_DOCS = ['LICENSE', 'VEHICLE_RC', 'INSURANCE', 'PERMIT', 'AADHAAR', 'PHOTO', 'VEHICLE_PHOTO'];
+  const docMap = {};
+  docs.forEach(d => { docMap[d.docType] = d; });
+
+  const checks = [
+    { label: 'Full name provided',       ok: !!(driver.fullName && driver.fullName.trim().length > 1) },
+    { label: 'Phone number verified',    ok: !!(driver.phone) },
+    { label: 'City assigned',            ok: !!(profile.city) },
+    { label: 'License number on file',   ok: !!(profile.licenseNumber && !profile.licenseNumber.startsWith('KL-')) },
+    { label: 'Vehicle registered',       ok: !!(vehicle) },
+    { label: 'Vehicle plate number',     ok: !!(vehicle?.registrationNo) },
+    ...REQUIRED_DOCS.map(type => ({
+      label: docTypeName(type),
+      ok: docMap[type]?.status === 'VERIFIED',
+      warn: docMap[type] && docMap[type].status === 'PENDING',
+      missing: !docMap[type],
+    })),
+  ];
+
+  const passCount = checks.filter(c => c.ok).length;
+  const allPassed = passCount === checks.length;
+
+  function checkRow(c) {
+    let icon, color;
+    if (c.ok)           { icon = '✓'; color = 'var(--green)'; }
+    else if (c.warn)    { icon = '◎'; color = 'var(--yellow)'; }
+    else if (c.missing) { icon = '○'; color = 'var(--text3)'; }
+    else                { icon = '✕'; color = 'var(--red)'; }
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px">
+      <span style="font-size:14px;font-weight:700;color:${color};width:16px;text-align:center">${icon}</span>
+      <span style="flex:1;color:var(--text)">${c.label}</span>
+      ${c.warn ? '<span class="badge badge-yellow" style="font-size:11px">Pending Review</span>' : ''}
+      ${c.missing ? '<span style="font-size:11px;color:var(--text3)">Not uploaded</span>' : ''}
+    </div>`;
+  }
+
+  document.getElementById('driverModalBody').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div class="avatar" style="width:48px;height:48px;border-radius:24px;font-size:18px">${initials(driver.fullName)}</div>
+      <div>
+        <div style="font-size:17px;font-weight:700">${driver.fullName || 'Unnamed Driver'}</div>
+        <div style="font-size:13px;color:var(--text2)">${driver.phone} · ${profile.city || '—'}</div>
+      </div>
+      <div style="margin-left:auto">${statusBadge(vs)}</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:20px;font-weight:800">⭐ ${parseFloat(profile.rating||5).toFixed(1)}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">Rating</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:20px;font-weight:800">${profile.totalRides || 0}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">Total Rides</div>
+      </div>
+    </div>
+
+    ${vehicle ? `
+    <div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px">
+      <div style="font-weight:700;margin-bottom:6px;color:var(--text2)">🚗 Vehicle</div>
+      <div style="display:flex;justify-content:space-between">
+        <span>${vehicle.make || ''} ${vehicle.model || ''} · <span class="font-mono">${vehicle.registrationNo}</span></span>
+        <span class="badge ${vehicle.vehicleType === 'E_AUTO' ? 'badge-green' : 'badge-blue'}">${vehicle.vehicleType === 'E_AUTO' ? 'E-Auto' : 'Auto'}</span>
+      </div>
+      ${vehicle.insuranceExpiry ? `<div style="margin-top:4px;color:var(--text2)">Insurance expires: ${fmtDate(vehicle.insuranceExpiry)}</div>` : ''}
+      ${vehicle.permitExpiry ? `<div style="margin-top:2px;color:var(--text2)">Permit expires: ${fmtDate(vehicle.permitExpiry)}</div>` : ''}
+    </div>` : `<div style="background:var(--red-light);border-radius:10px;padding:10px;font-size:13px;color:var(--red);margin-bottom:16px">⚠ No vehicle registered</div>`}
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--text2)">VERIFICATION CHECKLIST</div>
+      <span class="badge ${allPassed ? 'badge-green' : 'badge-yellow'}">${passCount}/${checks.length} passed</span>
+    </div>
+    <div style="background:var(--bg);border-radius:10px;padding:4px 12px">
+      ${checks.map(checkRow).join('')}
+    </div>
+
+    ${!allPassed ? `<div style="margin-top:12px;background:var(--yellow-light);border-radius:10px;padding:10px 12px;font-size:12px;color:#92400E">
+      ⚠ This driver has unresolved checklist items. Review before approving.
+    </div>` : `<div style="margin-top:12px;background:var(--green-light);border-radius:10px;padding:10px 12px;font-size:12px;color:#065F46">
+      ✓ All checks passed — driver is ready to verify.
+    </div>`}
+
+    <div style="margin-top:12px;font-size:12px;color:var(--text3)">Joined ${fmtDate(driver.createdAt)}</div>
+  `;
+
+  let footerHtml = `<button class="btn btn-outline btn-sm" onclick="closeModal('driverModal')">Close</button>`;
+  if (vs === 'PENDING' || vs === 'IN_REVIEW') {
+    footerHtml += `
+      <button class="btn btn-red btn-sm" onclick="closeModal('driverModal');promptRejectDriver('${driver.id}')">✕ Reject</button>
+      <button class="btn btn-green btn-sm" onclick="closeModal('driverModal');verifyDriver('${driver.id}','verify')">✓ Verify Driver</button>
+    `;
+  } else if (vs === 'VERIFIED') {
+    footerHtml += `<button class="btn btn-red btn-sm" onclick="closeModal('driverModal');promptRejectDriver('${driver.id}')">⊘ Suspend</button>`;
+  }
+  document.getElementById('driverModalFooter').innerHTML = footerHtml;
+}
+
+async function verifyDriver(userId, action) {
+  const data = await api('PUT', `/admin/drivers/${userId}/verify`, { action });
+  if (data.success) {
+    toast(action === 'verify' ? 'Driver verified ✓' : 'Driver rejected', action === 'verify' ? 'success' : 'info');
+    loadDrivers(driverPage);
+    loadDocBadge();
+  } else {
+    toast(data.error?.message || 'Action failed', 'error');
+  }
+}
+
+function promptRejectDriver(userId) {
+  openRejectModal('Reject Driver', (reason) => {
+    verifyDriver(userId, 'reject');
+  });
+}
+
+// ─── DOCUMENTS ──────────────────────────────────────────────────
+
+async function loadDocBadge() {
+  const data = await api('GET', '/admin/documents/pending?limit=1');
+  if (data.success) {
+    const count = data.total || 0;
+    const badge = document.getElementById('docBadge');
+    badge.textContent = count;
+    badge.classList.toggle('hidden', count === 0);
+    document.getElementById('bnavDocDot').classList.toggle('visible', count > 0);
+  }
+}
+
+function isImageUrl(url) {
+  if (!url) return false;
+  return /\.(jpg|jpeg|png|gif|webp|bmp)(\?|$)/i.test(url) || url.startsWith('data:image');
+}
+
+function openLightbox(url) {
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightbox').classList.remove('hidden');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.add('hidden');
+  document.getElementById('lightboxImg').src = '';
+}
+
+async function loadDocuments(page) {
+  docPage = page;
+  const grid = document.getElementById('docsGrid');
+  grid.innerHTML = '<div class="table-empty" style="grid-column:1/-1">Loading…</div>';
+  const statusFilter = document.getElementById('docStatusFilter').value;
+  const endpoint = statusFilter === 'PENDING'
+    ? `/admin/documents/pending?page=${page}&limit=12`
+    : `/admin/documents/pending?page=${page}&limit=12&status=${statusFilter}`;
+  const data = await api('GET', endpoint);
+  if (!data.success || !data.data?.length) {
+    const emptyMsg = statusFilter === 'PENDING' ? '✅ No pending documents — all caught up!' : `No ${statusFilter.toLowerCase()} documents`;
+    grid.innerHTML = `<div class="table-empty" style="grid-column:1/-1;padding:48px">${emptyMsg}</div>`;
+    document.getElementById('docsMeta').textContent = '';
+    document.getElementById('docsFooterMeta').textContent = '';
+    document.getElementById('docsPagination').innerHTML = '';
+    loadDocBadge();
+    return;
+  }
+  const { data: docs, total } = data;
+  document.getElementById('docsMeta').textContent = `${total} ${statusFilter.toLowerCase()}`;
+
+  grid.innerHTML = docs.map(doc => {
+    const driver = doc.driver?.user;
+    const driverName = driver?.fullName || 'Unknown';
+    const driverPhone = driver?.phone || '';
+    const hasImg = isImageUrl(doc.docUrl);
+    const isPending = doc.status === 'PENDING';
+    return `<div class="doc-card">
+      <div class="doc-card-header">
+        <div class="doc-driver">
+          <div class="avatar" style="width:36px;height:36px;border-radius:18px">${initials(driverName)}</div>
+          <div>
+            <div style="font-weight:600;font-size:14px">${driverName}</div>
+            <div style="font-size:12px;color:var(--text2)">${driverPhone}</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span class="doc-type-badge">${docTypeName(doc.docType)}</span>
+          ${statusBadge(doc.status)}
+        </div>
+      </div>
+      <div class="doc-img-wrap" onclick="${doc.docUrl ? `openLightbox('${doc.docUrl.replace(/'/g,"\\'")}')` : ''}">
+        ${hasImg
+          ? `<img src="${doc.docUrl}" alt="${docTypeName(doc.docType)}" onerror="this.parentElement.innerHTML='<span class=\\'doc-no-img\\'>📄</span>'">
+             <div class="doc-img-overlay">🔍 View Full</div>`
+          : doc.docUrl
+            ? `<span class="doc-no-img">📄</span><div class="doc-img-overlay"><a href="${doc.docUrl}" target="_blank" onclick="event.stopPropagation()" style="color:white">Open File ↗</a></div>`
+            : `<span class="doc-no-img">📭</span>`
+        }
+      </div>
+      ${doc.docNumber ? `<div class="doc-number">Doc #: ${doc.docNumber}</div>` : ''}
+      <div class="doc-meta">
+        ${doc.expiryDate ? `<span>📅 Expires ${fmtDate(doc.expiryDate)}</span>` : ''}
+        ${doc.docUrl ? `<span><a href="${doc.docUrl}" target="_blank" style="color:var(--primary)">📎 Open doc</a></span>` : ''}
+      </div>
+      <div class="doc-meta" style="margin-top:2px"><span style="color:var(--text3)">Submitted ${fmtDate(doc.createdAt)}</span></div>
+      ${doc.rejectionReason ? `<div style="background:var(--red-light);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--red);margin-bottom:10px">⚠ ${doc.rejectionReason}</div>` : ''}
+      ${isPending ? `<div class="doc-actions">
+        <button class="btn btn-red btn-sm" onclick="promptRejectDoc('${doc.id}','${driverName.replace(/'/g,"\\'")}')">✕ Reject</button>
+        <button class="btn btn-green btn-sm" style="flex:1" onclick="verifyDoc('${doc.id}','verify')">✓ Verify</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('docsFooterMeta').textContent = `${(page-1)*12 + 1}–${Math.min(page*12, total)} of ${total}`;
+  renderPagination('docsPagination', page, total, 12, loadDocuments);
+}
+
+async function verifyDoc(docId, action, reason) {
+  const body = { action };
+  if (reason) body.rejectionReason = reason;
+  const data = await api('PUT', `/admin/documents/${docId}/verify`, body);
+  if (data.success) {
+    toast(action === 'verify' ? 'Document verified ✓' : 'Document rejected', action === 'verify' ? 'success' : 'info');
+    loadDocuments(docPage);
+    loadDocBadge();
+  } else {
+    toast(data.error?.message || 'Action failed', 'error');
+  }
+}
+
+function promptRejectDoc(docId, driverName) {
+  openRejectModal(`Reject Document — ${driverName}`, (reason) => {
+    verifyDoc(docId, 'reject', reason);
+  });
+}
+
+// ─── RIDES ───────────────────────────────────────────────────────
+
+async function loadRides(page) {
+  ridePage = page;
+  const status = document.getElementById('rideStatusFilter').value;
+  const from = document.getElementById('rideDateFrom').value;
+  const to = document.getElementById('rideDateTo').value;
+  let qs = `?page=${page}&limit=20`;
+  if (status) qs += '&status=' + status;
+  if (from) qs += '&dateFrom=' + from;
+  if (to) qs += '&dateTo=' + to;
+
+  const tbody = document.getElementById('ridesBody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Loading…</td></tr>';
+
+  const data = await api('GET', '/admin/rides' + qs);
+  if (!data.success) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Failed to load</td></tr>'; return; }
+
+  const { data: rides, total } = data;
+  if (!rides?.length) { tbody.innerHTML = '<tr class="loading-row"><td colspan="7">No rides found</td></tr>'; return; }
+
+  tbody.innerHTML = rides.map(r => `<tr>
+    <td><span class="font-mono" style="color:var(--text2);font-size:12px">${r.id.slice(0,8)}…</span></td>
+    <td><div class="route-mini"><span class="from">${truncate(r.pickupAddress, 20)}</span><span class="arrow">→</span><span class="to">${truncate(r.dropoffAddress, 20)}</span></div></td>
+    <td><div class="user-cell"><div class="avatar" style="width:28px;height:28px;font-size:12px">${initials(r.rider?.fullName)}</div><div style="font-size:13px">${r.rider?.fullName || '—'}</div></div></td>
+    <td style="font-size:13px">${r.driver?.fullName || '<span style="color:var(--text3)">Unassigned</span>'}</td>
+    <td style="font-weight:600">${fmtMoney(r.totalAmount || r.estimatedFare)}</td>
+    <td>${statusBadge(r.status)}</td>
+    <td style="font-size:13px;color:var(--text2)">${fmtTime(r.createdAt)}</td>
+  </tr>`).join('');
+
+  document.getElementById('ridesMeta').textContent = `Showing ${(page-1)*20 + 1}–${Math.min(page*20, total)} of ${total} rides`;
+  renderPagination('ridesPagination', page, total, 20, loadRides);
+}
+
+// ─── FARE CONFIG ─────────────────────────────────────────────────
+
+async function saveFareConfig(e) {
+  e.preventDefault();
+  const btn = document.getElementById('fareSubmitBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving…';
+
+  const body = {
+    city: document.getElementById('fc-city').value,
+    vehicleType: document.getElementById('fc-type').value,
+    baseFare: parseFloat(document.getElementById('fc-base').value),
+    baseDistanceKm: parseFloat(document.getElementById('fc-basedist').value),
+    perKmRate: parseFloat(document.getElementById('fc-perkm').value),
+    perMinRate: parseFloat(document.getElementById('fc-permin').value),
+    minFare: parseFloat(document.getElementById('fc-min').value),
+    nightMultiplier: parseFloat(document.getElementById('fc-night').value),
+  };
+
+  const data = await api('POST', '/admin/fare-config', body);
+  btn.disabled = false; btn.textContent = '💾 Save Fare Config';
+
+  if (data.success) {
+    toast('Fare config saved successfully ✓', 'success');
+  } else {
+    toast(data.error?.message || 'Failed to save', 'error');
+  }
+}
+
+// ─── ADD DRIVER ──────────────────────────────────────────────────
+
+function openAddDriverModal() {
+  ['ad-phone','ad-name','ad-license','ad-make','ad-model','ad-plate'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ad-city').value = 'Taliparamba';
+  document.getElementById('ad-vtype').value = 'AUTO';
+  document.getElementById('ad-verify').checked = true;
+  document.getElementById('addDriverErr').style.display = 'none';
+  document.getElementById('addDriverModal').classList.remove('hidden');
+  document.getElementById('ad-phone').focus();
+}
+
+async function submitAddDriver() {
+  const phone = document.getElementById('ad-phone').value.trim();
+  const fullName = document.getElementById('ad-name').value.trim();
+  const city = document.getElementById('ad-city').value.trim();
+  const licenseNumber = document.getElementById('ad-license').value.trim();
+  const vehicleMake = document.getElementById('ad-make').value.trim();
+  const vehicleModel = document.getElementById('ad-model').value.trim();
+  const vehiclePlate = document.getElementById('ad-plate').value.trim();
+  const vehicleType = document.getElementById('ad-vtype').value;
+  const autoVerify = document.getElementById('ad-verify').checked;
+
+  if (!phone || phone.length !== 10 || !/^\d+$/.test(phone)) { showAddDriverErr('Enter a valid 10-digit phone number'); return; }
+  if (!fullName) { showAddDriverErr('Full name is required'); return; }
+  if (!licenseNumber) { showAddDriverErr('License number is required'); return; }
+  if (!vehiclePlate) { showAddDriverErr('Vehicle plate is required'); return; }
+
+  const btn = document.getElementById('addDriverBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Adding…';
+
+  const data = await api('POST', '/admin/drivers', { phone, fullName, city, licenseNumber, vehicleMake, vehicleModel, vehiclePlate, vehicleType, autoVerify });
+
+  btn.disabled = false; btn.textContent = '➕ Add Driver';
+
+  if (data.success) {
+    closeModal('addDriverModal');
+    toast(`Driver ${fullName} added successfully ✓`, 'success');
+    loadDrivers(1);
+  } else {
+    showAddDriverErr(data.error?.message || 'Failed to add driver');
+  }
+}
+
+function showAddDriverErr(msg) {
+  const el = document.getElementById('addDriverErr');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+// ─── SUBSCRIPTIONS ───────────────────────────────────────────────
+
+async function loadSubBadge() {
+  const data = await api('GET', '/admin/subscriptions?pending=true&limit=1');
+  if (data.success) {
+    const count = data.total || 0;
+    const badge = document.getElementById('subBadge');
+    badge.textContent = count;
+    badge.classList.toggle('hidden', count === 0);
+    document.getElementById('bnavSubDot').classList.toggle('visible', count > 0);
+  }
+}
+
+function switchSubTab(tab) {
+  currentSubTab = tab;
+  document.getElementById('subTabPending').classList.toggle('active', tab === 'pending');
+  document.getElementById('subTabAll').classList.toggle('active', tab === 'all');
+  loadSubscriptions(1);
+}
+
+async function loadSubscriptions(page) {
+  subPage = page;
+  const grid = document.getElementById('subGrid');
+  grid.innerHTML = '<div class="table-empty" style="grid-column:1/-1">Loading…</div>';
+  const qs = currentSubTab === 'pending'
+    ? `?pending=true&page=${page}&limit=12`
+    : `?page=${page}&limit=12`;
+  const data = await api('GET', '/admin/subscriptions' + qs);
+  if (!data.success || !data.data?.length) {
+    grid.innerHTML = `<div class="table-empty" style="grid-column:1/-1;padding:48px">${currentSubTab === 'pending' ? '✅ No pending payments — all verified!' : 'No subscriptions yet'}</div>`;
+    document.getElementById('subMeta').textContent = '';
+    document.getElementById('subFooterMeta').textContent = '';
+    document.getElementById('subPagination').innerHTML = '';
+    loadSubBadge();
+    return;
+  }
+  const { data: subs, total } = data;
+  document.getElementById('subMeta').textContent = `${total} ${currentSubTab === 'pending' ? 'pending' : 'total'}`;
+
+  grid.innerHTML = subs.map(sub => {
+    const driver = sub.driver?.user;
+    const driverName = driver?.fullName || 'Unknown';
+    const driverPhone = driver?.phone || '';
+    const utr = sub.payment?.gatewayTxnId || '—';
+    const isPending = sub.status === 'PENDING';
+    const amount = sub.payment?.amount;
+    return `<div class="sub-card">
+      <div class="sub-card-header">
+        <div class="sub-driver">
+          <div class="avatar" style="width:36px;height:36px;border-radius:18px">${initials(driverName)}</div>
+          <div>
+            <div style="font-weight:600;font-size:14px">${driverName}</div>
+            <div style="font-size:12px;color:var(--text2)">${driverPhone}</div>
+          </div>
+        </div>
+        ${statusBadge(sub.status)}
+      </div>
+      <div class="sub-meta">
+        <span>📋 ${sub.plan?.name || 'Plan'}</span>
+        ${amount ? `<span>💰 ₹${amount}</span>` : ''}
+        <span>📅 ${fmtDate(sub.createdAt)}</span>
+      </div>
+      <div style="margin-bottom:6px;font-size:12px;color:var(--text2);font-weight:600">UTR / Payment Reference</div>
+      <div class="sub-utr">${utr}</div>
+      ${sub.status === 'ACTIVE' && sub.expiresAt ? `<div style="font-size:12px;color:var(--green);margin-bottom:12px">✓ Active until ${fmtDate(sub.expiresAt)}</div>` : ''}
+      ${sub.status === 'CANCELLED' ? `<div style="font-size:12px;color:var(--red);margin-bottom:12px">✕ Cancelled / Rejected</div>` : ''}
+      ${isPending ? `<div class="sub-actions">
+        <button class="btn btn-red btn-sm" onclick="verifySubscription('${sub.id}','reject')">✕ Reject</button>
+        <button class="btn btn-green btn-sm" style="flex:1" onclick="verifySubscription('${sub.id}','approve')">✓ Approve Payment</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('subFooterMeta').textContent = `${(page-1)*12 + 1}–${Math.min(page*12, total)} of ${total}`;
+  renderPagination('subPagination', page, total, 12, loadSubscriptions);
+}
+
+async function verifySubscription(subId, action) {
+  if (action === 'approve') {
+    const data = await api('PUT', `/admin/subscriptions/${subId}/verify`, { action: 'approve' });
+    if (data.success) {
+      toast('Payment approved — driver subscription activated ✓', 'success');
+      loadSubscriptions(subPage);
+      loadSubBadge();
+    } else {
+      toast(data.error?.message || 'Failed', 'error');
+    }
+  } else {
+    openRejectModal('Reject Payment', async () => {
+      const data = await api('PUT', `/admin/subscriptions/${subId}/verify`, { action: 'reject' });
+      if (data.success) {
+        toast('Payment rejected', 'info');
+        loadSubscriptions(subPage);
+        loadSubBadge();
+      } else {
+        toast(data.error?.message || 'Failed', 'error');
+      }
+    });
+  }
+}
+
+// ─── KEYBOARD SHORTCUTS ──────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeLightbox();
+    if (!token) return;
+    closeModal('driverModal');
+    closeModal('rejectModal');
+  }
+});
+</script>
+</body>
+</html>

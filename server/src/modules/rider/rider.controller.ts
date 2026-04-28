@@ -76,6 +76,15 @@ export class RiderController {
     }
   }
 
+  async triggerSOS(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await riderService.triggerSOS(req.user!.userId, req.body.rideId);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getRideHistory(req: Request, res: Response, next: NextFunction) {
     try {
       const page = parseInt(req.query.page as string) || 1;

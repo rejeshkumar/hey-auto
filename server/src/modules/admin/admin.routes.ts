@@ -30,6 +30,15 @@ router.get('/drivers', async (req: Request, res: Response, next: NextFunction) =
   }
 });
 
+router.get('/drivers/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await adminService.getDriver(req.params.id as string);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.put('/drivers/:id/verify', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { action } = req.body;
@@ -74,6 +83,52 @@ router.get('/rides', async (req: Request, res: Response, next: NextFunction) => 
       dateTo: req.query.dateTo as string,
     });
     res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/riders', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await adminService.getRiders({
+      page: parseInt(req.query.page as string) || 1,
+      limit: parseInt(req.query.limit as string) || 20,
+      search: req.query.search as string,
+    });
+    res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/drivers', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await adminService.createDriver(req.body);
+    res.status(201).json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/subscriptions', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const pending = req.query.pending === 'true';
+    const result = pending
+      ? await adminService.getPendingSubscriptions(page, limit)
+      : await adminService.getAllSubscriptions(page, limit);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/subscriptions/:id/verify', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { action } = req.body;
+    const result = await adminService.verifySubscription(req.params.id as string, action);
+    res.json({ success: true, data: result });
   } catch (err) {
     next(err);
   }

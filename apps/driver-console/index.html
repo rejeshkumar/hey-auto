@@ -7,8 +7,8 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --primary: #FF6B00;
-      --primary-light: #FFF3E8;
+      --primary: #F5C800;
+      --primary-light: #FFFBDE;
       --green: #10B981;
       --green-light: #D1FAE5;
       --red: #EF4444;
@@ -44,8 +44,8 @@
     .phone-input { display: flex; gap: 8px; }
     .phone-prefix { padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg); font-weight: 600; font-size: 16px; }
     .btn { padding: 14px 24px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-primary:hover { background: #D45A00; }
+    .btn-primary { background: var(--primary); color: #1A1A2E; }
+    .btn-primary:hover { background: #D4AC00; }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-green { background: var(--green); color: white; }
     .btn-green:hover { background: #059669; }
@@ -64,7 +64,7 @@
     .toggle-btn { padding: 20px 48px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
     .toggle-btn:disabled { opacity: 0.5; cursor: wait; }
     .toggle-online { background: var(--red); color: white; }
-    .toggle-offline { background: var(--primary); color: white; }
+    .toggle-offline { background: var(--primary); color: #1A1A2E; }
     .waiting-text { color: var(--text3); margin-top: 16px; font-size: 15px; }
     .ride-request { background: var(--card); border-radius: 16px; padding: 24px; box-shadow: 0 4px 24px rgba(0,0,0,0.12); border-left: 4px solid var(--primary); animation: slideIn 0.3s ease; }
     @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
