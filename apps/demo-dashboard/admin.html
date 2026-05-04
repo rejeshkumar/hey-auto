@@ -1924,40 +1924,74 @@ async function simPollForRide() {
   // If already on a ride, poll ride status instead
   if (simRide) { await simRefreshRide(); return; }
 
+  // Primary: check if server assigned a ride request to this driver via Redis
   const data = await simApi('GET', '/driver/ride-request');
   if (data.success && data.data) {
-    const ride = data.data;
-    // Show incoming request card
-    simStopPolling();
-    document.getElementById('sim-polling-status').classList.add('hidden');
-    document.getElementById('sim-request-card').classList.remove('hidden');
-    document.getElementById('sim-req-pickup').textContent = ride.pickupAddress || '—';
-    document.getElementById('sim-req-drop').textContent = ride.dropoffAddress || '—';
-    document.getElementById('sim-req-dist').textContent = ride.estimatedDistanceKm ? ride.estimatedDistanceKm.toFixed(1) + ' km' : '—';
-    document.getElementById('sim-req-fare').textContent = ride.estimatedFare ? '₹' + ride.estimatedFare : '—';
-    simRide = ride;
-    // 15-second countdown timer
-    let timeLeft = 15;
-    document.getElementById('sim-req-timer').textContent = timeLeft + 's';
-    simReqTimerInterval = setInterval(() => {
-      timeLeft--;
-      document.getElementById('sim-req-timer').textContent = timeLeft + 's';
-      if (timeLeft <= 0) {
-        clearInterval(simReqTimerInterval);
-        document.getElementById('sim-request-card').classList.add('hidden');
-        simRide = null;
-        document.getElementById('sim-polling-status').classList.remove('hidden');
-        simStartPolling();
-      }
-    }, 1000);
-  } else {
-    document.getElementById('sim-poll-info').textContent = 'Last checked: ' + new Date().toLocaleTimeString('en-IN');
+    simShowIncomingRide(data.data);
+    return;
   }
+
+  // Fallback for simulator: check admin rides API for any REQUESTED ride
+  // (handles case where findDriver didn't select this driver due to location/score)
+  const adminCheck = await api('GET', '/admin/rides?status=REQUESTED&limit=1');
+  if (adminCheck.success && adminCheck.data?.length) {
+    const ride = adminCheck.data[0];
+    // Only show if this ride was requested in last 30 seconds
+    const age = (Date.now() - new Date(ride.createdAt).getTime()) / 1000;
+    if (age < 30) {
+      simShowIncomingRide({
+        rideId: ride.id,
+        pickupAddress: ride.pickupAddress,
+        dropoffAddress: ride.dropoffAddress,
+        estimatedFare: ride.estimatedFare,
+        estimatedDistanceKm: ride.estimatedDistanceKm,
+        estimatedDurationMin: ride.estimatedDurationMin,
+      });
+      return;
+    }
+  }
+
+  document.getElementById('sim-poll-info').textContent = 'Last checked: ' + new Date().toLocaleTimeString('en-IN');
+}
+
+function simShowIncomingRide(ride) {
+  simStopPolling();
+  document.getElementById('sim-polling-status').classList.add('hidden');
+  document.getElementById('sim-request-card').classList.remove('hidden');
+  document.getElementById('sim-req-pickup').textContent = ride.pickupAddress || '—';
+  document.getElementById('sim-req-drop').textContent = ride.dropoffAddress || '—';
+  document.getElementById('sim-req-dist').textContent = ride.estimatedDistanceKm ? parseFloat(ride.estimatedDistanceKm).toFixed(1) + ' km' : '—';
+  document.getElementById('sim-req-fare').textContent = ride.estimatedFare ? '₹' + ride.estimatedFare : '—';
+  simRide = ride;
+  let timeLeft = 30;
+  document.getElementById('sim-req-timer').textContent = timeLeft + 's';
+  simReqTimerInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById('sim-req-timer').textContent = timeLeft + 's';
+    if (timeLeft <= 0) {
+      clearInterval(simReqTimerInterval);
+      document.getElementById('sim-request-card').classList.add('hidden');
+      simRide = null;
+      document.getElementById('sim-polling-status').classList.remove('hidden');
+      simStartPolling();
+    }
+  }, 1000);
 }
 
 async function simAcceptRide() {
   if (!simRide) return;
   clearInterval(simReqTimerInterval);
+  // First check ride is still REQUESTED
+  const check = await simApi('GET', `/rides/${simRide.id}`);
+  if (!check.success) { toast('Could not load ride details', 'error'); return; }
+  if (check.data?.status !== 'REQUESTED') {
+    toast(`Ride is no longer available (status: ${check.data?.status})`, 'error');
+    document.getElementById('sim-request-card').classList.add('hidden');
+    simRide = null;
+    document.getElementById('sim-polling-status').classList.remove('hidden');
+    simStartPolling();
+    return;
+  }
   const data = await simApi('POST', `/rides/${simRide.id}/accept`);
   if (data.success) {
     document.getElementById('sim-request-card').classList.add('hidden');
@@ -1966,7 +2000,12 @@ async function simAcceptRide() {
     toast('Ride accepted ✓', 'success');
     simStartPolling();
   } else {
-    toast(data.error?.message || 'Accept failed', 'error');
+    const msg = data.error?.message || 'Accept failed';
+    toast(msg, 'error');
+    // Show detailed error in UI
+    document.getElementById('sim-req-timer').textContent = '';
+    document.getElementById('sim-req-pickup').textContent = '⚠ ' + msg;
+    console.error('Accept error:', data);
   }
 }
 

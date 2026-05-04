@@ -42,6 +42,12 @@ export function ActiveRideScreen({ navigation }: any) {
     };
   }, []);
 
+  const handleRetryRide = async () => {
+    if (!pickup || !dropoff) { navigation.replace('MainTabs'); return; }
+    setPhase('reviewing_estimate');
+    navigation.replace('BookingConfirm');
+  };
+
   const handleCancel = () => {
     Alert.alert(t('ride.cancelConfirm'), '', [
       { text: t('common.cancel'), style: 'cancel' },
@@ -113,7 +119,8 @@ export function ActiveRideScreen({ navigation }: any) {
             <MaterialCommunityIcons name="alert-circle-outline" size={60} color={colors.warning} />
             <Text style={styles.statusTitle}>{t('ride.noDrivers')}</Text>
             <Text style={styles.statusSub}>{t('ride.noDriversSub')}</Text>
-            <Button title={t('common.retry')} onPress={() => { resetRide(); navigation.replace('MainTabs'); }} style={{ marginTop: spacing.lg }} />
+            <Button title={t('common.retry')} onPress={handleRetryRide} style={{ marginTop: spacing.lg }} />
+            <Button title={t('common.cancel')} variant="outline" onPress={() => { resetRide(); navigation.replace('MainTabs'); }} style={{ marginTop: spacing.sm }} />
           </View>
         )}
 
