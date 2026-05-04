@@ -28,34 +28,51 @@ export class RideService {
       orderBy: { effectiveFrom: 'desc' },
     });
 
-    const baseFare = fareConfig?.baseFare ?? 30;
-    const baseDistanceKm = fareConfig?.baseDistanceKm ?? 1.5;
-    const perKmRate = fareConfig?.perKmRate ?? 15;
-    const perMinRate = fareConfig?.perMinRate ?? 1.5;
-    const minFare = fareConfig?.minFare ?? 30;
-    const nightStart = fareConfig?.nightStart ?? '22:00';
-    const nightEnd = fareConfig?.nightEnd ?? '05:00';
-    const nightMultiplier = fareConfig?.nightMultiplier ?? 1.25;
+    const baseFare         = fareConfig?.baseFare ?? 30;
+    const baseDistanceKm   = fareConfig?.baseDistanceKm ?? 1.5;
+    const perKmRate        = fareConfig?.perKmRate ?? 15;
+    const perMinRate       = fareConfig?.perMinRate ?? 0;       // Kerala: 0 while moving
+    const minFare          = fareConfig?.minFare ?? 30;
+    const nightStart       = fareConfig?.nightStart ?? '22:00';
+    const nightEnd         = fareConfig?.nightEnd ?? '05:00';
+    const nightMultiplier  = fareConfig?.nightMultiplier ?? 1.5; // Kerala gazette: 50%
+    const onwardEnabled    = fareConfig?.onwardSurchargeEnabled ?? true;
+    const onwardPercent    = fareConfig?.onwardSurchargePercent ?? 50;
 
-    let fare = baseFare;
-    if (distanceKm > baseDistanceKm) {
-      fare += (distanceKm - baseDistanceKm) * perKmRate;
-    }
-    fare += estimatedDurationMin * perMinRate;
+    // Step 1: base distance fare
+    const distanceFare = distanceKm > baseDistanceKm
+      ? (distanceKm - baseDistanceKm) * perKmRate
+      : 0;
 
+    // Step 2: time fare (0 by default per Kerala rules)
+    const timeFare = estimatedDurationMin * perMinRate;
+
+    let fare = baseFare + distanceFare + timeFare;
+
+    // Step 3: night surcharge — 50% of total (Kerala gazette)
     let nightSurcharge = 0;
-    if (isNightTime(nightStart, nightEnd)) {
+    const isNight = isNightTime(nightStart, nightEnd);
+    if (isNight) {
       nightSurcharge = fare * (nightMultiplier - 1);
-      fare *= nightMultiplier;
+      fare += nightSurcharge;
+    }
+
+    // Step 4: onward-only surcharge — 50% of amount above minimum, daytime only
+    // Applied when rider books a one-way trip in non-corporation towns (default: enabled)
+    let onwardSurcharge = 0;
+    if (!isNight && onwardEnabled && fare > minFare) {
+      onwardSurcharge = (fare - minFare) * (onwardPercent / 100);
+      fare += onwardSurcharge;
     }
 
     fare = Math.max(fare, minFare);
 
     return {
       baseFare: roundToRupee(baseFare),
-      distanceFare: roundToRupee(Math.max(0, (distanceKm - baseDistanceKm) * perKmRate)),
-      timeFare: roundToRupee(estimatedDurationMin * perMinRate),
+      distanceFare: roundToRupee(distanceFare),
+      timeFare: roundToRupee(timeFare),
       nightSurcharge: roundToRupee(nightSurcharge),
+      onwardSurcharge: roundToRupee(onwardSurcharge),
       totalFare: roundToRupee(fare),
       distanceKm,
       durationMin: estimatedDurationMin,
@@ -105,6 +122,7 @@ export class RideService {
         perMinRate: estimate.durationMin > 0 ? estimate.timeFare / estimate.durationMin : 1.5,
         estimatedFare: estimate.totalFare,
         nightSurcharge: estimate.nightSurcharge,
+        onwardSurcharge: estimate.onwardSurcharge,
         paymentMethod: input.paymentMethod,
         city: input.city,
         rideOtp,

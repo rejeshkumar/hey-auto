@@ -180,7 +180,8 @@ model Ride {
   perMinRate     Float? @map("per_min_rate")
   estimatedFare  Float  @map("estimated_fare")
   actualFare     Float? @map("actual_fare")
-  nightSurcharge Float  @default(0) @map("night_surcharge")
+  nightSurcharge   Float  @default(0) @map("night_surcharge")
+  onwardSurcharge  Float  @default(0) @map("onward_surcharge")
   tipAmount      Float  @default(0) @map("tip_amount")
   totalAmount    Float? @map("total_amount")
 
@@ -378,14 +379,34 @@ model FareConfig {
   id              String      @id @default(uuid()) @db.Uuid
   city            String      @db.VarChar(50)
   vehicleType     VehicleType @map("vehicle_type")
+
+  // Base fare (Kerala gazette: ₹30 for first 1.5 km)
   baseFare        Float       @map("base_fare")
   baseDistanceKm  Float       @default(1.5) @map("base_distance_km")
+
+  // Distance rate (Kerala gazette: ₹15/km = ₹1.50 per 100m)
   perKmRate       Float       @map("per_km_rate")
-  perMinRate      Float       @map("per_min_rate")
+
+  // Per-minute rate — Kerala gazette does NOT charge per minute while moving
+  // Keep field for flexibility; set to 0 by default
+  perMinRate      Float       @default(0) @map("per_min_rate")
+
   minFare         Float       @map("min_fare")
+
+  // Night surcharge (Kerala gazette: 50% between 10 PM – 5 AM)
   nightStart      String      @default("22:00") @map("night_start") @db.VarChar(5)
   nightEnd        String      @default("05:00") @map("night_end") @db.VarChar(5)
-  nightMultiplier Float       @default(1.25) @map("night_multiplier")
+  nightMultiplier Float       @default(1.5) @map("night_multiplier")
+
+  // Onward-only surcharge (Kerala gazette: 50% of charges above minimum, daytime, outside corp cities)
+  // true = this city/town is eligible for onward surcharge (not a corporation area)
+  onwardSurchargeEnabled  Boolean @default(true) @map("onward_surcharge_enabled")
+  onwardSurchargePercent  Float   @default(50) @map("onward_surcharge_percent")
+
+  // Waiting/detention charge (Kerala gazette: ₹10 per 15 min, max ₹250/day)
+  waitingChargePerQuarterHour Float @default(10) @map("waiting_charge_per_quarter_hour")
+  waitingChargeMaxPerDay      Float @default(250) @map("waiting_charge_max_per_day")
+
   isActive        Boolean     @default(true) @map("is_active")
   effectiveFrom   DateTime    @map("effective_from") @db.Date
   createdAt       DateTime    @default(now()) @map("created_at")
