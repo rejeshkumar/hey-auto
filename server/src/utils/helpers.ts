@@ -36,8 +36,11 @@ function toRad(deg: number): number {
 
 export function isNightTime(nightStart: string, nightEnd: string): boolean {
   const now = new Date();
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
+  // Use IST (UTC+5:30) regardless of server timezone
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const ist = new Date(now.getTime() + istOffset);
+  const hours = ist.getUTCHours();
+  const minutes = ist.getUTCMinutes();
   const current = hours * 60 + minutes;
 
   const [startH, startM] = nightStart.split(':').map(Number);
