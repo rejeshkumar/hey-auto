@@ -30,30 +30,37 @@ export class AuthService {
       );
     }
 
+    const fast2smsConfigured = !!env.FAST2SMS_API_KEY;
     const whatsappConfigured = !!(env.WHATSAPP_ACCESS_TOKEN && env.WHATSAPP_PHONE_NUMBER_ID);
     const smsConfigured = !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN);
-    const useDemoOtp = !whatsappConfigured && !smsConfigured;
+    const useDemoOtp = !fast2smsConfigured && !whatsappConfigured && !smsConfigured;
     const otp = useDemoOtp ? '123456' : generateOTP(6);
 
     await redis.setex(`${OTP_PREFIX}${phone}`, env.OTP_EXPIRY_SEC, otp);
     await redis.setex(cooldownKey, 30, '1');
     await redis.del(`${OTP_ATTEMPTS_PREFIX}${phone}`);
 
-    if (whatsappConfigured) {
-      // Send OTP via WhatsApp (preferred — everyone in Kerala has WhatsApp)
+    let channel = 'demo';
+    if (fast2smsConfigured) {
+      await this.sendFast2Sms(phone, otp);
+      channel = 'fast2sms';
+    } else if (whatsappConfigured) {
       whatsappService.sendOtpMessage(phone, otp).catch((err) => {
         logger.error({ err, phone: phone.slice(-4) }, 'WhatsApp OTP failed');
       });
+      channel = 'whatsapp';
     } else if (smsConfigured) {
       await this.sendSms(phone, `Your Aye Auto verification code is: ${otp}. Valid for 5 minutes.`);
+      channel = 'twilio';
     }
 
-    logger.info({ phone: phone.slice(-4), role, channel: whatsappConfigured ? 'whatsapp' : smsConfigured ? 'sms' : 'demo' }, 'OTP sent');
+    logger.info({ phone: phone.slice(-4), role, channel }, 'OTP sent');
 
     return {
-      message: whatsappConfigured
-        ? 'OTP sent to your WhatsApp'
-        : smsConfigured ? 'OTP sent via SMS' : 'OTP sent successfully',
+      message: fast2smsConfigured ? 'OTP sent via SMS'
+        : whatsappConfigured ? 'OTP sent to your WhatsApp'
+        : smsConfigured ? 'OTP sent via SMS'
+        : 'OTP sent successfully',
       expiresIn: env.OTP_EXPIRY_SEC,
       ...(useDemoOtp && { otp }),
     };
@@ -266,6 +273,28 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
+  }
+
+  private async sendFast2Sms(phone: string, otp: string) {
+    // phone is already in +91XXXXXXXXXX format — strip to 10 digits
+    const digits = phone.replace(/^\+91/, '').replace(/\D/g, '');
+    try {
+      const res = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+        method: 'POST',
+        headers: { authorization: env.FAST2SMS_API_KEY!, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          route: 'otp',
+          variables_values: otp,
+          numbers: digits,
+        }),
+      });
+      const json = await res.json() as any;
+      if (!json.return) throw new Error(json.message || 'Fast2SMS failed');
+      logger.info({ digits: digits.slice(-4) }, 'Fast2SMS OTP sent');
+    } catch (err) {
+      logger.error({ err, digits: digits.slice(-4) }, 'Fast2SMS OTP failed');
+      throw err;
+    }
   }
 
   private async sendSms(to: string, body: string) {
