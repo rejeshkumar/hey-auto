@@ -22,7 +22,7 @@ export default {
     phonePlaceholder: 'നിങ്ങളുടെ 10 അക്ക നമ്പർ',
     sendOtp: 'OTP അയക്കുക',
     enterOtp: 'OTP നൽകുക',
-    otpSent: '{{phone}} ലേക്ക് OTP അയച്ചു',
+    otpSent: '{{phone}} WhatsApp-ൽ OTP അയച്ചു',
     verifyOtp: 'സ്ഥിരീകരിക്കുക',
     resendOtp: 'OTP വീണ്ടും അയക്കുക',
     resendIn: '{{seconds}} സെക്കൻഡിൽ വീണ്ടും അയക്കാം',

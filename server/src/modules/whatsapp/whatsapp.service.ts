@@ -712,6 +712,16 @@ export class WhatsAppService {
       }
     }
   }
+
+  async sendOtpMessage(phone: string, otp: string): Promise<void> {
+    const text =
+      `🔐 *Aye Auto OTP*\n\n` +
+      `Your verification code is:\n\n` +
+      `*${otp}*\n\n` +
+      `Valid for 5 minutes. Do not share this with anyone.\n` +
+      `_(ഈ OTP ആർക്കും കൊടുക്കരുത്)_`;
+    await sendMessage(phone, text);
+  }
 }
 
 export const whatsappService = new WhatsAppService();

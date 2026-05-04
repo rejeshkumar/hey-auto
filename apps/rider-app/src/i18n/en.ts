@@ -22,7 +22,7 @@ export default {
     phonePlaceholder: 'Your 10-digit number',
     sendOtp: 'Send OTP',
     enterOtp: 'Enter OTP',
-    otpSent: 'OTP sent to {{phone}}',
+    otpSent: 'OTP sent to {{phone}} via WhatsApp',
     verifyOtp: 'Verify',
     resendOtp: 'Resend OTP',
     resendIn: 'Resend in {{seconds}}s',
