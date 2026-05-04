@@ -32,7 +32,7 @@ interface SubscriptionPlan {
 }
 
 const UPI_ID = 'heyauto@upi';
-const UPI_NAME = 'Hey Auto';
+const UPI_NAME = 'Aye Auto';
 
 export function SubscriptionScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -207,9 +207,9 @@ export function SubscriptionScreen({ navigation }: any) {
               {plans.length === 0 ? (
                 <View style={styles.fallbackPlans}>
                   {[
-                    { id: 'daily', name: '1-Day Pass', pricePerDay: 25, durationDays: 1, totalAmount: 25 },
-                    { id: 'weekly', name: '7-Day Pack', pricePerDay: 20, durationDays: 7, totalAmount: 140 },
-                    { id: 'monthly', name: '30-Day Pack', pricePerDay: 17, durationDays: 30, totalAmount: 500, description: 'Best Value' },
+                    { id: 'daily', name: 'Daily Plan', pricePerDay: 25, durationDays: 1, totalAmount: 25 },
+                    { id: 'weekly', name: 'Weekly Plan', pricePerDay: 21, durationDays: 7, totalAmount: 150 },
+                    { id: 'monthly', name: 'Monthly Plan', pricePerDay: 17, durationDays: 30, totalAmount: 500 },
                   ].map(plan => renderPlanCard(plan, selectedPlan, setSelectedPlan))}
                 </View>
               ) : (

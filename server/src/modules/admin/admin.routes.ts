@@ -134,6 +134,31 @@ router.put('/subscriptions/:id/verify', async (req: Request, res: Response, next
   }
 });
 
+router.put('/users/fix-role', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone, role, status } = req.body;
+    const { prisma } = await import('../../config/database');
+    const updated = await prisma.user.updateMany({
+      where: { phone: phone.startsWith('+91') ? phone : `+91${phone}` },
+      data: { role, status },
+    });
+    res.json({ success: true, data: { updated: updated.count, phone, role, status } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/fare-config', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const city = (req.query.city as string) || 'Taliparamba';
+    const vehicleType = (req.query.vehicleType as 'AUTO' | 'E_AUTO') || 'AUTO';
+    const result = await adminService.getFareConfig(city, vehicleType);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/fare-config', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await adminService.updateFareConfig(req.body);

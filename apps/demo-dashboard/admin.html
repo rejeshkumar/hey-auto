@@ -353,6 +353,9 @@
       <div class="bnav-item" id="bnav-fare" onclick="showTab('fare')">
         <span class="bicon">💰</span><span class="blabel">Fares</span>
       </div>
+      <div class="bnav-item" id="bnav-simulator" onclick="showTab('simulator')">
+        <span class="bicon">🧪</span><span class="blabel">Simulate</span>
+      </div>
     </div>
   </nav>
 
@@ -393,6 +396,11 @@
       <div class="nav-section" style="margin-top:8px">Config</div>
       <div class="nav-item" onclick="showTab('fare')" id="nav-fare">
         <span class="icon">💰</span> Fare Config
+      </div>
+
+      <div class="nav-section" style="margin-top:8px">Testing</div>
+      <div class="nav-item" onclick="showTab('simulator')" id="nav-simulator">
+        <span class="icon">🧪</span> Driver Simulator
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -588,55 +596,230 @@
 
       <!-- ── FARE CONFIG ── -->
       <div id="tab-fare" class="hidden">
-        <div class="table-card">
+        <div class="table-card" style="margin-bottom:16px">
           <div class="table-header">
-            <h3>Fare Configuration</h3>
-            <span style="font-size:13px;color:var(--text2)">Changes take effect immediately</span>
+            <div>
+              <h3>Fare Configuration</h3>
+              <div style="font-size:12px;color:var(--text2);margin-top:3px">Kerala Govt. G.O.(P) No.14/2022/TRANS — effective 1 May 2022</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <select class="filter-select" id="fc-type-select" onchange="loadFareConfig()">
+                <option value="AUTO">Auto Rickshaw</option>
+                <option value="E_AUTO">E-Auto</option>
+              </select>
+              <span style="font-size:13px;color:var(--text2)">Changes take effect immediately</span>
+            </div>
           </div>
           <form class="fare-form" onsubmit="saveFareConfig(event)">
+            <input type="hidden" id="fc-type">
+
+            <div style="grid-column:span 2;background:var(--blue-light);border-radius:10px;padding:12px 16px;font-size:13px;color:#1E40AF;margin-bottom:4px">
+              📋 <strong>Base Fare</strong> — minimum charge covers first 1.5 km
+            </div>
             <div class="fare-form-group">
               <label>City</label>
               <input type="text" id="fc-city" value="Taliparamba" required>
             </div>
             <div class="fare-form-group">
-              <label>Vehicle Type</label>
-              <select id="fc-type">
-                <option value="AUTO">Auto Rickshaw</option>
-                <option value="E_AUTO">E-Auto</option>
-              </select>
-            </div>
-            <div class="fare-form-group">
               <label>Base Fare (₹)</label>
               <input type="number" id="fc-base" value="30" min="0" step="0.5" required>
-              <div class="hint">Covers the first base distance</div>
+              <div class="hint">Kerala gazette: ₹30 for Auto, ₹35 for E-Auto</div>
             </div>
             <div class="fare-form-group">
               <label>Base Distance (km)</label>
               <input type="number" id="fc-basedist" value="1.5" min="0" step="0.1" required>
+              <div class="hint">Gazette: 1.5 km minimum</div>
             </div>
             <div class="fare-form-group">
               <label>Per Km Rate (₹)</label>
               <input type="number" id="fc-perkm" value="15" min="0" step="0.5" required>
-            </div>
-            <div class="fare-form-group">
-              <label>Per Min Rate (₹)</label>
-              <input type="number" id="fc-permin" value="1" min="0" step="0.1" required>
-              <div class="hint">Waiting / traffic charge</div>
+              <div class="hint">Gazette: ₹15/km (= ₹1.50 per 100m)</div>
             </div>
             <div class="fare-form-group">
               <label>Minimum Fare (₹)</label>
               <input type="number" id="fc-min" value="30" min="0" step="0.5" required>
             </div>
             <div class="fare-form-group">
-              <label>Night Surcharge Multiplier</label>
-              <input type="number" id="fc-night" value="1.25" min="1" max="3" step="0.05" required>
-              <div class="hint">e.g. 1.25 = 25% surcharge (10 PM – 5 AM)</div>
+              <label>Per Minute Rate (₹)</label>
+              <input type="number" id="fc-permin" value="0" min="0" step="0.1" required>
+              <div class="hint">Kerala gazette: 0 (distance-only while moving)</div>
             </div>
+
+            <div style="grid-column:span 2;background:var(--purple-light);border-radius:10px;padding:12px 16px;font-size:13px;color:#5B21B6;margin-top:8px;margin-bottom:4px">
+              🌙 <strong>Night Surcharge</strong> — 50% additional charge (10 PM – 5 AM)
+            </div>
+            <div class="fare-form-group">
+              <label>Night Start</label>
+              <input type="time" id="fc-night-start" value="22:00" required>
+            </div>
+            <div class="fare-form-group">
+              <label>Night End</label>
+              <input type="time" id="fc-night-end" value="05:00" required>
+            </div>
+            <div class="fare-form-group">
+              <label>Night Multiplier</label>
+              <input type="number" id="fc-night" value="1.5" min="1" max="3" step="0.05" required>
+              <div class="hint">Gazette: 1.5 = 50% surcharge</div>
+            </div>
+
+            <div style="grid-column:span 2;background:var(--yellow-light);border-radius:10px;padding:12px 16px;font-size:13px;color:#92400E;margin-top:8px;margin-bottom:4px">
+              🚗 <strong>Onward-Only Surcharge</strong> — 50% of charges above minimum, daytime, outside corporation cities
+            </div>
+            <div class="fare-form-group">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" id="fc-onward-enabled" checked style="width:16px;height:16px;accent-color:var(--primary)">
+                Enable onward-only surcharge
+              </label>
+              <div class="hint">Disable for Thiruvananthapuram, Kollam, Kochi, Thrissur, Kozhikode, Kannur, Palakkad, Kottayam</div>
+            </div>
+            <div class="fare-form-group">
+              <label>Onward Surcharge (%)</label>
+              <input type="number" id="fc-onward-pct" value="50" min="0" max="100" step="5" required>
+              <div class="hint">Gazette: 50% of fare above minimum</div>
+            </div>
+
+            <div style="grid-column:span 2;background:var(--green-light);border-radius:10px;padding:12px 16px;font-size:13px;color:#065F46;margin-top:8px;margin-bottom:4px">
+              ⏱️ <strong>Waiting / Detention Charge</strong> — when auto is stationary
+            </div>
+            <div class="fare-form-group">
+              <label>Charge per 15 min (₹)</label>
+              <input type="number" id="fc-wait-per15" value="10" min="0" step="0.5" required>
+              <div class="hint">Gazette: ₹10 per 15 min or part thereof</div>
+            </div>
+            <div class="fare-form-group">
+              <label>Max per Day (₹)</label>
+              <input type="number" id="fc-wait-max" value="250" min="0" step="10" required>
+              <div class="hint">Gazette: maximum ₹250 per day</div>
+            </div>
+
             <div class="fare-form-actions">
+              <div id="fc-preview" style="font-size:13px;color:var(--text2);padding:8px 12px;background:var(--bg);border-radius:8px;display:none"></div>
+              <button type="button" class="btn btn-outline btn-sm" onclick="previewFare()">🧮 Preview Sample Fare</button>
               <button type="submit" class="btn btn-primary btn-sm" id="fareSubmitBtn">💾 Save Fare Config</button>
             </div>
           </form>
         </div>
+      </div>
+
+      <!-- ── DRIVER SIMULATOR ── -->
+      <div id="tab-simulator" class="hidden">
+
+        <!-- Step 1: Login -->
+        <div class="table-card" id="sim-login-card" style="max-width:480px;margin:0 auto">
+          <div class="table-header"><h3>🧪 Driver Simulator</h3><span style="font-size:12px;color:var(--text2)">Test rides end-to-end from this browser</span></div>
+          <div style="padding:20px">
+            <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Login as a <strong>driver</strong> to receive and handle ride requests without needing the driver app.</div>
+            <div class="fare-form-group" style="margin-bottom:12px">
+              <label>Driver Phone Number</label>
+              <div style="display:flex;gap:8px">
+                <span style="padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-weight:700;color:var(--text2)">+91</span>
+                <input type="tel" id="sim-phone" placeholder="9876543210" maxlength="10" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+              </div>
+            </div>
+            <div id="sim-otp-row" class="hidden" style="margin-bottom:12px">
+              <label style="display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px">OTP</label>
+              <div style="display:flex;gap:8px">
+                <input type="text" id="sim-otp" placeholder="123456" maxlength="6" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:18px;font-weight:700;letter-spacing:6px;outline:none;text-align:center">
+              </div>
+              <div id="sim-otp-hint" style="font-size:12px;color:var(--green);margin-top:4px"></div>
+            </div>
+            <div id="sim-login-err" class="err-msg"></div>
+            <button class="btn btn-primary" id="sim-login-btn" onclick="simSendOtp()" style="margin-top:4px">Send OTP</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Online Panel -->
+        <div id="sim-panel" class="hidden">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div class="stat-card" style="border:2px solid var(--border)">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <div style="font-size:13px;color:var(--text2);font-weight:600">Driver</div>
+                  <div style="font-size:16px;font-weight:800;margin-top:2px" id="sim-driver-name">—</div>
+                  <div style="font-size:12px;color:var(--text2)" id="sim-driver-phone">—</div>
+                </div>
+                <div id="sim-status-dot" style="width:14px;height:14px;border-radius:50%;background:var(--offline)"></div>
+              </div>
+            </div>
+            <div class="stat-card" style="display:flex;flex-direction:column;justify-content:center;gap:10px">
+              <button class="btn btn-green btn-sm" id="sim-go-online-btn" onclick="simGoOnline()">▶ Go Online</button>
+              <button class="btn btn-outline btn-sm" id="sim-go-offline-btn" onclick="simGoOffline()" style="display:none">⏹ Go Offline</button>
+              <button class="btn btn-ghost btn-sm" onclick="simLogout()">← Switch Driver</button>
+            </div>
+          </div>
+
+          <!-- Incoming ride request -->
+          <div id="sim-request-card" class="table-card hidden" style="border:2px solid var(--primary);margin-bottom:16px">
+            <div style="padding:20px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+                <div style="width:10px;height:10px;border-radius:50%;background:var(--primary);animation:pulse 1s infinite"></div>
+                <div style="font-size:16px;font-weight:800">🛺 New Ride Request!</div>
+                <div style="margin-left:auto;font-size:13px;color:var(--text2)" id="sim-req-timer"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+                <div style="background:var(--bg);border-radius:10px;padding:12px">
+                  <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Pickup</div>
+                  <div style="font-size:13px;font-weight:600;color:var(--secondary)" id="sim-req-pickup">—</div>
+                </div>
+                <div style="background:var(--bg);border-radius:10px;padding:12px">
+                  <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Drop</div>
+                  <div style="font-size:13px;font-weight:600;color:var(--error)" id="sim-req-drop">—</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:16px;margin-bottom:16px;font-size:14px">
+                <span>📏 <strong id="sim-req-dist">—</strong></span>
+                <span>💰 <strong id="sim-req-fare">—</strong></span>
+              </div>
+              <div style="display:flex;gap:10px">
+                <button class="btn btn-red" style="flex:1" onclick="simDeclineRide()">✕ Decline</button>
+                <button class="btn btn-green" style="flex:2" onclick="simAcceptRide()">✓ Accept Ride</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active ride steps -->
+          <div id="sim-ride-card" class="table-card hidden" style="margin-bottom:16px">
+            <div class="table-header"><h3>🚗 Active Ride</h3><span id="sim-ride-status-badge"></span></div>
+            <div style="padding:20px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+                <div style="background:var(--bg);border-radius:10px;padding:12px">
+                  <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Pickup</div>
+                  <div style="font-size:13px;font-weight:600;color:var(--secondary)" id="sim-ride-pickup">—</div>
+                </div>
+                <div style="background:var(--bg);border-radius:10px;padding:12px">
+                  <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;margin-bottom:4px">Drop</div>
+                  <div style="font-size:13px;font-weight:600;color:var(--error)" id="sim-ride-drop">—</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:16px;margin-bottom:20px;font-size:14px">
+                <span>📏 <strong id="sim-ride-dist">—</strong></span>
+                <span>💰 <strong id="sim-ride-fare">—</strong></span>
+                <span>⏱ <strong id="sim-ride-dur">—</strong></span>
+              </div>
+
+              <!-- OTP entry (shown at DRIVER_ARRIVED stage) -->
+              <div id="sim-otp-entry" class="hidden" style="margin-bottom:16px;background:var(--yellow-light);border-radius:10px;padding:14px">
+                <div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:8px">🔑 Enter OTP from rider to start ride</div>
+                <div style="display:flex;gap:10px">
+                  <input type="text" id="sim-ride-otp" placeholder="Enter 4-digit OTP" maxlength="4" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:20px;font-weight:700;letter-spacing:6px;text-align:center;outline:none">
+                  <button class="btn btn-primary btn-sm" onclick="simVerifyOtp()">Verify</button>
+                </div>
+              </div>
+
+              <div id="sim-ride-actions" style="display:flex;gap:10px;flex-wrap:wrap">
+                <!-- buttons rendered dynamically based on ride status -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Polling status -->
+          <div id="sim-polling-status" class="hidden" style="text-align:center;padding:32px;color:var(--text2)">
+            <div style="font-size:32px;margin-bottom:12px">📡</div>
+            <div style="font-size:14px;font-weight:600">Waiting for ride requests…</div>
+            <div style="font-size:12px;margin-top:4px" id="sim-poll-info">Polling every 3 seconds</div>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -958,13 +1141,13 @@ function initApp() {
 }
 
 function showTab(tab) {
-  ['dashboard','drivers','riders','documents','subscriptions','rides','fare'].forEach(t => {
+  ['dashboard','drivers','riders','documents','subscriptions','rides','fare','simulator'].forEach(t => {
     document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
     document.getElementById('nav-' + t).classList.toggle('active', t === tab);
     const bn = document.getElementById('bnav-' + t);
     if (bn) bn.classList.toggle('active', t === tab);
   });
-  const titles = { dashboard:'Dashboard', drivers:'Drivers', riders:'Riders', documents:'Document Verifications', subscriptions:'Subscriptions', rides:'Ride History', fare:'Fare Configuration' };
+  const titles = { dashboard:'Dashboard', drivers:'Drivers', riders:'Riders', documents:'Document Verifications', subscriptions:'Subscriptions', rides:'Ride History', fare:'Fare Configuration', simulator:'Driver Simulator' };
   document.getElementById('topbarTitle').textContent = titles[tab] || tab;
   currentTab = tab;
   closeSidebar();
@@ -977,6 +1160,8 @@ function showTab(tab) {
   else if (tab === 'documents') loadDocuments(1);
   else if (tab === 'subscriptions') loadSubscriptions(1);
   else if (tab === 'rides') loadRides(1);
+  else if (tab === 'fare') loadFareConfig();
+  // simulator tab has no auto-load — user manually logs in
 }
 
 function refreshCurrent() { showTab(currentTab); }
@@ -1408,27 +1593,81 @@ async function loadRides(page) {
 
 // ─── FARE CONFIG ─────────────────────────────────────────────────
 
+async function loadFareConfig() {
+  const vehicleType = document.getElementById('fc-type-select').value;
+  document.getElementById('fc-type').value = vehicleType;
+  const city = document.getElementById('fc-city').value || 'Taliparamba';
+  const data = await api('GET', `/admin/fare-config?city=${encodeURIComponent(city)}&vehicleType=${vehicleType}`);
+  if (!data.success || !data.data) return;
+  const c = data.data;
+  document.getElementById('fc-base').value        = c.baseFare;
+  document.getElementById('fc-basedist').value    = c.baseDistanceKm;
+  document.getElementById('fc-perkm').value       = c.perKmRate;
+  document.getElementById('fc-permin').value      = c.perMinRate;
+  document.getElementById('fc-min').value         = c.minFare;
+  document.getElementById('fc-night-start').value = c.nightStart || '22:00';
+  document.getElementById('fc-night-end').value   = c.nightEnd   || '05:00';
+  document.getElementById('fc-night').value       = c.nightMultiplier;
+  document.getElementById('fc-onward-enabled').checked = c.onwardSurchargeEnabled;
+  document.getElementById('fc-onward-pct').value  = c.onwardSurchargePercent;
+  document.getElementById('fc-wait-per15').value  = c.waitingChargePerQuarterHour;
+  document.getElementById('fc-wait-max').value    = c.waitingChargeMaxPerDay;
+  // set gazette-correct base fare hint
+  document.getElementById('fc-base').nextElementSibling.textContent =
+    vehicleType === 'E_AUTO' ? 'Kerala gazette: ₹35 for E-Auto' : 'Kerala gazette: ₹30 for Auto';
+}
+
+function previewFare() {
+  const base      = parseFloat(document.getElementById('fc-base').value) || 30;
+  const baseDist  = parseFloat(document.getElementById('fc-basedist').value) || 1.5;
+  const perKm     = parseFloat(document.getElementById('fc-perkm').value) || 15;
+  const perMin    = parseFloat(document.getElementById('fc-permin').value) || 0;
+  const minFare   = parseFloat(document.getElementById('fc-min').value) || 30;
+  const nightMult = parseFloat(document.getElementById('fc-night').value) || 1.5;
+  const onwardEn  = document.getElementById('fc-onward-enabled').checked;
+  const onwardPct = parseFloat(document.getElementById('fc-onward-pct').value) || 50;
+
+  // Sample: 10 km, 20 min, daytime
+  const distKm = 10, durMin = 20;
+  const distFare = Math.max(0, (distKm - baseDist) * perKm);
+  const timeFare = durMin * perMin;
+  let fare = base + distFare + timeFare;
+  const onward = (onwardEn && fare > minFare) ? (fare - minFare) * (onwardPct / 100) : 0;
+  fare += onward;
+  fare = Math.max(fare, minFare);
+
+  const el = document.getElementById('fc-preview');
+  el.style.display = 'block';
+  el.innerHTML = `<strong>Sample (10 km, daytime):</strong> Base ₹${base} + Distance ₹${Math.round(distFare)} + Onward ₹${Math.round(onward)} = <strong>₹${Math.round(fare)}</strong>`;
+}
+
 async function saveFareConfig(e) {
   e.preventDefault();
   const btn = document.getElementById('fareSubmitBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving…';
 
   const body = {
-    city: document.getElementById('fc-city').value,
-    vehicleType: document.getElementById('fc-type').value,
-    baseFare: parseFloat(document.getElementById('fc-base').value),
-    baseDistanceKm: parseFloat(document.getElementById('fc-basedist').value),
-    perKmRate: parseFloat(document.getElementById('fc-perkm').value),
-    perMinRate: parseFloat(document.getElementById('fc-permin').value),
-    minFare: parseFloat(document.getElementById('fc-min').value),
-    nightMultiplier: parseFloat(document.getElementById('fc-night').value),
+    city:                       document.getElementById('fc-city').value,
+    vehicleType:                document.getElementById('fc-type').value || document.getElementById('fc-type-select').value,
+    baseFare:                   parseFloat(document.getElementById('fc-base').value),
+    baseDistanceKm:             parseFloat(document.getElementById('fc-basedist').value),
+    perKmRate:                  parseFloat(document.getElementById('fc-perkm').value),
+    perMinRate:                 parseFloat(document.getElementById('fc-permin').value),
+    minFare:                    parseFloat(document.getElementById('fc-min').value),
+    nightStart:                 document.getElementById('fc-night-start').value,
+    nightEnd:                   document.getElementById('fc-night-end').value,
+    nightMultiplier:            parseFloat(document.getElementById('fc-night').value),
+    onwardSurchargeEnabled:     document.getElementById('fc-onward-enabled').checked,
+    onwardSurchargePercent:     parseFloat(document.getElementById('fc-onward-pct').value),
+    waitingChargePerQuarterHour: parseFloat(document.getElementById('fc-wait-per15').value),
+    waitingChargeMaxPerDay:     parseFloat(document.getElementById('fc-wait-max').value),
   };
 
   const data = await api('POST', '/admin/fare-config', body);
   btn.disabled = false; btn.textContent = '💾 Save Fare Config';
 
   if (data.success) {
-    toast('Fare config saved successfully ✓', 'success');
+    toast('Fare config saved ✓', 'success');
   } else {
     toast(data.error?.message || 'Failed to save', 'error');
   }
@@ -1582,6 +1821,267 @@ async function verifySubscription(subId, action) {
       }
     });
   }
+}
+
+// ─── DRIVER SIMULATOR ────────────────────────────────────────────
+
+let simToken = '';
+let simUser = null;
+let simRide = null;
+let simPollInterval = null;
+let simReqTimerInterval = null;
+let simIsOnline = false;
+
+async function simApi(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (simToken) opts.headers['Authorization'] = 'Bearer ' + simToken;
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  return res.json();
+}
+
+async function simSendOtp() {
+  const phone = document.getElementById('sim-phone').value.trim();
+  if (phone.length !== 10) { showSimErr('Enter a valid 10-digit number'); return; }
+  const btn = document.getElementById('sim-login-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  const data = await simApi('POST', '/auth/send-otp', { phone, role: 'DRIVER' });
+  btn.disabled = false;
+  if (data.success) {
+    document.getElementById('sim-otp-row').classList.remove('hidden');
+    const hint = data.data?.otp ? `OTP: ${data.data.otp}` : '';
+    document.getElementById('sim-otp-hint').textContent = hint;
+    document.getElementById('sim-otp').value = data.data?.otp || '';
+    btn.textContent = 'Verify OTP';
+    btn.onclick = simVerifyLogin;
+  } else {
+    showSimErr(data.error?.message || 'Failed to send OTP');
+    btn.textContent = 'Send OTP';
+  }
+}
+
+async function simVerifyLogin() {
+  const phone = document.getElementById('sim-phone').value.trim();
+  const otp = document.getElementById('sim-otp').value.trim();
+  const btn = document.getElementById('sim-login-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  const data = await simApi('POST', '/auth/verify-otp', { phone, otp, role: 'DRIVER' });
+  btn.disabled = false; btn.textContent = 'Verify OTP';
+  if (data.success) {
+    simToken = data.data.tokens.accessToken;
+    simUser = data.data.user;
+    document.getElementById('sim-login-card').classList.add('hidden');
+    document.getElementById('sim-panel').classList.remove('hidden');
+    document.getElementById('sim-driver-name').textContent = simUser.fullName || 'Driver';
+    document.getElementById('sim-driver-phone').textContent = '+91' + phone;
+  } else {
+    showSimErr(data.error?.message || 'Invalid OTP');
+  }
+}
+
+function showSimErr(msg) {
+  const el = document.getElementById('sim-login-err');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 5000);
+}
+
+async function simGoOnline() {
+  const data = await simApi('POST', '/driver/go-online', { lat: 12.015, lng: 75.367, city: 'Taliparamba' });
+  if (data.success) {
+    simIsOnline = true;
+    document.getElementById('sim-status-dot').style.background = 'var(--online)';
+    document.getElementById('sim-go-online-btn').style.display = 'none';
+    document.getElementById('sim-go-offline-btn').style.display = '';
+    document.getElementById('sim-polling-status').classList.remove('hidden');
+    toast('Driver is online — waiting for rides', 'success');
+    simStartPolling();
+  } else {
+    toast(data.error?.message || 'Could not go online', 'error');
+  }
+}
+
+async function simGoOffline() {
+  await simApi('POST', '/driver/go-offline');
+  simIsOnline = false;
+  simStopPolling();
+  document.getElementById('sim-status-dot').style.background = 'var(--offline)';
+  document.getElementById('sim-go-online-btn').style.display = '';
+  document.getElementById('sim-go-offline-btn').style.display = 'none';
+  document.getElementById('sim-polling-status').classList.add('hidden');
+  toast('Driver offline', 'info');
+}
+
+function simStartPolling() {
+  simPollInterval = setInterval(simPollForRide, 3000);
+}
+
+function simStopPolling() {
+  if (simPollInterval) { clearInterval(simPollInterval); simPollInterval = null; }
+}
+
+async function simPollForRide() {
+  if (!simIsOnline) return;
+  // If already on a ride, poll ride status instead
+  if (simRide) { await simRefreshRide(); return; }
+
+  const data = await simApi('GET', '/driver/ride-request');
+  if (data.success && data.data) {
+    const ride = data.data;
+    // Show incoming request card
+    simStopPolling();
+    document.getElementById('sim-polling-status').classList.add('hidden');
+    document.getElementById('sim-request-card').classList.remove('hidden');
+    document.getElementById('sim-req-pickup').textContent = ride.pickupAddress || '—';
+    document.getElementById('sim-req-drop').textContent = ride.dropoffAddress || '—';
+    document.getElementById('sim-req-dist').textContent = ride.estimatedDistanceKm ? ride.estimatedDistanceKm.toFixed(1) + ' km' : '—';
+    document.getElementById('sim-req-fare').textContent = ride.estimatedFare ? '₹' + ride.estimatedFare : '—';
+    simRide = ride;
+    // 15-second countdown timer
+    let timeLeft = 15;
+    document.getElementById('sim-req-timer').textContent = timeLeft + 's';
+    simReqTimerInterval = setInterval(() => {
+      timeLeft--;
+      document.getElementById('sim-req-timer').textContent = timeLeft + 's';
+      if (timeLeft <= 0) {
+        clearInterval(simReqTimerInterval);
+        document.getElementById('sim-request-card').classList.add('hidden');
+        simRide = null;
+        document.getElementById('sim-polling-status').classList.remove('hidden');
+        simStartPolling();
+      }
+    }, 1000);
+  } else {
+    document.getElementById('sim-poll-info').textContent = 'Last checked: ' + new Date().toLocaleTimeString('en-IN');
+  }
+}
+
+async function simAcceptRide() {
+  if (!simRide) return;
+  clearInterval(simReqTimerInterval);
+  const data = await simApi('POST', `/rides/${simRide.id}/accept`);
+  if (data.success) {
+    document.getElementById('sim-request-card').classList.add('hidden');
+    simRide = data.data || simRide;
+    simShowRideCard('DRIVER_ASSIGNED');
+    toast('Ride accepted ✓', 'success');
+    simStartPolling();
+  } else {
+    toast(data.error?.message || 'Accept failed', 'error');
+  }
+}
+
+async function simDeclineRide() {
+  if (!simRide) return;
+  clearInterval(simReqTimerInterval);
+  await simApi('POST', `/rides/${simRide.id}/decline`);
+  simRide = null;
+  document.getElementById('sim-request-card').classList.add('hidden');
+  document.getElementById('sim-polling-status').classList.remove('hidden');
+  simStartPolling();
+  toast('Ride declined', 'info');
+}
+
+async function simRefreshRide() {
+  if (!simRide) return;
+  const data = await simApi('GET', `/rides/${simRide.id}`);
+  if (data.success && data.data) {
+    simRide = data.data;
+    simShowRideCard(simRide.status);
+  }
+}
+
+function simShowRideCard(status) {
+  const card = document.getElementById('sim-ride-card');
+  card.classList.remove('hidden');
+  document.getElementById('sim-polling-status').classList.add('hidden');
+
+  document.getElementById('sim-ride-pickup').textContent = simRide.pickupAddress || '—';
+  document.getElementById('sim-ride-drop').textContent = simRide.dropoffAddress || '—';
+  document.getElementById('sim-ride-dist').textContent = simRide.estimatedDistanceKm ? simRide.estimatedDistanceKm.toFixed(1) + ' km' : '—';
+  document.getElementById('sim-ride-fare').textContent = simRide.estimatedFare ? '₹' + simRide.estimatedFare : '—';
+  document.getElementById('sim-ride-dur').textContent = simRide.estimatedDurationMin ? simRide.estimatedDurationMin + ' min' : '—';
+
+  const badge = statusBadge(status);
+  document.getElementById('sim-ride-status-badge').innerHTML = badge;
+
+  const otpEntry = document.getElementById('sim-otp-entry');
+  const actions = document.getElementById('sim-ride-actions');
+
+  otpEntry.classList.add('hidden');
+  actions.innerHTML = '';
+
+  if (status === 'DRIVER_ASSIGNED') {
+    actions.innerHTML = `<button class="btn btn-primary" style="flex:1" onclick="simMarkArrived()">📍 I've Arrived at Pickup</button>`;
+  } else if (status === 'DRIVER_ARRIVED') {
+    otpEntry.classList.remove('hidden');
+  } else if (status === 'OTP_VERIFIED' || status === 'IN_PROGRESS') {
+    actions.innerHTML = `<button class="btn btn-green" style="flex:1" onclick="simCompleteRide()">✓ Complete Ride</button>`;
+  } else if (status === 'COMPLETED') {
+    actions.innerHTML = `<div style="text-align:center;width:100%"><div style="font-size:32px">🎉</div><div style="font-size:16px;font-weight:700;color:var(--green);margin-top:8px">Ride Completed!</div><div style="font-size:13px;color:var(--text2);margin-top:4px">Total: ₹${simRide.totalAmount || simRide.estimatedFare}</div><button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="simResetAfterRide()">✓ Done</button></div>`;
+    simStopPolling();
+  }
+}
+
+async function simMarkArrived() {
+  const data = await simApi('POST', `/rides/${simRide.id}/arrived`);
+  if (data.success) {
+    simRide = data.data || simRide;
+    simShowRideCard('DRIVER_ARRIVED');
+    toast('Marked as arrived — ask rider for OTP', 'info');
+  } else {
+    toast(data.error?.message || 'Failed', 'error');
+  }
+}
+
+async function simVerifyOtp() {
+  const otp = document.getElementById('sim-ride-otp').value.trim();
+  if (!otp || otp.length !== 4) { toast('Enter 4-digit OTP', 'error'); return; }
+  const data = await simApi('POST', `/rides/${simRide.id}/verify-otp`, { otp });
+  if (data.success) {
+    // start ride immediately after OTP
+    const startData = await simApi('POST', `/rides/${simRide.id}/start`);
+    simRide = startData.data || simRide;
+    simShowRideCard('IN_PROGRESS');
+    toast('OTP verified — ride started!', 'success');
+  } else {
+    toast(data.error?.message || 'Wrong OTP', 'error');
+  }
+}
+
+async function simCompleteRide() {
+  const data = await simApi('POST', `/rides/${simRide.id}/complete`);
+  if (data.success) {
+    simRide = data.data || simRide;
+    simShowRideCard('COMPLETED');
+    toast('Ride completed ✓', 'success');
+  } else {
+    toast(data.error?.message || 'Failed', 'error');
+  }
+}
+
+function simResetAfterRide() {
+  simRide = null;
+  document.getElementById('sim-ride-card').classList.add('hidden');
+  document.getElementById('sim-ride-otp').value = '';
+  if (simIsOnline) {
+    document.getElementById('sim-polling-status').classList.remove('hidden');
+    simStartPolling();
+  }
+}
+
+function simLogout() {
+  simStopPolling();
+  simToken = ''; simUser = null; simRide = null; simIsOnline = false;
+  document.getElementById('sim-panel').classList.add('hidden');
+  document.getElementById('sim-login-card').classList.remove('hidden');
+  document.getElementById('sim-otp-row').classList.add('hidden');
+  document.getElementById('sim-phone').value = '';
+  document.getElementById('sim-otp').value = '';
+  document.getElementById('sim-login-btn').textContent = 'Send OTP';
+  document.getElementById('sim-login-btn').onclick = simSendOtp;
+  document.getElementById('sim-request-card').classList.add('hidden');
+  document.getElementById('sim-ride-card').classList.add('hidden');
+  document.getElementById('sim-polling-status').classList.add('hidden');
 }
 
 // ─── KEYBOARD SHORTCUTS ──────────────────────────────────────────

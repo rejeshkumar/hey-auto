@@ -1,7 +1,7 @@
 export default {
   common: {
-    appName: 'Hey Auto Driver',
-    tagline: 'ഡ്രൈവർമാർക്കുള്ള Hey Auto',
+    appName: 'Aye Auto Driver',
+    tagline: 'ഡ്രൈവർമാർക്കുള്ള Aye Auto',
     ok: 'ശരി',
     cancel: 'റദ്ദാക്കുക',
     confirm: 'സ്ഥിരീകരിക്കുക',
@@ -15,7 +15,7 @@ export default {
   },
 
   auth: {
-    welcome: 'Hey Auto Driver',
+    welcome: 'Aye Auto Driver',
     welcomeSub: 'നിങ്ങളുടെ ഫോൺ നമ്പർ നൽകുക',
     phoneLabel: 'ഫോൺ നമ്പർ',
     phonePlaceholder: 'നിങ്ങളുടെ 10 അക്ക നമ്പർ',
@@ -104,7 +104,7 @@ export default {
     settings: 'ക്രമീകരണങ്ങൾ',
     language: 'ഭാഷ',
     help: 'സഹായം',
-    about: 'Hey Auto-നെ കുറിച്ച്',
+    about: 'Aye Auto-നെ കുറിച്ച്',
     logout: 'ലോഗൗട്ട്',
     logoutConfirm: 'ലോഗൗട്ട് ചെയ്യണോ?',
     verification: 'പരിശോധന നില',

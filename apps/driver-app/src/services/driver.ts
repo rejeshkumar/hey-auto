@@ -15,6 +15,7 @@ export interface DriverProfile {
   licenseNumber?: string;
   licenseExpiry?: string;
   verificationStatus: string;
+  vehicles?: Vehicle[];
 }
 
 export interface Vehicle {
@@ -82,6 +83,12 @@ export const driverApi = {
     year?: number;
     permitNumber?: string;
   }) => api.post<ApiResponse<Vehicle>>('/driver/vehicle', data),
+
+  updateVehicle: (vehicleId: string, data: {
+    model?: string;
+    color?: string;
+    year?: number;
+  }) => api.put<ApiResponse<Vehicle>>(`/driver/vehicle/${vehicleId}`, data),
 
   getEarnings: () =>
     api.get<ApiResponse<EarningsSummary>>('/driver/earnings'),

@@ -17,6 +17,7 @@ import { HistoryScreen } from '../features/history/HistoryScreen';
 import { ProfileScreen } from '../features/profile/ProfileScreen';
 import { DocumentsScreen } from '../features/profile/DocumentsScreen';
 import { SubscriptionScreen } from '../features/profile/SubscriptionScreen';
+import { VehicleScreen } from '../features/profile/VehicleScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -97,6 +98,7 @@ export function Navigation() {
             <Stack.Screen name="ActiveRide" component={ActiveRideScreen} options={{ gestureEnabled: false }} />
             <Stack.Screen name="Documents" component={DocumentsScreen} />
             <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+            <Stack.Screen name="Vehicle" component={VehicleScreen} />
           </>
         )}
       </Stack.Navigator>

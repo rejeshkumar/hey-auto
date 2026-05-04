@@ -19,7 +19,7 @@ interface PaymentMethod {
 const METHODS: PaymentMethod[] = [
   { id: 'cash', type: 'cash', label: 'Cash', sublabel: 'Pay directly to driver', icon: 'cash', iconColor: colors.success },
   { id: 'upi', type: 'upi', label: 'UPI', sublabel: 'GPay, PhonePe, Paytm, BHIM', icon: 'contactless-payment', iconColor: colors.info },
-  { id: 'wallet', type: 'wallet', label: 'Hey Auto Wallet', sublabel: '₹0.00 balance', icon: 'wallet', iconColor: colors.primary },
+  { id: 'wallet', type: 'wallet', label: 'Aye Auto Wallet', sublabel: '₹0.00 balance', icon: 'wallet', iconColor: colors.primary },
 ];
 
 export function PaymentMethodsScreen({ navigation }: any) {
@@ -65,7 +65,7 @@ export function PaymentMethodsScreen({ navigation }: any) {
           <View style={styles.walletTop}>
             <View>
               <Text style={styles.walletBalance}>₹0.00</Text>
-              <Text style={styles.walletLabel}>Hey Auto Wallet Balance</Text>
+              <Text style={styles.walletLabel}>Aye Auto Wallet Balance</Text>
             </View>
             <Icon name="wallet" size={32} color={colors.primary} />
           </View>

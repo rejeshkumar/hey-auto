@@ -91,6 +91,7 @@ export function ProfileScreen({ navigation }: any) {
         )}
 
         <View style={styles.menuSection}>
+          <MenuItem icon="car" label="My Vehicle" onPress={() => navigation.navigate('Vehicle')} rightText={profile?.vehicles?.[0]?.registrationNo} />
           <MenuItem icon="file-document" label={t('profile.documents')} onPress={() => navigation.navigate('Documents')} />
           <MenuItem icon="star-circle" label="Subscription" onPress={() => navigation.navigate('Subscription')} rightText={profile?.verificationStatus === 'VERIFIED' ? 'Active' : undefined} />
           <MenuItem icon="cash-multiple" label={t('profile.myEarnings')} onPress={() => navigation.navigate('EarningsTab')} />

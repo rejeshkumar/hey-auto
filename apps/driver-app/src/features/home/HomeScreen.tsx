@@ -82,11 +82,14 @@ export function HomeScreen({ navigation }: any) {
       }
       loadEarnings();
     } catch (err: any) {
-      const code = err?.response?.data?.code;
+      const errData = err?.response?.data?.error || err?.response?.data;
+      let parsed = errData;
+      if (typeof errData?.message === 'string') {
+        try { parsed = JSON.parse(errData.message); } catch {}
+      }
+      const code = parsed?.code || errData?.code;
       if (code === 'SUBSCRIPTION_REQUIRED') {
-        const msg = i18n.language === 'ml'
-          ? err.response.data.messageMl
-          : err.response.data.message;
+        const msg = i18n.language === 'ml' ? parsed?.messageMl : parsed?.message;
         Alert.alert(
           'Subscription Required',
           msg || 'Pay ₹25 to go online today',
@@ -96,7 +99,7 @@ export function HomeScreen({ navigation }: any) {
           ],
         );
       } else {
-        Alert.alert('Error', err?.response?.data?.message || 'Something went wrong');
+        Alert.alert('Error', parsed?.message || errData?.message || 'Something went wrong');
       }
     } finally {
       setToggling(false);

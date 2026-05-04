@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { storage } from '../utils/storage';
 
-const SOCKET_URL = __DEV__ ? 'http://192.168.1.3:3000' : 'https://api.heyauto.in';
+const SOCKET_URL = __DEV__ ? 'https://hey-auto-server-production.up.railway.app' : 'https://hey-auto-server-production.up.railway.app';
 
 class SocketService {
   private socket: Socket | null = null;
@@ -13,7 +13,7 @@ class SocketService {
 
     this.socket = io(SOCKET_URL, {
       auth: { token },
-      transports: ['websocket'],
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: 15,
       reconnectionDelay: 2000,

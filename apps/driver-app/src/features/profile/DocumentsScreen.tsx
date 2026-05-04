@@ -224,7 +224,7 @@ export function DocumentsScreen({ navigation }: any) {
           <View style={styles.noteCard}>
             <Icon name="information" size={18} color={colors.info} />
             <Text style={styles.noteText}>
-              Documents are reviewed by Hey Auto admin within 24 hours. You'll receive a notification once verified.
+              Documents are reviewed by Aye Auto admin within 24 hours. You'll receive a notification once verified.
             </Text>
           </View>
         </ScrollView>

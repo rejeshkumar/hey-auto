@@ -1,8 +1,8 @@
 export const colors = {
-  primary: '#FF6B00',
-  primaryDark: '#D45A00',
-  primaryLight: '#FFF3E8',
-  secondary: '#1B8F4E',
+  primary: '#FECE26',
+  primaryDark: '#D4A800',
+  primaryLight: '#FFF9DC',
+  secondary: '#419952',
   secondaryLight: '#E8F5EE',
 
   background: '#FFFFFF',
@@ -12,14 +12,14 @@ export const colors = {
   text: '#1A1A2E',
   textSecondary: '#6B7280',
   textLight: '#9CA3AF',
-  textOnPrimary: '#FFFFFF',
+  textOnPrimary: '#1A1A2E',
 
   border: '#E5E7EB',
   borderLight: '#F3F4F6',
   divider: '#F0F0F0',
 
-  success: '#10B981',
-  successLight: '#D1FAE5',
+  success: '#419952',
+  successLight: '#E8F5EE',
   error: '#EF4444',
   errorLight: '#FEE2E2',
   warning: '#F59E0B',
@@ -32,17 +32,17 @@ export const colors = {
   transparent: 'transparent',
   overlay: 'rgba(0,0,0,0.5)',
 
-  rating: '#F5A623',
-  online: '#10B981',
+  rating: '#FECE26',
+  online: '#419952',
   offline: '#EF4444',
 
-  earnings: '#10B981',
-  earningsLight: '#D1FAE5',
+  earnings: '#419952',
+  earningsLight: '#E8F5EE',
 
   map: {
-    pickup: '#1B8F4E',
+    pickup: '#419952',
     dropoff: '#EF4444',
-    route: '#3B82F6',
-    driverMarker: '#FF6B00',
+    route: '#FECE26',
+    driverMarker: '#FECE26',
   },
 } as const;

@@ -24,7 +24,7 @@ interface VerifyOtpResponse {
 }
 
 const normalizePhone = (phone: string) =>
-  phone.startsWith('+91') ? phone : `+91${phone}`;
+  phone.startsWith('+91') ? phone.slice(3) : phone;
 
 export const authApi = {
   sendOtp: (phone: string) =>

@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { storage } from '../utils/storage';
 
-const BASE_URL = __DEV__ ? 'http://192.168.1.3:3000/api/v1' : 'https://api.heyauto.in/api/v1';
+const BASE_URL = __DEV__ ? 'https://hey-auto-server-production.up.railway.app/api/v1' : 'https://hey-auto-server-production.up.railway.app/api/v1';
 
 export const api = axios.create({
   baseURL: BASE_URL,

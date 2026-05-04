@@ -1,6 +1,6 @@
 export default {
   common: {
-    appName: 'Hey Auto',
+    appName: 'Aye Auto',
     tagline: 'കേരളത്തിലെ നിങ്ങളുടെ വിശ്വസ്ത ഓട്ടോ യാത്ര',
     ok: 'ശരി',
     cancel: 'റദ്ദാക്കുക',
@@ -16,7 +16,7 @@ export default {
   },
 
   auth: {
-    welcome: 'Hey Auto-ലേക്ക് സ്വാഗതം',
+    welcome: 'Aye Auto-ലേക്ക് സ്വാഗതം',
     welcomeSub: 'നിങ്ങളുടെ ഫോൺ നമ്പർ നൽകുക',
     phoneLabel: 'ഫോൺ നമ്പർ',
     phonePlaceholder: 'നിങ്ങളുടെ 10 അക്ക നമ്പർ',
@@ -99,7 +99,7 @@ export default {
     paid: 'അടച്ചത്',
     rateDriver: 'ഡ്രൈവറെ റേറ്റ് ചെയ്യുക',
     addTip: 'ടിപ്പ് നൽകുക (ഐച്ഛികം)',
-    thankYou: 'Hey Auto ഉപയോഗിച്ചതിന് നന്ദി!',
+    thankYou: 'Aye Auto ഉപയോഗിച്ചതിന് നന്ദി!',
     submit: 'സമർപ്പിക്കുക',
   },
 
@@ -113,7 +113,7 @@ export default {
     settings: 'ക്രമീകരണങ്ങൾ',
     language: 'ഭാഷ',
     help: 'സഹായം',
-    about: 'Hey Auto-നെ കുറിച്ച്',
+    about: 'Aye Auto-നെ കുറിച്ച്',
     logout: 'ലോഗൗട്ട്',
     logoutConfirm: 'ലോഗൗട്ട് ചെയ്യണോ?',
     version: 'പതിപ്പ് {{version}}',

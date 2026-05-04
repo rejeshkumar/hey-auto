@@ -1,6 +1,6 @@
 export default {
   common: {
-    appName: 'Hey Auto',
+    appName: 'Aye Auto',
     tagline: 'Your trusted auto ride in Kerala',
     ok: 'OK',
     cancel: 'Cancel',
@@ -16,7 +16,7 @@ export default {
   },
 
   auth: {
-    welcome: 'Welcome to Hey Auto',
+    welcome: 'Welcome to Aye Auto',
     welcomeSub: 'Enter your phone number to get started',
     phoneLabel: 'Phone Number',
     phonePlaceholder: 'Your 10-digit number',
@@ -99,7 +99,7 @@ export default {
     paid: 'Paid',
     rateDriver: 'Rate your driver',
     addTip: 'Add a tip (optional)',
-    thankYou: 'Thank you for riding with Hey Auto!',
+    thankYou: 'Thank you for riding with Aye Auto!',
     submit: 'Submit',
   },
 
@@ -113,7 +113,7 @@ export default {
     settings: 'Settings',
     language: 'Language',
     help: 'Help & Support',
-    about: 'About Hey Auto',
+    about: 'About Aye Auto',
     logout: 'Logout',
     logoutConfirm: 'Are you sure you want to logout?',
     version: 'Version {{version}}',

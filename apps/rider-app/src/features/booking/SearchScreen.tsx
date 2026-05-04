@@ -14,19 +14,16 @@ export function SearchScreen({ navigation }: any) {
   const [results, setResults] = useState<PlacePrediction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { setDropoff, setPhase } = useRideStore();
+  const [editingPickup, setEditingPickup] = useState(false);
+  const [pickupQuery, setPickupQuery] = useState('');
+  const { setDropoff, setPickup, setPhase } = useRideStore();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pickupDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSearch = useCallback((text: string) => {
     setQuery(text);
-
     if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    if (text.length < 2) {
-      setResults([]);
-      return;
-    }
-
+    if (text.length < 2) { setResults([]); return; }
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       setError(null);
@@ -40,27 +37,61 @@ export function SearchScreen({ navigation }: any) {
       } catch (err: any) {
         const msg = err?.response?.data?.error?.message || err?.message || 'Network error';
         setError(msg);
-        console.error('Search error:', msg, err?.response?.status);
       } finally {
         setLoading(false);
       }
     }, 300);
   }, []);
 
-  const handleSelectPlace = async (place: PlacePrediction) => {
+  const handlePickupSearch = useCallback((text: string) => {
+    setPickupQuery(text);
+    if (pickupDebounceRef.current) clearTimeout(pickupDebounceRef.current);
+    if (text.length < 2) { setResults([]); return; }
+    pickupDebounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const { data } = await mapsApi.searchPlaces(text, SESSION_TOKEN);
+        if (data.success) setResults(data.data);
+      } catch {} finally {
+        setLoading(false);
+      }
+    }, 300);
+  }, []);
+
+  const handleSelectPlace = async (place: PlacePrediction, isPickup = false) => {
     try {
       const { data } = await mapsApi.getPlaceDetails(place.placeId, SESSION_TOKEN);
-      if (data.success && data.data) {
-        setDropoff({ lat: data.data.lat, lng: data.data.lng, address: data.data.name || place.mainText });
-        setPhase('reviewing_estimate');
-        navigation.navigate('BookingConfirm');
+      if (data.success && data.data && data.data.lat !== 0 && data.data.lng !== 0) {
+        if (isPickup) {
+          setPickup({ lat: data.data.lat, lng: data.data.lng, address: data.data.name || place.mainText });
+          setEditingPickup(false);
+          setPickupQuery('');
+          setResults([]);
+        } else {
+          setDropoff({ lat: data.data.lat, lng: data.data.lng, address: data.data.name || place.mainText });
+          setPhase('reviewing_estimate');
+          navigation.navigate('BookingConfirm');
+        }
+      } else {
+        setError('Could not get location details. Please try another place.');
       }
     } catch {
-      setDropoff({ lat: 0, lng: 0, address: place.mainText });
-      setPhase('reviewing_estimate');
-      navigation.navigate('BookingConfirm');
+      setError('Could not get location details. Please try another place.');
     }
   };
+
+  const handleSwap = () => {
+    const store = useRideStore.getState();
+    const currentPickup = store.pickup;
+    const currentDropoff = store.dropoff;
+    if (currentPickup && currentDropoff) {
+      setPickup(currentDropoff);
+      setDropoff(currentPickup);
+    }
+  };
+
+  const pickupAddress = useRideStore.getState().pickup?.address || t('booking.currentLocation');
+  const dropoffAddress = useRideStore.getState().dropoff?.address || '';
 
   return (
     <View style={styles.container}>
@@ -71,34 +102,49 @@ export function SearchScreen({ navigation }: any) {
 
         <View style={styles.inputContainer}>
           <View style={styles.dots}>
-            <View style={[styles.dot, { backgroundColor: colors.primary }]} />
+            <View style={[styles.dot, { backgroundColor: colors.secondary }]} />
             <View style={styles.line} />
             <View style={[styles.dot, { backgroundColor: colors.error }]} />
           </View>
           <View style={styles.inputs}>
             <View style={styles.inputRow}>
-              <Text style={styles.inputLabel} numberOfLines={1}>
-                {useRideStore.getState().pickup?.address || t('booking.currentLocation')}
-              </Text>
+              {editingPickup ? (
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search pickup location"
+                  placeholderTextColor={colors.textLight}
+                  value={pickupQuery}
+                  onChangeText={handlePickupSearch}
+                  autoFocus
+                />
+              ) : (
+                <TouchableOpacity onPress={() => { setEditingPickup(true); setResults([]); setQuery(''); }}>
+                  <Text style={styles.inputLabel} numberOfLines={1}>{pickupAddress}</Text>
+                </TouchableOpacity>
+              )}
             </View>
             <View style={styles.inputDivider} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={t('home.searchPlaceholder')}
-              placeholderTextColor={colors.textLight}
-              value={query}
-              onChangeText={handleSearch}
-              autoFocus
-            />
+            {!editingPickup && (
+              <TextInput
+                style={styles.searchInput}
+                placeholder={t('home.searchPlaceholder')}
+                placeholderTextColor={colors.textLight}
+                value={query}
+                onChangeText={handleSearch}
+                autoFocus
+              />
+            )}
           </View>
+
+          <TouchableOpacity style={styles.swapBtn} onPress={handleSwap}>
+            <Icon name="swap-vertical" size={20} color={colors.primary} />
+          </TouchableOpacity>
         </View>
       </View>
 
       {loading && <ActivityIndicator size="small" color={colors.primary} style={styles.loader} />}
 
-      {error && (
-        <Text style={styles.errorText}>{error}</Text>
-      )}
+      {error && <Text style={styles.errorText}>{error}</Text>}
 
       <FlatList
         data={results}
@@ -106,7 +152,7 @@ export function SearchScreen({ navigation }: any) {
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.placeItem} onPress={() => handleSelectPlace(item)}>
+          <TouchableOpacity style={styles.placeItem} onPress={() => handleSelectPlace(item, editingPickup)}>
             <View style={styles.placeIcon}>
               <Icon name="map-marker" size={20} color={colors.primary} />
             </View>
@@ -134,7 +180,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.borderLight,
   },
   backBtn: { marginRight: spacing.md },
-  inputContainer: { flex: 1, flexDirection: 'row', gap: spacing.md },
+  inputContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   dots: { alignItems: 'center', paddingTop: spacing.sm, gap: 2 },
   dot: { width: 10, height: 10, borderRadius: 5 },
   line: { width: 2, height: 24, backgroundColor: colors.border },
@@ -143,6 +189,12 @@ const styles = StyleSheet.create({
   inputLabel: { ...typography.small, color: colors.textSecondary },
   inputDivider: { height: 1, backgroundColor: colors.borderLight },
   searchInput: { ...typography.body, color: colors.text, paddingVertical: spacing.sm },
+  swapBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: colors.primary,
+  },
   loader: { marginTop: spacing.md },
   list: { padding: spacing.base },
   placeItem: {

@@ -152,7 +152,7 @@ class MapsService {
       }
 
       return data.predictions.map((p: any) => ({
-        placeId: p.place_id,
+        placeId: String(p.place_id),
         description: p.description,
         mainText: p.structured_formatting?.main_text || p.description,
         secondaryText: p.structured_formatting?.secondary_text || '',

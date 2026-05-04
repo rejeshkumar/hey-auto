@@ -13,6 +13,7 @@ export function BookingConfirmScreen({ navigation }: any) {
   const { t } = useTranslation();
   const { pickup, dropoff, fareEstimate, setFareEstimate, setCurrentRide, setPhase, paymentMethod, setPaymentMethod } = useRideStore();
   const [loading, setLoading] = useState(true);
+  const [estimateError, setEstimateError] = useState(false);
   const [booking, setBooking] = useState(false);
   const [routeCoords, setRouteCoords] = useState<{ latitude: number; longitude: number }[]>([]);
 
@@ -34,6 +35,7 @@ export function BookingConfirmScreen({ navigation }: any) {
       }
     } catch (err) {
       console.error('Fare estimate error:', err);
+      setEstimateError(true);
     } finally {
       setLoading(false);
     }
@@ -102,6 +104,13 @@ export function BookingConfirmScreen({ navigation }: any) {
 
         {loading ? (
           <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: spacing.xl }} />
+        ) : estimateError ? (
+          <View style={{ alignItems: 'center', marginVertical: spacing.xl }}>
+            <Text style={{ color: colors.error, marginBottom: spacing.md }}>Could not get fare estimate</Text>
+            <TouchableOpacity onPress={() => { setEstimateError(false); fetchEstimate(); }} style={{ backgroundColor: colors.primary, padding: spacing.md, borderRadius: 8 }}>
+              <Text style={{ color: colors.white }}>Retry</Text>
+            </TouchableOpacity>
+          </View>
         ) : fareEstimate ? (
           <>
             <View style={styles.fareCard}>

@@ -262,6 +262,13 @@ export class AdminService {
     return { data: rides, total, page, limit, hasMore: skip + rides.length < total };
   }
 
+  async getFareConfig(city: string, vehicleType: 'AUTO' | 'E_AUTO') {
+    return prisma.fareConfig.findFirst({
+      where: { city, vehicleType, isActive: true },
+      orderBy: { effectiveFrom: 'desc' },
+    });
+  }
+
   async updateFareConfig(data: {
     city: string;
     vehicleType: 'AUTO' | 'E_AUTO';
@@ -271,9 +278,30 @@ export class AdminService {
     perMinRate: number;
     minFare: number;
     nightMultiplier: number;
+    nightStart: string;
+    nightEnd: string;
+    onwardSurchargeEnabled: boolean;
+    onwardSurchargePercent: number;
+    waitingChargePerQuarterHour: number;
+    waitingChargeMaxPerDay: number;
   }) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    const fields = {
+      baseFare: data.baseFare,
+      baseDistanceKm: data.baseDistanceKm,
+      perKmRate: data.perKmRate,
+      perMinRate: data.perMinRate,
+      minFare: data.minFare,
+      nightStart: data.nightStart,
+      nightEnd: data.nightEnd,
+      nightMultiplier: data.nightMultiplier,
+      onwardSurchargeEnabled: data.onwardSurchargeEnabled,
+      onwardSurchargePercent: data.onwardSurchargePercent,
+      waitingChargePerQuarterHour: data.waitingChargePerQuarterHour,
+      waitingChargeMaxPerDay: data.waitingChargeMaxPerDay,
+    };
 
     return prisma.fareConfig.upsert({
       where: {
@@ -283,24 +311,12 @@ export class AdminService {
           effectiveFrom: today,
         },
       },
-      update: {
-        baseFare: data.baseFare,
-        baseDistanceKm: data.baseDistanceKm,
-        perKmRate: data.perKmRate,
-        perMinRate: data.perMinRate,
-        minFare: data.minFare,
-        nightMultiplier: data.nightMultiplier,
-      },
+      update: fields,
       create: {
         city: data.city,
         vehicleType: data.vehicleType,
-        baseFare: data.baseFare,
-        baseDistanceKm: data.baseDistanceKm,
-        perKmRate: data.perKmRate,
-        perMinRate: data.perMinRate,
-        minFare: data.minFare,
-        nightMultiplier: data.nightMultiplier,
         effectiveFrom: today,
+        ...fields,
       },
     });
   }
