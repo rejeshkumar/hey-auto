@@ -107,10 +107,10 @@ const publicDir = path.resolve(process.cwd(), '..', 'public');
 app.use('/driver-console', express.static(path.join(publicDir, 'driver-console')));
 app.use('/rider', express.static(path.join(publicDir, 'rider')));
 
-// Legacy /demo → serves apps/demo-dashboard directly
+// Legacy /demo → serves apps/demo-dashboard directly (copied to public/demo in Docker)
 const appsDir = path.resolve(process.cwd(), '..', 'apps');
-app.use('/demo', express.static(path.join(appsDir, 'demo-dashboard')));
-app.get('/admin', (_req, res) => res.sendFile(path.join(appsDir, 'demo-dashboard', 'admin.html')));
+app.use('/demo', express.static(path.join(publicDir, 'demo')));
+app.get('/admin', (_req, res) => res.sendFile(path.join(publicDir, 'demo', 'admin.html')));
 
 // Root redirect
 app.get('/', (_req, res) => {
