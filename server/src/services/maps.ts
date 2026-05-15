@@ -310,8 +310,11 @@ class MapsService {
           .slice(1)
           .join(',')
           .trim();
+        // Encode coords + name into placeId so place-details needs no second request
+        const encodedName = encodeURIComponent(mainText);
+        const placeId = `osm_coord_${r.lat}_${r.lon}_${encodedName}`;
         return {
-          placeId: `osm_${r.osm_type}_${r.osm_id}`,
+          placeId,
           description: r.display_name,
           mainText,
           secondaryText: secondary,
@@ -325,39 +328,19 @@ class MapsService {
 
   private async getNominatimDetails(placeId: string): Promise<PlaceDetails | null> {
     try {
-      // placeId format: osm_<type>_<id>  e.g. osm_way_12345
+      // placeId format: osm_coord_<lat>_<lon>_<encodedName>
       const parts = placeId.split('_');
-      if (parts.length < 3 || parts[0] !== 'osm') return null;
-      const osmType = parts[1]; // node/way/relation
-      const osmId = parts[2];
-
-      const typeChar = osmType === 'node' ? 'N' : osmType === 'way' ? 'W' : 'R';
-      const url =
-        `https://nominatim.openstreetmap.org/lookup` +
-        `?osm_ids=${typeChar}${osmId}` +
-        `&format=json` +
-        `&addressdetails=1` +
-        `&accept-language=en`;
-
-      const response = await globalThis.fetch(url, {
-        headers: { 'User-Agent': 'HeyAutoApp/1.0 (heyauto.in)' },
-      });
-      if (!response.ok) return null;
-
-      const results: any[] = await response.json();
-      if (!results.length) return null;
-
-      const r = results[0];
-      const name = r.name || r.display_name.split(',')[0];
-      return {
-        placeId,
-        name,
-        address: r.display_name,
-        lat: parseFloat(r.lat),
-        lng: parseFloat(r.lon),
-      };
+      if (parts.length >= 5 && parts[0] === 'osm' && parts[1] === 'coord') {
+        const lat = parseFloat(parts[2]);
+        const lng = parseFloat(parts[3]);
+        const name = decodeURIComponent(parts.slice(4).join('_'));
+        if (!isNaN(lat) && !isNaN(lng)) {
+          return { placeId, name, address: name, lat, lng };
+        }
+      }
+      return null;
     } catch (err) {
-      logger.error({ err }, 'Nominatim lookup failed');
+      logger.error({ err }, 'Nominatim details decode failed');
       return null;
     }
   }
