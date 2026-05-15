@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database';
 import { redis } from '../../config/redis';
+import { env } from '../../config/env';
 import { NotFoundError, BadRequestError } from '../../utils/errors';
 import type {
   UpdateDriverProfileInput,
@@ -179,9 +180,13 @@ export class DriverService {
       throw new BadRequestError('Location not available. Please enable GPS.');
     }
 
-    // ── Subscription check (skip in development) ────
+    // ── Subscription check (skip in development or for bypass list) ────
     const isDev = process.env.NODE_ENV === 'development';
-    if (!isDev && profile.subscriptions.length === 0) {
+    const bypassPhones = (env.BYPASS_SUBSCRIPTION_PHONES || '')
+      .split(',').map((p) => p.trim()).filter(Boolean);
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { phone: true } });
+    const isBypassed = user ? bypassPhones.includes(user.phone) : false;
+    if (!isDev && !isBypassed && profile.subscriptions.length === 0) {
       throw new BadRequestError(
         JSON.stringify({
           code: 'SUBSCRIPTION_REQUIRED',
@@ -191,7 +196,7 @@ export class DriverService {
         })
       );
     }
-    // ───────────────────────────────────────────────
+    // ────────────────────────────────────────────────────────────────
 
     await prisma.driverProfile.update({
       where: { userId },

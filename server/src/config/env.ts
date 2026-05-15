@@ -28,14 +28,24 @@ const envSchema = z.object({
 
   GOOGLE_MAPS_API_KEY: z.string().optional(),
 
+  // Cloudflare R2 (preferred — zero egress cost)
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET_NAME: z.string().optional(),
+  R2_PUBLIC_URL: z.string().optional(), // e.g. https://files.heyauto.in (custom domain on R2)
+
+  // AWS S3 (legacy fallback — kept for backward compatibility)
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
   AWS_REGION: z.string().default('ap-south-1'),
   AWS_S3_BUCKET: z.string().default('heyauto-uploads'),
 
+  // Firebase — FCM Server Key only needed for Expo dashboard registration (not used at runtime)
   FIREBASE_PROJECT_ID: z.string().optional(),
   FIREBASE_PRIVATE_KEY: z.string().optional(),
   FIREBASE_CLIENT_EMAIL: z.string().optional(),
+  FCM_SERVER_KEY: z.string().optional(),
 
   SENTRY_DSN: z.string().optional(),
 
@@ -48,6 +58,9 @@ const envSchema = z.object({
   RIDE_REQUEST_TIMEOUT_SEC: z.coerce.number().default(15),
   MAX_MATCHING_ROUNDS: z.coerce.number().default(3),
   OTP_EXPIRY_SEC: z.coerce.number().default(300),
+
+  // Comma-separated phone numbers exempt from subscription check (testing only)
+  BYPASS_SUBSCRIPTION_PHONES: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
