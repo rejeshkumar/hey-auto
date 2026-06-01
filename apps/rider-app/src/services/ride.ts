@@ -72,4 +72,7 @@ export const rideApi = {
 
   rateRide: (rideId: string, rating: number, review?: string, tipAmount?: number) =>
     api.post(`/rides/${rideId}/rate`, { rating, review, tipAmount }),
+
+  createShareToken: (rideId: string) =>
+    api.post<ApiResponse<{ url: string }>>(`/rides/${rideId}/share`, {}),
 };

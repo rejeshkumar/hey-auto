@@ -76,6 +76,10 @@ export class DriverController {
 
   async goOnline(req: Request, res: Response, next: NextFunction) {
     try {
+      const { lat, lng } = req.body;
+      if (lat && lng) {
+        await driverService.updateLocation(req.user!.userId, { lat: parseFloat(lat), lng: parseFloat(lng) });
+      }
       const result = await driverService.goOnline(req.user!.userId);
       res.json({ success: true, data: result });
     } catch (err) {

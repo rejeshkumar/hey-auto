@@ -2,8 +2,28 @@ import { prisma } from '../../config/database';
 import { logger } from '../../utils/logger';
 import { env } from '../../config/env';
 
+// Both apps call getExpoPushTokenAsync() which produces ExponentPushToken[xxx] tokens.
+// These must be sent through Expo's push gateway, which internally uses FCM/APNs.
+// The FCM Server Key is registered in the Expo dashboard — the server never calls FCM directly.
+const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+
+interface ExpoMessage {
+  to: string;
+  title: string;
+  body: string;
+  data?: Record<string, string>;
+  sound?: 'default';
+  priority?: 'high' | 'normal' | 'default';
+  channelId?: string;
+}
+
 export class NotificationService {
-  async sendPushNotification(userId: string, title: string, body: string, data?: Record<string, string>) {
+  async sendPushNotification(
+    userId: string,
+    title: string,
+    body: string,
+    data?: Record<string, string>,
+  ) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { fcmToken: true },
@@ -16,33 +36,40 @@ export class NotificationService {
 
     await this.saveNotification(userId, title, body, 'SYSTEM', data);
 
-    if (!env.FIREBASE_PROJECT_ID) {
-      logger.debug('Firebase not configured, skipping push');
+    const isExpoToken = user.fcmToken.startsWith('ExponentPushToken[');
+    if (!isExpoToken) {
+      logger.warn({ userId }, 'Unrecognised push token format — skipping push');
       return;
     }
 
-    try {
-      // firebase-admin is an optional dependency — only loaded when configured
-      const admin = await import('firebase-admin' as string);
-      if (!admin.apps?.length) {
-        admin.initializeApp({
-          credential: admin.credential.cert({
-            projectId: env.FIREBASE_PROJECT_ID,
-            privateKey: env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            clientEmail: env.FIREBASE_CLIENT_EMAIL,
-          }),
-        });
-      }
+    const message: ExpoMessage = {
+      to: user.fcmToken,
+      title,
+      body,
+      data: data ?? {},
+      sound: 'default',
+      priority: 'high',
+      channelId: 'rides',
+    };
 
-      await admin.messaging().send({
-        token: user.fcmToken,
-        notification: { title, body },
-        data: data ?? {},
-        android: { priority: 'high' as const },
-        apns: { payload: { aps: { sound: 'default' } } },
+    try {
+      const res = await fetch(EXPO_PUSH_URL, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Accept-Encoding': 'gzip, deflate',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(message),
       });
 
-      logger.info({ userId, title }, 'Push notification sent');
+      const result = await res.json() as { data: { status: string; message?: string } };
+
+      if (result.data?.status === 'error') {
+        logger.error({ userId, title, error: result.data.message }, 'Expo push delivery error');
+      } else {
+        logger.info({ userId, title }, 'Push notification sent via Expo');
+      }
     } catch (err) {
       logger.error({ err, userId }, 'Failed to send push notification');
     }

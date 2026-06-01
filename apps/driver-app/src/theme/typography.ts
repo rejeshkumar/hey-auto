@@ -1,23 +1,24 @@
 import { Platform } from 'react-native';
 
 const fontFamily = Platform.select({
-  ios: 'System',
-  android: 'Roboto',
-  default: 'System',
+  ios:     'Inter',
+  android: 'Inter',
+  default: 'Inter',
 });
 
 export const typography = {
-  h1: { fontSize: 28, fontWeight: '700' as const, lineHeight: 36, fontFamily },
-  h2: { fontSize: 24, fontWeight: '700' as const, lineHeight: 32, fontFamily },
-  h3: { fontSize: 20, fontWeight: '600' as const, lineHeight: 28, fontFamily },
-  h4: { fontSize: 18, fontWeight: '600' as const, lineHeight: 24, fontFamily },
-  body: { fontSize: 16, fontWeight: '400' as const, lineHeight: 24, fontFamily },
-  bodyBold: { fontSize: 16, fontWeight: '600' as const, lineHeight: 24, fontFamily },
-  small: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20, fontFamily },
-  smallBold: { fontSize: 14, fontWeight: '600' as const, lineHeight: 20, fontFamily },
-  caption: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16, fontFamily },
-  captionBold: { fontSize: 12, fontWeight: '600' as const, lineHeight: 16, fontFamily },
-  button: { fontSize: 16, fontWeight: '600' as const, lineHeight: 24, fontFamily },
-  label: { fontSize: 14, fontWeight: '500' as const, lineHeight: 20, fontFamily },
-  bigNumber: { fontSize: 40, fontWeight: '800' as const, lineHeight: 48, fontFamily },
+  h1:          { fontSize: 28, fontWeight: '900' as const, lineHeight: 34, fontFamily, letterSpacing: -0.5 },
+  h2:          { fontSize: 24, fontWeight: '800' as const, lineHeight: 30, fontFamily, letterSpacing: -0.5 },
+  h3:          { fontSize: 20, fontWeight: '700' as const, lineHeight: 26, fontFamily, letterSpacing: -0.3 },
+  h4:          { fontSize: 17, fontWeight: '700' as const, lineHeight: 22, fontFamily },
+  body:        { fontSize: 15, fontWeight: '400' as const, lineHeight: 22, fontFamily },
+  bodyBold:    { fontSize: 15, fontWeight: '600' as const, lineHeight: 22, fontFamily },
+  small:       { fontSize: 13, fontWeight: '400' as const, lineHeight: 18, fontFamily },
+  smallBold:   { fontSize: 13, fontWeight: '600' as const, lineHeight: 18, fontFamily },
+  caption:     { fontSize: 11, fontWeight: '400' as const, lineHeight: 15, fontFamily },
+  captionBold: { fontSize: 11, fontWeight: '600' as const, lineHeight: 15, fontFamily },
+  button:      { fontSize: 15, fontWeight: '800' as const, lineHeight: 20, fontFamily },
+  label:       { fontSize: 10, fontWeight: '700' as const, lineHeight: 14, fontFamily, letterSpacing: 0.5 },
+  inkLabel:    { fontSize: 10, fontWeight: '600' as const, lineHeight: 14, fontFamily },
+  bigNumber:   { fontSize: 40, fontWeight: '900' as const, lineHeight: 48, fontFamily, letterSpacing: -1 },
 } as const;

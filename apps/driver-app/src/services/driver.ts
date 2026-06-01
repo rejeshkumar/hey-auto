@@ -93,6 +93,9 @@ export const driverApi = {
   getEarnings: () =>
     api.get<ApiResponse<EarningsSummary>>('/driver/earnings'),
 
+  getPendingRideRequest: () =>
+    api.get<ApiResponse<any>>('/driver/ride-request'),
+
   getRideHistory: (page = 1) =>
     api.get(`/driver/rides/history?page=${page}&limit=20`),
 
@@ -108,6 +111,9 @@ export const driverApi = {
   completeRide: (rideId: string) =>
     api.post<ApiResponse<any>>(`/rides/${rideId}/complete`),
 
+  cancelRide: (rideId: string, reason?: string) =>
+    api.post<ApiResponse<any>>(`/rides/${rideId}/cancel`, { reason }),
+
   rateRide: (rideId: string, rating: number) =>
     api.post<ApiResponse<any>>(`/rides/${rideId}/rate`, { rating }),
 
@@ -116,6 +122,12 @@ export const driverApi = {
 
   getSubscriptionPlans: () =>
     api.get<ApiResponse<any>>('/subscription/plans'),
+
+  createSubscriptionPayment: (planId?: string) =>
+    api.post<ApiResponse<{ paymentUrl: string; linkId: string; amount: number }>>(
+      '/subscription/create-payment',
+      { planId },
+    ),
 
   verifySubscriptionUTR: (data: { utrNumber: string; planId: string; amount: number }) =>
     api.post<ApiResponse<any>>('/subscription/verify-utr', data),

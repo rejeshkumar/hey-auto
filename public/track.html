@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aye Auto — Live Trip Tracking</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1A1A2E; color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
+    #header { background: #F5C800; padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+    #header h1 { font-size: 18px; font-weight: 800; color: #1A1A2E; }
+    #header span { font-size: 13px; color: #1A1A2E; opacity: 0.7; }
+    #map-wrap { position: relative; background: #2a2a4a; flex: 1; min-height: 300px; overflow: hidden; }
+    #map-img { width: 100%; height: 100%; object-fit: cover; display: block; min-height: 320px; }
+    #map-placeholder { display: flex; align-items: center; justify-content: center; min-height: 320px; color: #888; font-size: 15px; }
+    #refresh-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #F5C800; font-size: 11px; padding: 4px 10px; border-radius: 20px; }
+    #card { background: #23234a; border-radius: 20px 20px 0 0; padding: 20px; margin-top: -12px; position: relative; z-index: 2; }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 14px; }
+    .pill-green { background: #00C853; color: #fff; }
+    .pill-yellow { background: #F5C800; color: #1A1A2E; }
+    .pill-grey { background: #555; color: #fff; }
+    .row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .dot-green { background: #00C853; }
+    .dot-red { background: #FF3B30; }
+    .addr-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .addr-text { font-size: 14px; color: #fff; margin-top: 2px; line-height: 1.4; }
+    #driver-card { background: #2a2a4a; border-radius: 14px; padding: 14px; margin-bottom: 14px; display: none; }
+    #driver-card .dname { font-size: 16px; font-weight: 700; color: #fff; }
+    #driver-card .dvehicle { font-size: 13px; color: #F5C800; margin-top: 2px; }
+    #fare { font-size: 14px; color: #888; margin-bottom: 6px; }
+    #fare strong { color: #F5C800; font-size: 20px; }
+    #error { text-align: center; padding: 40px 20px; color: #ff6b6b; font-size: 15px; display: none; }
+    #loading { text-align: center; padding: 40px 20px; color: #888; font-size: 15px; }
+    .powered { text-align: center; font-size: 11px; color: #555; padding: 14px; }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div>
+      <h1>🛺 Aye Auto</h1>
+      <span>Live Trip Tracking</span>
+    </div>
+  </div>
+
+  <div id="map-wrap">
+    <div id="map-placeholder" id="loading-map">Loading map…</div>
+    <img id="map-img" style="display:none" alt="Live map" />
+    <div id="refresh-badge" style="display:none">↻ Live</div>
+  </div>
+
+  <div id="card">
+    <div id="loading">Loading trip details…</div>
+    <div id="error"></div>
+    <div id="content" style="display:none">
+      <div id="status-pill" class="status-pill pill-yellow">Searching for driver</div>
+
+      <div class="row">
+        <div class="dot dot-green"></div>
+        <div>
+          <div class="addr-label">Pickup</div>
+          <div class="addr-text" id="pickup-addr">—</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="dot dot-red"></div>
+        <div>
+          <div class="addr-label">Destination</div>
+          <div class="addr-text" id="dropoff-addr">—</div>
+        </div>
+      </div>
+
+      <div id="driver-card">
+        <div class="dname" id="driver-name">—</div>
+        <div class="dvehicle" id="driver-vehicle">—</div>
+      </div>
+
+      <div id="fare"></div>
+    </div>
+  </div>
+
+  <div class="powered">Powered by Aye Auto · Zero-commission auto booking</div>
+
+  <script>
+    const MAPS_KEY = 'AIzaSyBaOw8Yu2FKHSOSqnBbZNfPVBfJcD4J2i8';
+    const token    = location.pathname.split('/track/')[1];
+    const API_URL  = `/api/v1/rides/track/${token}`;
+
+    const STATUS_LABELS = {
+      REQUESTED:       ['Searching for driver', 'pill-yellow'],
+      DRIVER_ASSIGNED: ['Driver on the way', 'pill-green'],
+      DRIVER_ARRIVED:  ['Driver arrived', 'pill-green'],
+      OTP_VERIFIED:    ['Ride starting', 'pill-green'],
+      IN_PROGRESS:     ['Ride in progress', 'pill-green'],
+      COMPLETED:       ['Trip completed', 'pill-grey'],
+      CANCELLED_RIDER: ['Trip cancelled', 'pill-grey'],
+      CANCELLED_DRIVER:['Trip cancelled', 'pill-grey'],
+    };
+
+    function buildMapUrl(data) {
+      const hasDriver = data.driverLat && data.driverLng;
+      const center = hasDriver
+        ? `${data.driverLat},${data.driverLng}`
+        : `${data.pickupLat},${data.pickupLng}`;
+
+      // Build manually — URLSearchParams encodes | to %7C which breaks Google Static Maps
+      const parts = [
+        `center=${center}`,
+        `zoom=15`,
+        `size=640x400`,
+        `scale=2`,
+        `maptype=roadmap`,
+        `key=${MAPS_KEY}`,
+      ];
+
+      if (hasDriver) parts.push(`markers=color:0xF5C800|label:D|${data.driverLat},${data.driverLng}`);
+      parts.push(`markers=color:0x00C853|label:P|${data.pickupLat},${data.pickupLng}`);
+      parts.push(`markers=color:0xFF3B30|label:X|${data.dropoffLat},${data.dropoffLng}`);
+
+      return `https://maps.googleapis.com/maps/api/staticmap?${parts.join('&')}`;
+    }
+
+    function render(data) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+
+      // Status pill
+      const [label, cls] = STATUS_LABELS[data.status] || ['Unknown', 'pill-grey'];
+      const pill = document.getElementById('status-pill');
+      pill.textContent = label;
+      pill.className   = 'status-pill ' + cls;
+
+      // Addresses
+      document.getElementById('pickup-addr').textContent  = data.pickupAddress;
+      document.getElementById('dropoff-addr').textContent = data.dropoffAddress;
+
+      // Driver card
+      const dcard = document.getElementById('driver-card');
+      if (data.driverName) {
+        dcard.style.display = 'block';
+        document.getElementById('driver-name').textContent = data.driverName;
+        const v = data.vehicle;
+        document.getElementById('driver-vehicle').textContent =
+          v ? `${v.registrationNo}${v.color ? ' · ' + v.color : ''}${v.model ? ' · ' + v.model : ''}` : '';
+      }
+
+      // Fare
+      const fareEl = document.getElementById('fare');
+      fareEl.innerHTML = `Estimated fare <strong>₹${Math.round(data.estimatedFare)}</strong>`;
+
+      // Map
+      const img = document.getElementById('map-img');
+      const placeholder = document.getElementById('map-placeholder');
+      const badge = document.getElementById('refresh-badge');
+      img.src = buildMapUrl(data);
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+      badge.style.display = 'block';
+
+      // Stop polling on terminal states
+      if (['COMPLETED','CANCELLED_RIDER','CANCELLED_DRIVER','NO_DRIVERS'].includes(data.status)) {
+        stopPolling();
+        badge.textContent = '✓ Final';
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('loading').style.display = 'none';
+      const el = document.getElementById('error');
+      el.style.display = 'block';
+      el.textContent   = msg;
+      stopPolling();
+    }
+
+    async function fetchData() {
+      try {
+        const resp = await fetch(API_URL);
+        const json = await resp.json();
+        if (!json.success) { showError(json.error?.message || 'Link expired'); return; }
+        render(json.data);
+      } catch {
+        showError('Network error — please check your connection');
+      }
+    }
+
+    let interval;
+    function stopPolling() { clearInterval(interval); }
+
+    fetchData();
+    interval = setInterval(fetchData, 5000);
+  </script>
+</body>
+</html>

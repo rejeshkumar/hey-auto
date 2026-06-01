@@ -1,48 +1,57 @@
 export const colors = {
-  primary: '#FECE26',
-  primaryDark: '#D4A800',
-  primaryLight: '#FFF9DC',
-  secondary: '#419952',
-  secondaryLight: '#E8F5EE',
+  // Brand
+  primary:       '#f9b01b',
+  primaryDark:   '#c98a00',
+  primaryLight:  '#f9b01b1a',   // 10% tint for chip backgrounds
 
-  background: '#FFFFFF',
-  surface: '#F7F8FA',
-  card: '#FFFFFF',
+  // Ink — every highlighted card background
+  ink:           '#0A0A0A',
+  inkBorder:     '#1A1A1A',     // subtle card border on white
 
-  text: '#1A1A2E',
-  textSecondary: '#6B7280',
-  textLight: '#9CA3AF',
-  textOnPrimary: '#1A1A2E',
+  // Secondary
+  secondary:     '#00C96B',     // online / arrived / success
+  secondaryLight:'rgba(0,201,107,0.12)',
+  secondaryBorder:'rgba(0,201,107,0.25)',
 
-  border: '#E5E7EB',
-  borderLight: '#F3F4F6',
-  divider: '#F0F0F0',
+  // Backgrounds
+  background:    '#FFFFFF',
+  surface:       '#F7F7F5',
+  card:          '#F2F2F0',
 
-  success: '#419952',
-  successLight: '#E8F5EE',
-  error: '#EF4444',
-  errorLight: '#FEE2E2',
-  warning: '#F59E0B',
-  warningLight: '#FEF3C7',
-  info: '#3B82F6',
-  infoLight: '#DBEAFE',
+  // Text (on white surfaces)
+  text:          '#0A0A0A',
+  textSecondary: '#666666',
+  textLight:     '#999999',
 
-  black: '#000000',
-  white: '#FFFFFF',
-  transparent: 'transparent',
-  overlay: 'rgba(0,0,0,0.5)',
+  // Borders (on white surfaces)
+  border:        '#E8E8E8',
+  borderLight:   '#F0F0F0',
 
-  rating: '#FECE26',
-  online: '#419952',
-  offline: '#EF4444',
+  // Semantic
+  error:         '#F03A3A',
+  errorLight:    '#FEECEC',
+  warning:       '#F59E0B',
+  warningLight:  '#FEF3C7',
+  info:          '#3B82F6',
+  infoLight:     '#DBEAFE',
+  success:       '#00C96B',
+  successLight:  'rgba(0,201,107,0.12)',
 
-  earnings: '#419952',
-  earningsLight: '#E8F5EE',
+  // Utility
+  black:         '#000000',
+  white:         '#FFFFFF',
+  transparent:   'transparent',
+  overlay:       'rgba(0,0,0,0.5)',
+  rating:        '#f9b01b',
+  online:        '#00C96B',
+  offline:       '#F03A3A',
+  earnings:      '#f9b01b',
+  earningsLight: '#f9b01b1a',
 
   map: {
-    pickup: '#419952',
-    dropoff: '#EF4444',
-    route: '#FECE26',
-    driverMarker: '#FECE26',
+    pickup:      '#00C96B',
+    dropoff:     '#F03A3A',
+    route:       '#f9b01b',
+    driverMarker:'#f9b01b',
   },
 } as const;

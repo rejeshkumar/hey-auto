@@ -1,7 +1,7 @@
 export default {
   common: {
-    appName: 'Aye Auto Driver',
-    tagline: 'Aye Auto for Drivers',
+    appName: 'Hey Auto Driver',
+    tagline: 'Hey Auto for Drivers',
     ok: 'OK',
     cancel: 'Cancel',
     confirm: 'Confirm',
@@ -15,7 +15,7 @@ export default {
   },
 
   auth: {
-    welcome: 'Aye Auto Driver',
+    welcome: 'Hey Auto Driver',
     welcomeSub: 'Enter your phone number to get started',
     phoneLabel: 'Phone Number',
     phonePlaceholder: 'Your 10-digit number',
@@ -104,7 +104,7 @@ export default {
     settings: 'Settings',
     language: 'Language',
     help: 'Help & Support',
-    about: 'About Aye Auto',
+    about: 'About Hey Auto',
     logout: 'Logout',
     logoutConfirm: 'Are you sure you want to logout?',
     verification: 'Verification Status',

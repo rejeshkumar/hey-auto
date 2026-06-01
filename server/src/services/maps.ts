@@ -279,10 +279,13 @@ class MapsService {
 
   private async searchNominatim(query: string): Promise<PlacePrediction[]> {
     try {
+      // Bias results toward northern Kerala (Kannur / Kasaragod / Kozhikode district)
       const url =
         `https://nominatim.openstreetmap.org/search` +
         `?q=${encodeURIComponent(query)}` +
         `&countrycodes=in` +
+        `&viewbox=74.8,11.0,76.2,12.8` +
+        `&bounded=0` +
         `&format=json` +
         `&addressdetails=1` +
         `&limit=8` +

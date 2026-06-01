@@ -3,6 +3,7 @@ import { storage } from '../utils/storage';
 import { authApi, User } from '../services/auth';
 import { socketService } from '../services/socket';
 import { registerPushToken } from '../services/pushNotifications';
+import { setLoginGrace } from '../services/api';
 
 interface AuthState {
   user: User | null;
@@ -42,9 +43,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     storage.set('refreshToken', tokens.refreshToken);
     storage.set('user', JSON.stringify(user));
 
+    setLoginGrace();
     set({ user, isAuthenticated: true, isNewUser });
     socketService.connect();
-    registerPushToken();
+    registerPushToken().catch(() => {});
   },
 
   completeProfile: async (profileData) => {

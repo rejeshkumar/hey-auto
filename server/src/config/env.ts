@@ -61,6 +61,14 @@ const envSchema = z.object({
 
   // Comma-separated phone numbers exempt from subscription check (testing only)
   BYPASS_SUBSCRIPTION_PHONES: z.string().optional(),
+  // Comma-separated phone numbers that always get OTP 123456 (testing, even when WhatsApp is live)
+  DEMO_OTP_PHONES: z.string().optional(),
+
+  // Sarvam AI — Malayalam STT + TTS
+  SARVAM_API_KEY: z.string().optional(),
+
+  // Anthropic — Claude for voice NLU
+  ANTHROPIC_API_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

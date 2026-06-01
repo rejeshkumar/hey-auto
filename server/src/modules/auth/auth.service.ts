@@ -33,7 +33,15 @@ export class AuthService {
     const fast2smsConfigured = !!env.FAST2SMS_API_KEY;
     const whatsappConfigured = !!(env.WHATSAPP_ACCESS_TOKEN && env.WHATSAPP_PHONE_NUMBER_ID);
     const smsConfigured = !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN);
-    const useDemoOtp = !fast2smsConfigured && !whatsappConfigured && !smsConfigured;
+    const noGateway = !fast2smsConfigured && !whatsappConfigured && !smsConfigured;
+    const demoPhones = (env.DEMO_OTP_PHONES || '').split(',').map(p => p.trim()).filter(Boolean);
+    const useDemoOtp = noGateway || demoPhones.includes(phone);
+
+    // Hard block: never fall back to demo OTP silently in production
+    if (env.NODE_ENV === 'production' && noGateway && !demoPhones.includes(phone)) {
+      throw new BadRequestError('SMS service is not configured. Contact support.', 'SMS_UNAVAILABLE');
+    }
+
     const otp = useDemoOtp ? '123456' : generateOTP(6);
 
     await redis.setex(`${OTP_PREFIX}${phone}`, env.OTP_EXPIRY_SEC, otp);
@@ -42,16 +50,24 @@ export class AuthService {
 
     let channel = 'demo';
     if (fast2smsConfigured) {
-      await this.sendFast2Sms(phone, otp);
-      channel = 'fast2sms';
+      try {
+        await this.sendFast2Sms(phone, otp);
+        channel = 'fast2sms';
+      } catch (err) {
+        logger.error({ err, phone: phone.slice(-4) }, 'Fast2SMS failed — falling back to demo OTP');
+      }
     } else if (whatsappConfigured) {
       whatsappService.sendOtpMessage(phone, otp).catch((err) => {
         logger.error({ err, phone: phone.slice(-4) }, 'WhatsApp OTP failed');
       });
       channel = 'whatsapp';
     } else if (smsConfigured) {
-      await this.sendSms(phone, `Your Aye Auto verification code is: ${otp}. Valid for 5 minutes.`);
-      channel = 'twilio';
+      try {
+        await this.sendSms(phone, `Your Hey Auto verification code is: ${otp}. Valid for 5 minutes.`);
+        channel = 'twilio';
+      } catch (err) {
+        logger.error({ err, phone: phone.slice(-4) }, 'Twilio failed — falling back to demo OTP');
+      }
     }
 
     logger.info({ phone: phone.slice(-4), role, channel }, 'OTP sent');
@@ -62,7 +78,7 @@ export class AuthService {
         : smsConfigured ? 'OTP sent via SMS'
         : 'OTP sent successfully',
       expiresIn: env.OTP_EXPIRY_SEC,
-      ...(useDemoOtp && { otp }),
+      ...(useDemoOtp && env.NODE_ENV !== 'production' && { otp }),
     };
   }
 
@@ -145,7 +161,7 @@ export class AuthService {
                 userId: user.id,
                 licenseNumber: 'KL-' + Math.floor(1000 + Math.random() * 9000),
                 city: 'taliparamba',
-                verificationStatus: 'VERIFIED',
+                verificationStatus: 'PENDING',
                 isOnline: false,
                 currentLat: 12.0368,
                 currentLng: 75.3614,
@@ -164,10 +180,9 @@ export class AuthService {
           }
           await prisma.user.update({
             where: { id: user.id },
-            data: { fullName: 'Driver ' + phone.slice(-4), status: 'ACTIVE' },
+            data: { fullName: 'Driver ' + phone.slice(-4) },
           });
           user.fullName = 'Driver ' + phone.slice(-4);
-          user.status = 'ACTIVE' as any;
         }
       }
     }

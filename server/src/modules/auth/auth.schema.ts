@@ -5,7 +5,7 @@ export const sendOtpSchema = z.object({
     .string()
     .regex(/^[6-9]\d{9}$/, 'Invalid Indian phone number')
     .transform((v) => `+91${v}`),
-  role: z.enum(['RIDER', 'DRIVER', 'ADMIN']).default('RIDER'),
+  role: z.enum(['RIDER', 'DRIVER']).default('RIDER'),
 });
 
 export const verifyOtpSchema = z.object({
@@ -14,7 +14,24 @@ export const verifyOtpSchema = z.object({
     .regex(/^[6-9]\d{9}$/, 'Invalid Indian phone number')
     .transform((v) => `+91${v}`),
   otp: z.string().length(6, 'OTP must be 6 digits'),
-  role: z.enum(['RIDER', 'DRIVER', 'ADMIN']).default('RIDER'),
+  role: z.enum(['RIDER', 'DRIVER']).default('RIDER'),
+  deviceId: z.string().optional(),
+});
+
+// Admin-only schemas — used only on /admin/auth/* endpoints, never public
+export const adminSendOtpSchema = z.object({
+  phone: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, 'Invalid Indian phone number')
+    .transform((v) => `+91${v}`),
+});
+
+export const adminVerifyOtpSchema = z.object({
+  phone: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, 'Invalid Indian phone number')
+    .transform((v) => `+91${v}`),
+  otp: z.string().length(6, 'OTP must be 6 digits'),
   deviceId: z.string().optional(),
 });
 

@@ -9,6 +9,13 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Grace period after login — suppress auto-logout for 10 seconds
+// Prevents race where push token / socket hit a 401 before token is settled
+let loginGraceUntil = 0;
+export function setLoginGrace() {
+  loginGraceUntil = Date.now() + 10000;
+}
+
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = storage.getString('accessToken');
   if (token) {
@@ -38,9 +45,15 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch {
+        // Don't logout if we're within 10 seconds of a fresh login
+        if (Date.now() < loginGraceUntil) {
+          return Promise.reject(error);
+        }
         storage.delete('accessToken');
         storage.delete('refreshToken');
         storage.delete('user');
+        const { useAuthStore } = await import('../hooks/useAuthStore');
+        useAuthStore.getState().logout();
       }
     }
 

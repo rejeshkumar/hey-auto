@@ -268,6 +268,9 @@ async function clearSession(phone: string): Promise<void> {
 
 // ── WhatsApp send abstraction ─────────────────────────────────────────────────
 
+const DEV_INBOX_PFX = 'wa_dev_inbox:';
+const DEV_INBOX_TTL = 5 * 60; // 5 minutes
+
 async function sendMessage(to: string, text: string): Promise<void> {
   const metaReady = !!(env.WHATSAPP_ACCESS_TOKEN && env.WHATSAPP_PHONE_NUMBER_ID);
   const twilioReady = !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_PHONE_NUMBER);
@@ -277,9 +280,18 @@ async function sendMessage(to: string, text: string): Promise<void> {
   } else if (twilioReady) {
     await sendViaTwilio(to, text);
   } else {
-    // Dev mode: log to console
+    // Dev mode: store in Redis so /dev-inbox can return it
     logger.info({ to, text }, '[WhatsApp DEV] outgoing message');
+    const phone = normalisePhone(to);
+    await redis.setex(`${DEV_INBOX_PFX}${phone}`, DEV_INBOX_TTL, text);
   }
+}
+
+export async function devInboxPop(phone: string): Promise<string | null> {
+  const key = `${DEV_INBOX_PFX}${normalisePhone(phone)}`;
+  const msg = await redis.get(key);
+  if (msg) await redis.del(key);
+  return msg;
 }
 
 async function sendViaMeta(to: string, text: string): Promise<void> {
@@ -313,9 +325,12 @@ async function sendViaTwilio(to: string, text: string): Promise<void> {
   try {
     const twilio = await import('twilio');
     const client = twilio.default(env.TWILIO_ACCOUNT_SID!, env.TWILIO_AUTH_TOKEN!);
+    // Ensure E.164 format: strip whatsapp: prefix, bare 10-digit gets +91 prepended
+    const stripped = to.replace(/^whatsapp:\+?/, '').replace(/^\+/, '');
+    const toE164 = stripped.length === 10 ? `+91${stripped}` : `+${stripped}`;
     await client.messages.create({
       from: `whatsapp:${env.TWILIO_PHONE_NUMBER}`,
-      to: `whatsapp:${to}`,
+      to: `whatsapp:${toE164}`,
       body: text,
     });
   } catch (err) {
@@ -715,7 +730,7 @@ export class WhatsAppService {
 
   async sendOtpMessage(phone: string, otp: string): Promise<void> {
     const text =
-      `🔐 *Aye Auto OTP*\n\n` +
+      `🔐 *Hey Auto OTP*\n\n` +
       `Your verification code is:\n\n` +
       `*${otp}*\n\n` +
       `Valid for 5 minutes. Do not share this with anyone.\n` +

@@ -6,6 +6,9 @@ import { fareEstimateSchema, requestRideSchema, cancelRideSchema, rateRideSchema
 
 const router = Router();
 
+// Public track endpoint (no auth)
+router.get('/track/:token', rideController.getTrackData);
+
 router.use(authenticate);
 
 // Rider endpoints
@@ -14,6 +17,7 @@ router.post('/request', authorize('RIDER'), validate(requestRideSchema), rideCon
 router.get('/:id', rideController.getRideDetails);
 router.post('/:id/cancel', validate(cancelRideSchema), rideController.cancelRide);
 router.post('/:id/rate', validate(rateRideSchema), rideController.rateRide);
+router.post('/:id/share', authorize('RIDER'), rideController.createShareToken);
 
 // Driver endpoints
 router.post('/:id/accept', authorize('DRIVER'), rideController.acceptRide);

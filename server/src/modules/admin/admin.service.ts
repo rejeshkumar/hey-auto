@@ -237,7 +237,11 @@ export class AdminService {
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (status) where.status = status;
+    if (status) {
+      // Support comma-separated statuses e.g. "REQUESTED,DRIVER_ASSIGNED,IN_PROGRESS"
+      const statuses = status.split(',').map(s => s.trim()).filter(Boolean);
+      where.status = statuses.length === 1 ? statuses[0] : { in: statuses };
+    }
     if (city) where.city = city;
     if (dateFrom || dateTo) {
       where.createdAt = {};
@@ -319,6 +323,28 @@ export class AdminService {
         ...fields,
       },
     });
+  }
+
+  async getSubscriptionPlans() {
+    return prisma.subscriptionPlan.findMany({ orderBy: { durationDays: 'asc' } });
+  }
+
+  async updateSubscriptionPlan(planId: string, data: {
+    name?: string;
+    nameMl?: string;
+    price?: number;
+    isActive?: boolean;
+    description?: string;
+    descriptionMl?: string;
+  }) {
+    const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+    if (!plan) throw new NotFoundError('Subscription plan not found');
+
+    if (data.price !== undefined && data.price <= 0) {
+      throw new BadRequestError('Price must be greater than zero');
+    }
+
+    return prisma.subscriptionPlan.update({ where: { id: planId }, data });
   }
 
   async getPendingSubscriptions(page = 1, limit = 20) {

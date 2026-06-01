@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "953771477165",
+    "project_id": "hey-auto-770bf",
+    "storage_bucket": "hey-auto-770bf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:953771477165:android:0ebebd8ca6de4002645e24",
+        "android_client_info": {
+          "package_name": "in.heyauto.driver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDaD6Tqw40vsZzGqNWhB1Lzfboki3gXPAE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:953771477165:android:6a1f3776b2143b66645e24",
+        "android_client_info": {
+          "package_name": "in.heyauto.rider"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDaD6Tqw40vsZzGqNWhB1Lzfboki3gXPAE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

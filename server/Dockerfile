@@ -4,7 +4,6 @@ WORKDIR /app
 FROM base AS deps
 COPY package.json package-lock.json* ./
 COPY server/package.json ./server/
-COPY packages/shared/package.json ./packages/shared/
 RUN npm install --legacy-peer-deps
 
 FROM base AS builder
@@ -18,14 +17,14 @@ RUN apk add --no-cache openssl
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/server ./server
-COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/package.json ./
 
-# Copy static web apps — use || true so build succeeds even if folders are missing
+# Copy static web apps
 RUN mkdir -p ./public/driver-console ./public/demo ./public/rider
 COPY --from=builder /app/public/driver-console ./public/driver-console
 COPY --from=builder /app/public/rider ./public/rider
 COPY --from=builder /app/apps/demo-dashboard ./public/demo
+COPY --from=builder /app/public/demo.html ./public/demo.html
 
 EXPOSE ${PORT:-3000}
-CMD ["sh", "-c", "cd server && npx prisma db push --accept-data-loss && npx tsx src/app.ts"]
+CMD ["sh", "-c", "cd server && npx prisma migrate deploy && npx tsx src/app.ts"]

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aye Auto — Admin Console</title>
+  <title>Hey Auto — Admin Console</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
@@ -291,7 +291,7 @@
     <div class="login-logo">
       <div class="emoji">🛺</div>
       <h2>Admin Console</h2>
-      <p>Aye Auto — Taliparamba Operations</p>
+      <p>Hey Auto — Taliparamba Operations</p>
     </div>
     <div id="phoneStep">
       <div class="form-group">
@@ -303,7 +303,6 @@
       </div>
       <button class="btn btn-primary" id="sendOtpBtn" onclick="sendOtp()">Send OTP</button>
       <div id="sendErr" class="err-msg"></div>
-      <p style="margin-top:12px;font-size:12px;color:var(--text3);text-align:center">Dev mode: any phone · OTP: 123456</p>
     </div>
     <div id="otpStep" class="hidden">
       <div class="form-group">
@@ -362,7 +361,7 @@
   <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <h1>🛺 Aye Auto</h1>
+      <h1>🛺 Hey Auto</h1>
       <span>Admin Console</span>
     </div>
     <nav class="sidebar-nav">
@@ -511,6 +510,20 @@
 
       <!-- ── SUBSCRIPTIONS ── -->
       <div id="tab-subscriptions" class="hidden">
+
+        <!-- Subscription Plans editor -->
+        <div class="table-card" style="margin-bottom:16px">
+          <div class="table-header">
+            <div>
+              <h3>Subscription Plans</h3>
+              <div style="font-size:12px;color:var(--text2);margin-top:3px">Edit prices — changes apply to new subscriptions immediately</div>
+            </div>
+          </div>
+          <div id="subPlansGrid" style="padding:0 20px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">
+            <div style="color:var(--text2);font-size:13px">Loading plans…</div>
+          </div>
+        </div>
+
         <div class="table-card">
           <div class="table-header">
             <h3>Subscriptions</h3>
@@ -1078,7 +1091,7 @@ async function sendOtp() {
   if (phone.length !== 10 || !/^\d+$/.test(phone)) { showErr('sendErr', 'Enter a valid 10-digit number'); return; }
   const btn = document.getElementById('sendOtpBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Sending…';
-  const data = await api('POST', '/auth/send-otp', { phone, role: 'ADMIN' });
+  const data = await api('POST', '/admin/auth/send-otp', { phone });
   btn.disabled = false; btn.textContent = 'Send OTP';
   if (data.success) {
     document.getElementById('phoneStep').classList.add('hidden');
@@ -1108,7 +1121,7 @@ async function verifyOtp() {
   if (otp.length !== 6) { showErr('verifyErr', 'Enter all 6 digits'); return; }
   const btn = document.getElementById('verifyOtpBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Verifying…';
-  const data = await api('POST', '/auth/verify-otp', { phone, otp, role: 'ADMIN' });
+  const data = await api('POST', '/admin/auth/verify-otp', { phone, otp });
   btn.disabled = false; btn.textContent = 'Login to Admin';
   if (data.success) {
     token = data.data.tokens.accessToken;
@@ -1158,7 +1171,7 @@ function showTab(tab) {
   else if (tab === 'drivers') loadDrivers(1);
   else if (tab === 'riders') loadRiders(1);
   else if (tab === 'documents') loadDocuments(1);
-  else if (tab === 'subscriptions') loadSubscriptions(1);
+  else if (tab === 'subscriptions') { loadSubscriptionPlans(); loadSubscriptions(1); }
   else if (tab === 'rides') loadRides(1);
   else if (tab === 'fare') loadFareConfig();
   // simulator tab has no auto-load — user manually logs in
@@ -1194,22 +1207,23 @@ async function loadDashboard() {
 
 async function loadActiveRides(count) {
   document.getElementById('activeRideCount').textContent = count > 0 ? `${count} active` : 'No active rides';
-  const data = await api('GET', '/admin/rides?status=IN_PROGRESS&limit=10');
+  const data = await api('GET', '/admin/rides?status=REQUESTED,DRIVER_ASSIGNED,DRIVER_ARRIVED,OTP_VERIFIED,IN_PROGRESS&limit=20');
   const el = document.getElementById('activeRidesBody');
   if (!data.success || !data.data?.length) {
     el.innerHTML = '<div class="table-empty">No active rides right now</div>';
     return;
   }
   el.innerHTML = `<table style="width:100%">
-    <thead><tr><th>Rider</th><th>Driver</th><th>Route</th><th>Fare</th><th>Started</th></tr></thead>
+    <thead><tr><th>Rider</th><th>Driver</th><th>Route</th><th>Status</th><th>Fare</th><th>Time</th></tr></thead>
     <tbody>
       ${data.data.map(r => `
         <tr>
-          <td>${r.rider ? `<div class="user-cell"><div class="avatar">${initials(r.rider.fullName)}</div><div><div class="user-name">${r.rider.fullName || '—'}</div></div></div>` : '—'}</td>
-          <td>${r.driver ? `<div class="user-name">${r.driver.fullName || '—'}</div>` : '—'}</td>
-          <td><div class="route-mini"><span class="from">${truncate(r.pickupAddress, 22)}</span><span class="arrow">→</span><span class="to">${truncate(r.dropoffAddress, 22)}</span></div></td>
+          <td>${r.rider ? `<div class="user-cell"><div class="avatar">${initials(r.rider.fullName)}</div><div><div class="user-name">${r.rider.fullName || '—'}</div><div class="user-sub">${r.rider.phone?.slice(-4) || ''}</div></div></div>` : '—'}</td>
+          <td>${r.driver ? `<div class="user-name">${r.driver.fullName || 'Unassigned'}</div>` : '<span style="color:var(--text3)">Searching...</span>'}</td>
+          <td><div class="route-mini"><span class="from">${truncate(r.pickupAddress, 20)}</span><span class="arrow">→</span><span class="to">${truncate(r.dropoffAddress, 20)}</span></div></td>
+          <td>${statusBadge(r.status)}</td>
           <td>${fmtMoney(r.estimatedFare)}</td>
-          <td>${fmtTime(r.startedAt)}</td>
+          <td>${fmtTime(r.startedAt || r.createdAt)}</td>
         </tr>`).join('')}
     </tbody>
   </table>`;
@@ -1720,6 +1734,68 @@ async function submitAddDriver() {
 function showAddDriverErr(msg) {
   const el = document.getElementById('addDriverErr');
   el.textContent = msg; el.style.display = 'block';
+}
+
+// ─── SUBSCRIPTION PLANS ──────────────────────────────────────────
+
+async function loadSubscriptionPlans() {
+  const grid = document.getElementById('subPlansGrid');
+  const data = await api('GET', '/admin/subscription-plans');
+  if (!data.success || !data.data?.length) {
+    grid.innerHTML = '<div style="color:var(--text2);font-size:13px">No plans found.</div>';
+    return;
+  }
+  grid.innerHTML = data.data.map(plan => `
+    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <div style="font-weight:700;font-size:14px">${plan.name}</div>
+          <div style="font-size:12px;color:var(--text2)">${plan.durationDays} day${plan.durationDays > 1 ? 's' : ''}</div>
+        </div>
+        <span class="badge ${plan.isActive ? 'badge-green' : 'badge-grey'}">${plan.isActive ? 'Active' : 'Inactive'}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--text2)">₹</span>
+        <input
+          type="number"
+          id="plan-price-${plan.id}"
+          value="${plan.price}"
+          min="1" step="1"
+          style="width:90px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;outline:none"
+          onfocus="this.style.borderColor='var(--primary)'"
+          onblur="this.style.borderColor='var(--border)'"
+        >
+        <span style="font-size:12px;color:var(--text2)">/ ${plan.durationDays > 1 ? plan.durationDays + ' days' : 'day'}</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" style="flex:1" onclick="togglePlanActive('${plan.id}', ${!plan.isActive})">${plan.isActive ? '⏸ Disable' : '▶ Enable'}</button>
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="savePlanPrice('${plan.id}')">💾 Save</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function savePlanPrice(planId) {
+  const input = document.getElementById('plan-price-' + planId);
+  const price = parseFloat(input.value);
+  if (!price || price <= 0) { toast('Enter a valid price', 'error'); return; }
+  const data = await api('PUT', `/admin/subscription-plans/${planId}`, { price });
+  if (data.success) {
+    toast(`Plan price updated to ₹${price} ✓`, 'success');
+    loadSubscriptionPlans();
+  } else {
+    toast(data.error?.message || 'Failed to save', 'error');
+  }
+}
+
+async function togglePlanActive(planId, isActive) {
+  const data = await api('PUT', `/admin/subscription-plans/${planId}`, { isActive });
+  if (data.success) {
+    toast(isActive ? 'Plan enabled ✓' : 'Plan disabled', isActive ? 'success' : 'info');
+    loadSubscriptionPlans();
+  } else {
+    toast(data.error?.message || 'Failed', 'error');
+  }
 }
 
 // ─── SUBSCRIPTIONS ───────────────────────────────────────────────

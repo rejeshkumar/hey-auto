@@ -17,5 +17,6 @@ const router = Router();
  */
 router.get('/webhook', (req, res, next) => whatsappController.verify(req, res, next));
 router.post('/webhook', (req, res, next) => whatsappController.incoming(req, res, next));
+router.get('/dev-inbox/:phone', (req, res, next) => whatsappController.devInbox(req, res, next));
 
 export { router as whatsappRoutes };

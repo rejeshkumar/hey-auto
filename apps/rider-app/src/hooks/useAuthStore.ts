@@ -3,6 +3,7 @@ import { storage } from '../utils/storage';
 import { authApi, User } from '../services/auth';
 import { socketService } from '../services/socket';
 import { registerPushToken } from '../services/pushNotifications';
+import { setLoginGrace } from '../services/api';
 
 interface AuthState {
   user: User | null;
@@ -38,13 +39,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { data } = await authApi.verifyOtp(phone, otp);
     const { user, tokens, isNewUser } = data.data;
 
+    // Write tokens to storage FIRST before any API calls that need them
     storage.set('accessToken', tokens.accessToken);
     storage.set('refreshToken', tokens.refreshToken);
     storage.set('user', JSON.stringify(user));
 
+    // Clear stale ride state from any previous session
+    const { useRideStore } = require('./useRideStore');
+    useRideStore.getState().resetRide();
+
+    // Set 10-second grace period BEFORE anything else — prevents race-condition logout
+    setLoginGrace();
+
     set({ user, isAuthenticated: true, isNewUser });
+
     socketService.connect();
-    registerPushToken();
+    // Push token registration is best-effort — never block login on it
+    registerPushToken().catch(() => {});
   },
 
   completeProfile: async (profileData) => {
@@ -65,6 +76,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     storage.delete('refreshToken');
     storage.delete('user');
     set({ user: null, isAuthenticated: false, isNewUser: false });
+    // Clear any cached ride state so "active ride" error doesn't persist across sessions
+    const { useRideStore } = require('./useRideStore');
+    useRideStore.getState().resetRide();
   },
 
   loadSession: () => {
@@ -74,9 +88,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (userStr && token) {
       try {
         const user = JSON.parse(userStr) as User;
+        setLoginGrace();
         set({ user, isAuthenticated: true, isLoading: false });
         socketService.connect();
-        registerPushToken();
+        registerPushToken().catch(() => {});
       } catch {
         set({ isLoading: false });
       }

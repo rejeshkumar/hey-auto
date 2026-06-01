@@ -9,6 +9,11 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+let loginGraceUntil = 0;
+export function setLoginGrace() {
+  loginGraceUntil = Date.now() + 10000;
+}
+
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = storage.getString('accessToken');
   if (token) {
@@ -36,9 +41,14 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch {
+        if (Date.now() < loginGraceUntil) {
+          return Promise.reject(error);
+        }
         storage.delete('accessToken');
         storage.delete('refreshToken');
         storage.delete('user');
+        const { useAuthStore } = await import('../hooks/useAuthStore');
+        useAuthStore.getState().logout();
       }
     }
     return Promise.reject(error);

@@ -1,5 +1,5 @@
 import { prisma } from '../../config/database';
-import { NotFoundError } from '../../utils/errors';
+import { NotFoundError, BadRequestError } from '../../utils/errors';
 import { notificationService } from '../notification/notification.service';
 import type { UpdateRiderProfileInput, SavedPlaceInput, EmergencyContactInput } from './rider.schema';
 
@@ -58,6 +58,8 @@ export class RiderService {
   }
 
   async addSavedPlace(userId: string, input: SavedPlaceInput) {
+    const count = await prisma.savedPlace.count({ where: { userId } });
+    if (count >= 3) throw new BadRequestError('You can save up to 3 favourite places');
     return prisma.savedPlace.create({
       data: { userId, ...input },
     });

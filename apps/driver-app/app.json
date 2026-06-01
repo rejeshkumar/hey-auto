@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Aye Auto Driver",
+    "name": "Hey Auto Driver",
     "slug": "hey-auto-driver",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "in.heyauto.driver",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Aye Auto Driver needs your location to show your position and accept ride requests.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Aye Auto Driver tracks your location while you are online to match you with nearby riders.",
@@ -29,6 +29,8 @@
         "backgroundColor": "#000000"
       },
       "package": "in.heyauto.driver",
+      "versionCode": 2,
+      "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBaOw8Yu2FKHSOSqnBbZNfPVBfJcD4J2i8"
@@ -41,7 +43,9 @@
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
       ]
     },
     "plugins": [
@@ -59,7 +63,14 @@
           "cameraPermission": "Aye Auto Driver needs camera access to take document photos."
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#F5C800",
+          "defaultChannel": "rides"
+        }
+      ]
     ],
     "extra": {
       "eas": {

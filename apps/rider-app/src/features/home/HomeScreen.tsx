@@ -1,6 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Platform } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -9,31 +8,30 @@ import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useRideStore } from '../../hooks/useRideStore';
 import { useLocationStore } from '../../hooks/useLocationStore';
+import { riderApi, SavedPlace } from '../../services/rider';
 
 const TALIPARAMBA_CENTER = { latitude: 11.9462, longitude: 75.4928 };
 
-const QUICK_ROUTES = [
-  { id: '1', icon: 'bus' as const, labelKey: 'home.busStand', lat: 11.9462, lng: 75.4928 },
-  { id: '2', icon: 'train' as const, labelKey: 'home.railwayStation', lat: 11.9812, lng: 75.3644 },
-  { id: '3', icon: 'hospital-building' as const, labelKey: 'home.hospital', lat: 11.9480, lng: 75.4940 },
-  { id: '4', icon: 'temple-hindu' as const, labelKey: 'home.temple', lat: 11.9550, lng: 75.4850 },
+const FAVE_SLOTS = [
+  { key: 'Home',  icon: 'home'      as const },
+  { key: 'Work',  icon: 'briefcase' as const },
+  { key: 'Other', icon: 'star'      as const },
 ];
 
 export function HomeScreen({ navigation }: any) {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
-
-  const handleLanguageToggle = () => {
-    const newLang = i18n.language === 'ml' ? 'en' : 'ml';
-    i18n.changeLanguage(newLang);
-    storage.set('language', newLang);
-  };
   const { setPickup, setPhase } = useRideStore();
   const { currentLat, currentLng, setCurrentLocation, setPermission } = useLocationStore();
+  const [favourites, setFavourites] = useState<SavedPlace[]>([]);
 
-  useEffect(() => {
-    requestLocation();
-  }, []);
+  useEffect(() => { requestLocation(); loadFavourites(); }, []);
+
+  const loadFavourites = () => {
+    riderApi.getSavedPlaces()
+      .then(({ data }) => setFavourites(data.data || []))
+      .catch(() => {});
+  };
 
   const requestLocation = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -46,6 +44,12 @@ export function HomeScreen({ navigation }: any) {
     }
   };
 
+  const handleLanguageToggle = () => {
+    const newLang = i18n.language === 'ml' ? 'en' : 'ml';
+    i18n.changeLanguage(newLang);
+    storage.set('language', newLang);
+  };
+
   const handleSearchPress = () => {
     if (currentLat && currentLng) {
       setPickup({ lat: currentLat, lng: currentLng, address: t('booking.currentLocation') });
@@ -54,105 +58,219 @@ export function HomeScreen({ navigation }: any) {
     navigation.navigate('Search');
   };
 
-  const handleQuickRoute = (route: typeof QUICK_ROUTES[0]) => {
+  const handleFavourite = (place: SavedPlace) => {
     const lat = currentLat || TALIPARAMBA_CENTER.latitude;
     const lng = currentLng || TALIPARAMBA_CENTER.longitude;
     setPickup({ lat, lng, address: t('booking.currentLocation') });
-    useRideStore.getState().setDropoff({ lat: route.lat, lng: route.lng, address: t(route.labelKey) });
+    useRideStore.getState().setDropoff({ lat: place.lat, lng: place.lng, address: place.address });
     setPhase('reviewing_estimate');
     navigation.navigate('BookingConfirm');
   };
 
-  const mapRegion = {
-    latitude: currentLat || TALIPARAMBA_CENTER.latitude,
-    longitude: currentLng || TALIPARAMBA_CENTER.longitude,
-    latitudeDelta: 0.015,
-    longitudeDelta: 0.015,
-  };
+  const firstName = user?.fullName?.split(' ')[0] || '';
+  const greeting = getTimeGreeting();
 
   return (
     <View style={styles.container}>
-      <MapView style={styles.map} region={mapRegion} showsUserLocation showsMyLocationButton={false} />
+      <View style={styles.map} />
 
-      <View style={styles.overlay}>
-        <View style={styles.greetingRow}>
-          <Text style={styles.greeting}>
-            {t('home.greeting', { name: user?.fullName?.split(' ')[0] || '' })}
-          </Text>
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.langToggle} onPress={handleLanguageToggle}>
-              <Text style={styles.langToggleText}>{i18n.language === 'ml' ? 'EN' : 'മ'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('ProfileTab')}>
-              <MaterialCommunityIcons name="account-circle" size={36} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
+      {/* Top header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>{greeting}{firstName ? `, ${firstName}` : ''} 👋</Text>
+          <Text style={styles.subGreeting}>{t('home.whereTo')}</Text>
         </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.iconBtn} onPress={handleLanguageToggle}>
+            <Text style={styles.langText}>{i18n.language === 'ml' ? 'EN' : 'മ'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('ProfileTab')}>
+            <MaterialCommunityIcons name="account-circle-outline" size={24} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-        <TouchableOpacity style={styles.searchBar} onPress={handleSearchPress} activeOpacity={0.9}>
-          <MaterialCommunityIcons name="magnify" size={22} color={colors.textSecondary} />
+      {/* Bottom sheet */}
+      <View style={styles.bottomSheet}>
+        {/* Search bar */}
+        <TouchableOpacity style={styles.searchBar} onPress={handleSearchPress} activeOpacity={0.85}>
+          <View style={styles.searchIconWrap}>
+            <MaterialCommunityIcons name="magnify" size={20} color={colors.primary} />
+          </View>
           <Text style={styles.searchText}>{t('home.whereTo')}</Text>
-          <View style={styles.searchDot} />
+          <View style={styles.searchArrow}>
+            <MaterialCommunityIcons name="arrow-right" size={18} color={colors.ink} />
+          </View>
         </TouchableOpacity>
 
-        <View style={styles.quickRoutes}>
-          {QUICK_ROUTES.map((route) => (
-            <TouchableOpacity key={route.id} style={styles.quickItem} onPress={() => handleQuickRoute(route)}>
-              <View style={styles.quickIcon}>
-                <MaterialCommunityIcons name={route.icon} size={20} color={colors.primary} />
-              </View>
-              <Text style={styles.quickLabel} numberOfLines={1}>{t(route.labelKey)}</Text>
+        {/* Voice booking — for Sr. citizens */}
+        <TouchableOpacity style={styles.voiceBtn} onPress={() => navigation.navigate('VoiceBooking')} activeOpacity={0.85}>
+          <View style={styles.voiceMicWrap}>
+            <MaterialCommunityIcons name="microphone" size={22} color={colors.ink} />
+          </View>
+          <View style={styles.voiceTextWrap}>
+            <Text style={styles.voiceBtnTitle}>സംസാരിക്കൂ</Text>
+            <Text style={styles.voiceBtnSub}>Speak to book · Malayalam</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color={colors.primary} />
+        </TouchableOpacity>
+
+        {/* Favourites */}
+        <View style={styles.favHeader}>
+          <Text style={styles.sectionLabel}>Favourites</Text>
+          {favourites.length > 0 && (
+            <TouchableOpacity onPress={() => navigation.navigate('SavedPlaces')}>
+              <Text style={styles.favEditLink}>Edit</Text>
             </TouchableOpacity>
-          ))}
+          )}
+        </View>
+        <View style={styles.favRow}>
+          {FAVE_SLOTS.map((slot) => {
+            const saved = favourites.find(p => p.label.toLowerCase() === slot.key.toLowerCase());
+            if (saved) {
+              return (
+                <TouchableOpacity key={slot.key} style={styles.favItem} onPress={() => handleFavourite(saved)}>
+                  <View style={styles.favIcon}>
+                    <MaterialCommunityIcons name={slot.icon} size={20} color={colors.primary} />
+                  </View>
+                  <Text style={styles.favLabel} numberOfLines={1}>{saved.label}</Text>
+                  <Text style={styles.favAddr} numberOfLines={1}>{saved.address}</Text>
+                </TouchableOpacity>
+              );
+            }
+            return (
+              <TouchableOpacity key={slot.key} style={styles.favItemEmpty} onPress={() => navigation.navigate('SavedPlaces')}>
+                <View style={[styles.favIcon, styles.favIconEmpty]}>
+                  <MaterialCommunityIcons name={slot.icon} size={18} color={colors.textLight} />
+                </View>
+                <Text style={styles.favLabelEmpty}>{slot.key}</Text>
+                <View style={styles.favAddBadge}>
+                  <MaterialCommunityIcons name="plus" size={12} color={colors.primary} />
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* USP strip */}
+        <View style={styles.uspStrip}>
+          <MaterialCommunityIcons name="shield-check" size={16} color={colors.primary} />
+          <Text style={styles.uspText}>Govt. rates · Zero surge · Zero commission</Text>
         </View>
       </View>
     </View>
   );
 }
 
+function getTimeGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  map: { flex: 1 },
-  overlay: {
+  container: { flex: 1, backgroundColor: colors.background },
+
+  map: { flex: 1, backgroundColor: '#EAF3EA' },
+
+  header: {
     position: 'absolute', top: 0, left: 0, right: 0,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    paddingTop: Platform.OS === 'ios' ? 60 : 44,
     paddingHorizontal: spacing.base,
+    paddingBottom: spacing.sm,
   },
-  greetingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
-  greeting: { ...typography.h3, color: colors.text, flex: 1 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  langToggle: {
+  greeting: { ...typography.h3, color: colors.text },
+  subGreeting: { ...typography.small, color: colors.textSecondary, marginTop: 2 },
+  headerActions: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
+  iconBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center',
+    elevation: 3, shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4,
+  },
+  langText: { ...typography.smallBold, color: colors.text },
+
+  bottomSheet: {
     backgroundColor: colors.white,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 5,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    elevation: 2,
+    borderTopLeftRadius: borderRadius.xxl,
+    borderTopRightRadius: borderRadius.xxl,
+    padding: spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? 36 : spacing.xl,
+    elevation: 12,
     shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 16,
   },
-  langToggleText: { ...typography.smallBold, color: colors.primary },
-  profileBtn: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white,
-    alignItems: 'center', justifyContent: 'center',
-    elevation: 3, shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4,
-  },
+
   searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white,
-    borderRadius: borderRadius.xl, paddingVertical: spacing.base, paddingHorizontal: spacing.lg, gap: spacing.md,
-    elevation: 4, shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: colors.ink,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    paddingVertical: spacing.base,
+    paddingHorizontal: spacing.base,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+    borderTopWidth: 2,
+    borderTopColor: colors.primary,
   },
-  searchText: { ...typography.body, color: colors.textSecondary, flex: 1 },
-  searchDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
-  quickRoutes: { flexDirection: 'row', marginTop: spacing.base, gap: spacing.sm },
-  quickItem: {
-    flex: 1, backgroundColor: colors.white, borderRadius: borderRadius.lg,
-    padding: spacing.md, alignItems: 'center', gap: spacing.xs,
-    elevation: 2, shadowColor: colors.black, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 3,
+  searchIconWrap: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center', justifyContent: 'center',
   },
-  quickIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
-  quickLabel: { ...typography.caption, color: colors.text, textAlign: 'center' },
+  searchText: { ...typography.body, color: colors.primary, flex: 1, fontWeight: '600' },
+  searchArrow: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+  },
+
+  voiceBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    backgroundColor: colors.ink,
+    borderRadius: borderRadius.xl, overflow: 'hidden',
+    borderTopWidth: 2, borderTopColor: colors.primary,
+    padding: spacing.base,
+    marginBottom: spacing.lg,
+  },
+  voiceMicWrap: {
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+  },
+  voiceTextWrap: { flex: 1 },
+  voiceBtnTitle: { fontSize: 16, fontWeight: '800', color: colors.primary },
+  voiceBtnSub:   { fontSize: 11, fontWeight: '500', color: colors.primary, opacity: 0.6, marginTop: 2 },
+
+  sectionLabel: { ...typography.captionBold, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: spacing.sm },
+
+  favHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
+  favEditLink: { ...typography.caption, color: colors.primary, fontWeight: '600' },
+  favRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
+  favItem: { flex: 1, backgroundColor: colors.ink, borderRadius: borderRadius.xl, padding: spacing.sm, borderTopWidth: 2, borderTopColor: colors.primary, overflow: 'hidden', gap: 3 },
+  favItemEmpty: { flex: 1, backgroundColor: colors.surface, borderRadius: borderRadius.xl, padding: spacing.sm, borderWidth: 1.5, borderColor: colors.border, borderStyle: 'dashed', gap: 3, alignItems: 'flex-start' },
+  favIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 2, backgroundColor: 'rgba(249,176,27,0.15)' },
+  favIconEmpty: { backgroundColor: colors.borderLight },
+  favLabel: { fontSize: 13, fontWeight: '700', color: colors.primary },
+  favLabelEmpty: { fontSize: 13, fontWeight: '600', color: colors.textLight },
+  favAddr: { fontSize: 11, fontWeight: '500', color: colors.primary, opacity: 0.6 },
+  favAddBadge: { marginTop: 2, width: 18, height: 18, borderRadius: 9, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+
+  uspStrip: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+    justifyContent: 'center',
+    backgroundColor: colors.ink,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.base,
+    borderTopWidth: 2,
+    borderTopColor: colors.primary,
+  },
+  uspText: { ...typography.caption, color: colors.primary, fontWeight: '600' },
 });

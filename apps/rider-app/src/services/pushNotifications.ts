@@ -32,7 +32,9 @@ export async function registerPushToken(): Promise<void> {
       });
     }
 
-    const token = (await Notifications.getExpoPushTokenAsync()).data;
+    const token = (await Notifications.getExpoPushTokenAsync({
+      projectId: 'e81ff950-99f7-45d1-9a93-277920334268',
+    })).data;
     await api.put('/notification/fcm-token', { fcmToken: token });
   } catch (err) {
     console.warn('[push] Token registration failed:', err);

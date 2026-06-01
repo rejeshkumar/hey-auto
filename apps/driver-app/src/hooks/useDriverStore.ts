@@ -14,19 +14,20 @@ export type DriverPhase =
 
 export interface IncomingRideRequest {
   rideId: string;
-  riderName: string;
-  riderPhone: string;
-  riderRating: number;
+  riderName?: string;
+  riderPhone?: string;
+  riderRating?: number;
   pickupAddress: string;
   dropoffAddress: string;
   pickupLat: number;
   pickupLng: number;
-  dropoffLat: number;
-  dropoffLng: number;
+  dropoffLat?: number;
+  dropoffLng?: number;
   estimatedFare: number;
-  estimatedDistanceKm: number;
-  estimatedDurationMin: number;
-  expiresAt: number;
+  estimatedDistanceKm?: number;
+  distance?: number;
+  estimatedDurationMin?: number;
+  expiresAt?: number;
 }
 
 interface DriverState {

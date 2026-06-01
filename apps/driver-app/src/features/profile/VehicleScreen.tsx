@@ -226,7 +226,7 @@ export function VehicleScreen({ navigation }: any) {
         <View style={styles.noteCard}>
           <Icon name="information" size={16} color={colors.info} />
           <Text style={styles.noteText}>
-            Permit, insurance, and fitness expiry dates are updated by Aye Auto admin after document verification.
+            Permit, insurance, and fitness expiry dates are updated by Hey Auto admin after document verification.
           </Text>
         </View>
       </ScrollView>

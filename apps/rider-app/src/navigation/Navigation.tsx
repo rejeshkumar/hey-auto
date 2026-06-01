@@ -21,6 +21,7 @@ import { SavedPlacesScreen } from '../features/profile/SavedPlacesScreen';
 import { EmergencyContactsScreen } from '../features/profile/EmergencyContactsScreen';
 import { PaymentMethodsScreen } from '../features/profile/PaymentMethodsScreen';
 import { HistoryScreen } from '../features/history/HistoryScreen';
+import { VoiceBookingScreen } from '../features/voice/VoiceBookingScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -79,6 +80,7 @@ export function Navigation() {
             <Stack.Screen name="SavedPlaces" component={SavedPlacesScreen} />
             <Stack.Screen name="EmergencyContacts" component={EmergencyContactsScreen} />
             <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+            <Stack.Screen name="VoiceBooking" component={VoiceBookingScreen} options={{ animation: 'slide_from_bottom' }} />
           </>
         )}
       </Stack.Navigator>

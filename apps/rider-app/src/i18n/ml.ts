@@ -1,6 +1,6 @@
 export default {
   common: {
-    appName: 'Aye Auto',
+    appName: 'Hey Auto',
     tagline: 'കേരളത്തിലെ നിങ്ങളുടെ വിശ്വസ്ത ഓട്ടോ യാത്ര',
     ok: 'ശരി',
     cancel: 'റദ്ദാക്കുക',
@@ -16,7 +16,7 @@ export default {
   },
 
   auth: {
-    welcome: 'Aye Auto-ലേക്ക് സ്വാഗതം',
+    welcome: 'Hey Auto-ലേക്ക് സ്വാഗതം',
     welcomeSub: 'നിങ്ങളുടെ ഫോൺ നമ്പർ നൽകുക',
     phoneLabel: 'ഫോൺ നമ്പർ',
     phonePlaceholder: 'നിങ്ങളുടെ 10 അക്ക നമ്പർ',
@@ -41,12 +41,7 @@ export default {
     home: 'വീട്',
     work: 'ജോലിസ്ഥലം',
     recentRides: 'സമീപകാല യാത്രകൾ',
-    quickRoutes: 'ജനപ്രിയ റൂട്ടുകൾ',
     nearbyAutos: 'സമീപത്തുള്ള ഓട്ടോകൾ',
-    busStand: 'ബസ് സ്റ്റാൻഡ്',
-    railwayStation: 'റെയിൽവേ സ്റ്റേഷൻ',
-    hospital: 'ആശുപത്രി',
-    temple: 'തൃച്ചംബരം ക്ഷേത്രം',
   },
 
   booking: {
@@ -67,7 +62,7 @@ export default {
     cash: 'ക്യാഷ്',
     upi: 'UPI',
     wallet: 'വാലറ്റ്',
-    bookAuto: 'ഓട്ടോ ബുക്ക് ചെയ്യുക',
+    bookRide: 'റൈഡ് ബുക്ക് ചെയ്യുക',
     govtRate: 'സർക്കാർ മീറ്റർ നിരക്ക്',
   },
 
@@ -75,8 +70,8 @@ export default {
     searchingDriver: 'ഓട്ടോ തിരയുന്നു...',
     searchingSub: 'സമീപത്തുള്ള ഡ്രൈവർമാരെ ബന്ധപ്പെടുന്നു',
     driverAssigned: 'ഡ്രൈവർ കണ്ടെത്തി!',
-    driverOnWay: 'ഡ്രൈവർ വരുന്ന വഴിയിൽ',
-    driverArrived: 'ഡ്രൈവർ എത്തി!',
+    driverOnWay: 'നിങ്ങളുടെ സാരഥി വരുന്ന വഴിയിൽ',
+    driverArrived: 'നിങ്ങളുടെ സാരഥി എത്തി!',
     shareOtp: 'ഈ OTP ഡ്രൈവറുമായി പങ്കിടുക',
     rideStarted: 'യാത്ര ആരംഭിച്ചു',
     enjoyRide: 'നിങ്ങളുടെ യാത്ര ആസ്വദിക്കൂ!',
@@ -99,7 +94,7 @@ export default {
     paid: 'അടച്ചത്',
     rateDriver: 'ഡ്രൈവറെ റേറ്റ് ചെയ്യുക',
     addTip: 'ടിപ്പ് നൽകുക (ഐച്ഛികം)',
-    thankYou: 'Aye Auto ഉപയോഗിച്ചതിന് നന്ദി!',
+    thankYou: 'Hey Auto ഉപയോഗിച്ചതിന് നന്ദി!',
     submit: 'സമർപ്പിക്കുക',
   },
 
@@ -113,7 +108,7 @@ export default {
     settings: 'ക്രമീകരണങ്ങൾ',
     language: 'ഭാഷ',
     help: 'സഹായം',
-    about: 'Aye Auto-നെ കുറിച്ച്',
+    about: 'Hey Auto-നെ കുറിച്ച്',
     logout: 'ലോഗൗട്ട്',
     logoutConfirm: 'ലോഗൗട്ട് ചെയ്യണോ?',
     version: 'പതിപ്പ് {{version}}',

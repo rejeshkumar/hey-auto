@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { whatsappService } from './whatsapp.service';
+import { whatsappService, devInboxPop } from './whatsapp.service';
 import { metaWebhookSchema, twilioWhatsAppSchema, webhookVerifyQuerySchema } from './whatsapp.schema';
 import { BadRequestError } from '../../utils/errors';
 import { logger } from '../../utils/logger';
@@ -69,6 +69,17 @@ export class WhatsAppController {
           logger.error({ err }, 'WhatsApp: twilio webhook processing error'),
         );
       }
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /** GET /dev-inbox/:phone — returns the last bot reply (dev mode only, no Twilio/Meta configured) */
+  async devInbox(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const phone = req.params.phone as string;
+      const msg = await devInboxPop(phone);
+      res.json({ success: true, data: { message: msg ?? null } });
     } catch (err) {
       next(err);
     }

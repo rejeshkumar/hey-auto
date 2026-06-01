@@ -3,7 +3,7 @@ import { prisma } from '../../config/database';
 import { redis } from '../../config/redis';
 import { env } from '../../config/env';
 import { logger } from '../../utils/logger';
-import { BadRequestError, NotFoundError } from '../../utils/errors';
+import { BadRequestError, NotFoundError, ForbiddenError } from '../../utils/errors';
 import { haversineDistance, isNightTime, roundToRupee, generateRideOTP } from '../../utils/helpers';
 import { driverService } from '../driver/driver.service';
 import { mapsService } from '../../services/maps';
@@ -158,21 +158,49 @@ export class RideService {
     const ride = await prisma.ride.findUnique({ where: { id: rideId } });
     if (!ride || ride.status !== 'REQUESTED') return;
 
-    const nearbyDrivers = await driverService.getNearbyDrivers(
+    let nearbyDrivers = await driverService.getNearbyDrivers(
       pickupLat,
       pickupLng,
       env.DRIVER_SEARCH_RADIUS_KM,
     );
+
+    // If Redis geo set is empty (e.g. after redeploy), rebuild from DB for online drivers
+    if (nearbyDrivers.length === 0) {
+      const onlineInDb = await prisma.driverProfile.findMany({
+        where: { isOnline: true, currentLat: { not: null }, currentLng: { not: null } },
+        select: { userId: true, currentLat: true, currentLng: true },
+      });
+      if (onlineInDb.length > 0) {
+        logger.info({ count: onlineInDb.length }, 'findDriver: Redis geo empty, rebuilding from DB');
+        for (const d of onlineInDb) {
+          await redis.geoadd('driver_locations', d.currentLng!, d.currentLat!, d.userId);
+          await redis.set(`driver_online:${d.userId}`, '1');
+        }
+        // Re-query after rebuild
+        nearbyDrivers = await driverService.getNearbyDrivers(pickupLat, pickupLng, env.DRIVER_SEARCH_RADIUS_KM);
+      }
+    }
 
     const availableDrivers = [];
     for (const driver of nearbyDrivers) {
       const profile = await prisma.driverProfile.findUnique({
         where: { userId: driver.userId },
       });
-      if (profile && !profile.isOnRide && profile.isOnline && profile.city === city) {
+      logger.info({
+        driverId: driver.userId,
+        profileFound: !!profile,
+        isOnline: profile?.isOnline,
+        isOnRide: profile?.isOnRide,
+        driverCity: profile?.city,
+        searchCity: city,
+        cityMatch: profile ? profile.city.toLowerCase() === city.toLowerCase() : false,
+      }, 'findDriver: driver filter check');
+      if (profile && !profile.isOnRide && profile.isOnline && profile.city.toLowerCase() === city.toLowerCase()) {
         availableDrivers.push({ ...driver, rating: profile.rating, acceptanceRate: profile.acceptanceRate });
       }
     }
+
+    logger.info({ city, nearbyCount: nearbyDrivers.length, availableCount: availableDrivers.length }, 'findDriver: search results');
 
     if (availableDrivers.length === 0) {
       await prisma.ride.update({
@@ -186,7 +214,7 @@ export class RideService {
         '😔 No Drivers Available',
         'No drivers nearby right now. Please try again in a few minutes.',
         { type: 'ride:no_drivers', rideId },
-      ).catch(() => {});
+      ).catch((err: unknown) => logger.warn({ err }, 'Push notification failed'));
       return;
     }
 
@@ -237,7 +265,7 @@ export class RideService {
         '🛺 New Ride Request',
         `${ride.pickupAddress} → ${ride.dropoffAddress} · ₹${ride.estimatedFare}`,
         { type: 'ride:new_request', rideId },
-      ).catch(() => {});
+      ).catch((err: unknown) => logger.warn({ err }, 'Push notification failed'));
 
       const accepted = await this.waitForDriverResponse(rideId, driver.userId);
       if (accepted) return;
@@ -254,7 +282,7 @@ export class RideService {
       '😔 No Drivers Available',
       'All nearby drivers are busy. Please try again shortly.',
       { type: 'ride:no_drivers', rideId },
-    ).catch(() => {});
+    ).catch((err: unknown) => logger.warn({ err }, 'Push notification failed'));
   }
 
   private async waitForDriverResponse(rideId: string, driverId: string): Promise<boolean> {
@@ -287,6 +315,13 @@ export class RideService {
     if (!ride) throw new NotFoundError('Ride not found');
     if (ride.status !== 'REQUESTED') {
       throw new BadRequestError('This ride is no longer available');
+    }
+
+    // Verify this ride was actually offered to this driver
+    const pending = await redis.get(`${RIDE_REQUEST_PREFIX}${driverId}`);
+    const pendingData = pending ? JSON.parse(pending) : null;
+    if (!pendingData || pendingData.rideId !== rideId) {
+      throw new ForbiddenError('This ride was not offered to you');
     }
 
     const profile = await prisma.driverProfile.findUnique({
@@ -340,7 +375,7 @@ export class RideService {
       '✅ Driver Found!',
       `${driverUser?.fullName || 'Your driver'} is on the way · ${vehicle.registrationNo}`,
       { type: 'ride:driver_assigned', rideId },
-    ).catch(() => {});
+    ).catch((err: unknown) => logger.warn({ err }, 'Push notification failed'));
 
     logger.info({ rideId, driverId }, 'Ride accepted by driver');
     return updatedRide;
@@ -384,7 +419,7 @@ export class RideService {
       '📍 Driver Arrived',
       `Your driver is waiting. Show OTP: ${ride.rideOtp}`,
       { type: 'ride:driver_arrived', rideId },
-    ).catch(() => {});
+    ).catch((err: unknown) => logger.warn({ err }, 'Push notification failed'));
 
     return updated;
   }
@@ -499,7 +534,7 @@ export class RideService {
       '🏁 Ride Completed',
       `Total fare: ₹${totalAmount} · ${actualDistanceKm.toFixed(1)} km · ${actualDurationMin} min`,
       { type: 'ride:completed', rideId },
-    ).catch(() => {});
+    ).catch((err: unknown) => logger.warn({ err }, 'Push notification failed'));
 
     logger.info({ rideId, driverId, totalAmount }, 'Ride completed');
     return updated;
@@ -508,6 +543,14 @@ export class RideService {
   async cancelRide(userId: string, rideId: string, input: CancelRideInput, role: 'RIDER' | 'DRIVER') {
     const ride = await prisma.ride.findUnique({ where: { id: rideId } });
     if (!ride) throw new NotFoundError('Ride not found');
+
+    // Ownership check — a rider can only cancel their own ride, driver only rides assigned to them
+    if (role === 'RIDER' && ride.riderId !== userId) {
+      throw new ForbiddenError('You cannot cancel this ride');
+    }
+    if (role === 'DRIVER' && ride.driverId !== userId) {
+      throw new ForbiddenError('You cannot cancel this ride');
+    }
 
     const cancelableStatuses: RideStatus[] = ['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED'];
     if (!cancelableStatuses.includes(ride.status)) {
@@ -550,14 +593,14 @@ export class RideService {
         '❌ Ride Cancelled',
         `Rider cancelled the ride`,
         { type: 'ride:cancelled', rideId },
-      ).catch(() => {});
+      ).catch((err: unknown) => logger.warn({ err }, 'Push notification failed'));
     } else if (role === 'DRIVER') {
       notificationService.sendPushNotification(
         ride.riderId,
         '❌ Ride Cancelled',
         `Driver cancelled. We'll find you another driver.`,
         { type: 'ride:cancelled', rideId },
-      ).catch(() => {});
+      ).catch((err: unknown) => logger.warn({ err }, 'Push notification failed'));
     }
 
     logger.info({ rideId, cancelledBy: role }, 'Ride cancelled');

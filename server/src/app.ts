@@ -1,3 +1,4 @@
+// Security patch deployed: 2026-05-30 — debug endpoints removed, ADMIN OTP blocked
 import express from 'express';
 import http from 'http';
 import path from 'path';
@@ -25,8 +26,10 @@ import { adminRoutes } from './modules/admin';
 import { mapsRoutes } from './modules/maps/maps.routes';
 import { whatsappRoutes, whatsappService } from './modules/whatsapp';
 import { subscriptionRoutes } from './modules/payment/subscription.routes';
+import { voiceRoutes } from './modules/voice/voice.routes';
 
 const app = express();
+app.set('trust proxy', 1); // Railway sits behind a proxy
 const server = http.createServer(app);
 
 // Socket.io setup
@@ -44,21 +47,24 @@ const io = new Server(server, {
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors({ origin: true, credentials: true }));
 
-// Rate limiting
+// Trust Railway's reverse proxy so express-rate-limit reads the real client IP
+app.set('trust proxy', 1);
+
+// Rate limiting — global: 300 requests per 15 min per IP
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: env.NODE_ENV === 'production' ? 100 : 1000,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many requests' } },
 });
 app.use(limiter);
 
-// OTP rate limiting (stricter)
+// OTP rate limiting — 5 per minute per IP (prevents SMS abuse)
 const otpLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 3,
-  message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many OTP requests. Try again in a minute.' } },
+  max: 5,
+  message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many OTP requests. Please wait a minute.' } },
 });
 
 // Body parsing
@@ -82,6 +88,8 @@ app.get('/health', async (_req, res) => {
   }
 });
 
+// Debug endpoints removed — were unauthenticated and exposed PII in production
+
 // API routes
 const apiPrefix = `/api/${env.API_VERSION}`;
 
@@ -95,6 +103,7 @@ app.use(`${apiPrefix}/subscription`, subscriptionRoutes);
 app.use(`${apiPrefix}/notifications`, notificationRoutes);
 app.use(`${apiPrefix}/admin`, adminRoutes);
 app.use(`${apiPrefix}/maps`, mapsRoutes);
+app.use(`${apiPrefix}/voice`, voiceRoutes);
 app.use(`${apiPrefix}/whatsapp`, whatsappRoutes);
 
 // Serve uploaded files (local fallback when S3 is not configured)
@@ -111,6 +120,16 @@ app.use('/rider', express.static(path.join(publicDir, 'rider')));
 const appsDir = path.resolve(process.cwd(), '..', 'apps');
 app.use('/demo', express.static(path.join(publicDir, 'demo')));
 app.get('/admin', (_req, res) => res.sendFile(path.join(publicDir, 'demo', 'admin.html')));
+
+// Public ride tracking page (shareable link)
+app.get('/track/:token', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'track.html'));
+});
+
+// WhatsApp + Driver live simulator
+app.get('/simulator', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'demo.html'));
+});
 
 // Root redirect
 app.get('/', (_req, res) => {

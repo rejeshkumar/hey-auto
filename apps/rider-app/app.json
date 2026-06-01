@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Aye Auto",
+    "name": "Hey Auto",
     "slug": "hey-auto-rider",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "in.heyauto.rider",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Aye Auto needs your location to find nearby drivers and show your position on the map.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Aye Auto needs your location to track your ride."
@@ -27,26 +27,43 @@
         "backgroundColor": "#000000"
       },
       "package": "in.heyauto.rider",
+      "versionCode": 2,
+      "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBaOw8Yu2FKHSOSqnBbZNfPVBfJcD4J2i8"
         }
       },
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "plugins": [
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Aye Auto needs your location to find nearby drivers."
+          "locationWhenInUsePermission": "Hey Auto needs your location to find nearby drivers."
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Hey Auto needs microphone access for voice booking."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#F5C800",
+          "defaultChannel": "rides"
+        }
+      ]
     ],
     "extra": {
       "eas": {

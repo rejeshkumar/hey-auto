@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Input, ScreenWrapper } from '../../components';
-import { colors, typography, spacing } from '../../theme';
+import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useAuthStore } from '../../hooks/useAuthStore';
 
 export function PhoneScreen({ navigation }: any) {
@@ -35,7 +36,15 @@ export function PhoneScreen({ navigation }: any) {
         <View style={styles.content}>
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <Text style={styles.logoText}>🛺</Text>
+              <View style={styles.logoLines}>
+                <View style={[styles.logoLine, styles.logoLineShort]} />
+                <View style={[styles.logoLine, styles.logoLineMid]} />
+                <View style={[styles.logoLine, styles.logoLineLong]} />
+              </View>
+              <View style={styles.logoTextRow}>
+                <Text style={styles.logoHey}>Hey</Text>
+                <Text style={styles.logoAuto}>Auto</Text>
+              </View>
             </View>
             <Text style={styles.title}>{t('auth.welcome')}</Text>
             <Text style={styles.subtitle}>{t('auth.welcomeSub')}</Text>
@@ -78,15 +87,25 @@ const styles = StyleSheet.create({
   content: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing.xl },
   header: { alignItems: 'center', marginBottom: spacing.xxxl },
   logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: colors.ink,
+    borderRadius: borderRadius.xxl,
+    borderTopWidth: 3,
+    borderTopColor: colors.primary,
+    overflow: 'hidden',
+    paddingHorizontal: 24,
+    paddingTop: 18,
+    paddingBottom: 14,
+    alignItems: 'flex-start',
     marginBottom: spacing.lg,
   },
-  logoText: { fontSize: 40 },
+  logoLines: { gap: 7, marginBottom: 10 },
+  logoLine: { height: 5, borderRadius: 3, backgroundColor: colors.primary },
+  logoLineShort: { width: 44 },
+  logoLineMid:   { width: 60 },
+  logoLineLong:  { width: 76 },
+  logoTextRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
+  logoHey:  { fontSize: 22, fontWeight: '900', color: colors.white },
+  logoAuto: { fontSize: 22, fontWeight: '900', color: colors.primary, fontStyle: 'italic' },
   title: { ...typography.h1, color: colors.text, textAlign: 'center' },
   subtitle: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm },
   form: { gap: spacing.lg },

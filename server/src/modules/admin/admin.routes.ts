@@ -1,10 +1,45 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticate, authorize } from '../../middleware/auth';
+import { validate } from '../../middleware/validate';
 import { adminService } from './admin.service';
+import { authService } from '../auth/auth.service';
+import { adminSendOtpSchema, adminVerifyOtpSchema } from '../auth/auth.schema';
+import { redis } from '../../config/redis';
 
 const router = Router();
 
+// ── Admin auth endpoints (no auth middleware — these ARE the login) ──────────
+router.post('/auth/send-otp', validate(adminSendOtpSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await authService.sendOtp({ ...req.body, role: 'ADMIN' });
+    res.json({ success: true, data: result });
+  } catch (err) { next(err); }
+});
+
+router.post('/auth/verify-otp', validate(adminVerifyOtpSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await authService.verifyOtp({ ...req.body, role: 'ADMIN' });
+    // Verify the resolved user is actually ADMIN role
+    if (result.user.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Not an admin account' } });
+    }
+    res.json({ success: true, data: result });
+  } catch (err) { next(err); }
+});
+
+// ── All routes below require ADMIN JWT ───────────────────────────────────────
 router.use(authenticate, authorize('ADMIN'));
+
+// Clear stuck active-ride Redis key for a rider (useful when DB has no active ride but Redis does)
+router.post('/fix-rider/:userId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { userId } = req.params;
+    const key = `active_ride:${userId}`;
+    const val = await redis.get(key);
+    await redis.del(key);
+    res.json({ success: true, data: { cleared: key, hadValue: val } });
+  } catch (err) { next(err); }
+});
 
 router.get('/dashboard', async (_req: Request, res: Response, next: NextFunction) => {
   try {
@@ -105,6 +140,24 @@ router.post('/drivers', async (req: Request, res: Response, next: NextFunction) 
   try {
     const result = await adminService.createDriver(req.body);
     res.status(201).json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/subscription-plans', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const plans = await adminService.getSubscriptionPlans();
+    res.json({ success: true, data: plans });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/subscription-plans/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const plan = await adminService.updateSubscriptionPlan(req.params.id as string, req.body);
+    res.json({ success: true, data: plan });
   } catch (err) {
     next(err);
   }

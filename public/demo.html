@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aye Auto — Live Demo</title>
+  <style>
+    :root {
+      --primary: #F5C800;
+      --primary-dark: #D4A900;
+      --bg: #0F0F1A;
+      --card: #1A1A2E;
+      --card2: #222240;
+      --border: #2E2E50;
+      --text: #F0F0FF;
+      --text2: #9090B0;
+      --text3: #6060A0;
+      --green: #22C55E;
+      --green-light: rgba(34,197,94,0.12);
+      --red: #EF4444;
+      --red-light: rgba(239,68,68,0.12);
+      --yellow: #F5C800;
+      --yellow-light: rgba(245,200,0,0.12);
+      --wa-green: #25D366;
+      --wa-bg: #0B141A;
+      --wa-bubble-in: #202C33;
+      --wa-bubble-out: #005C4B;
+      --online: #22C55E;
+      --offline: #6B7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+
+    /* ── Header ── */
+    .header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .header-logo {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .header h1 { font-size: 18px; font-weight: 800; color: var(--text); }
+    .header p { font-size: 12px; color: var(--text2); margin-top: 1px; }
+    .header-badge {
+      margin-left: auto;
+      background: var(--green-light);
+      color: var(--green);
+      border: 1px solid var(--green);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* ── Layout ── */
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    @media (max-width: 700px) {
+      .demo-grid { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .panel-header h2 { font-size: 14px; font-weight: 700; }
+    .panel-header .subtitle { font-size: 11px; color: var(--text2); margin-top: 1px; }
+    .panel-body { flex: 1; display: flex; flex-direction: column; }
+
+    /* ── WhatsApp panel ── */
+    .wa-header {
+      background: #1F2C34;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #2A3942;
+    }
+    .wa-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--wa-green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .wa-name { font-size: 14px; font-weight: 700; }
+    .wa-status { font-size: 11px; color: #8696A0; }
+    .wa-status.online { color: var(--wa-green); }
+
+    .wa-messages {
+      flex: 1;
+      background: var(--wa-bg);
+      padding: 12px;
+      overflow-y: auto;
+      min-height: 340px;
+      max-height: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .wa-msg {
+      max-width: 82%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      position: relative;
+    }
+    .wa-msg.incoming {
+      background: var(--wa-bubble-in);
+      border-radius: 0 8px 8px 8px;
+      align-self: flex-start;
+      color: #E9EDEF;
+    }
+    .wa-msg.outgoing {
+      background: var(--wa-bubble-out);
+      border-radius: 8px 8px 0 8px;
+      align-self: flex-end;
+      color: #E9EDEF;
+    }
+    .wa-msg .time {
+      font-size: 10px;
+      color: #8696A0;
+      margin-top: 3px;
+      text-align: right;
+    }
+    .wa-msg.incoming .time { text-align: left; }
+    .wa-typing {
+      align-self: flex-start;
+      background: var(--wa-bubble-in);
+      border-radius: 0 8px 8px 8px;
+      padding: 10px 14px;
+      display: none;
+    }
+    .typing-dots span {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: #8696A0;
+      border-radius: 50%;
+      margin: 0 1px;
+      animation: typing 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+
+    .wa-quick-replies {
+      padding: 8px 12px;
+      background: #1F2C34;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-top: 1px solid #2A3942;
+    }
+    .wa-qr {
+      background: #2A3942;
+      border: 1px solid #3D5463;
+      color: #E9EDEF;
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .wa-qr:hover { background: #3D5463; }
+
+    .wa-input-row {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #1F2C34;
+      border-top: 1px solid #2A3942;
+    }
+    .wa-input {
+      flex: 1;
+      background: #2A3942;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 14px;
+      color: #E9EDEF;
+      font-size: 13px;
+      outline: none;
+    }
+    .wa-input::placeholder { color: #8696A0; }
+    .wa-send {
+      width: 36px; height: 36px;
+      background: var(--wa-green);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .wa-send:hover { background: #1EBE57; }
+
+    /* ── Driver panel ── */
+    .driver-inner { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+    .driver-status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card2);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .driver-info { display: flex; align-items: center; gap: 10px; }
+    .driver-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .driver-name { font-size: 14px; font-weight: 700; }
+    .driver-phone { font-size: 11px; color: var(--text2); }
+    .status-pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px; font-weight: 700;
+    }
+    .status-pill.offline { background: rgba(107,114,128,0.2); color: #9CA3AF; }
+    .status-pill.online { background: var(--green-light); color: var(--green); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-dot.offline { background: #6B7280; }
+    .status-dot.online { background: var(--green); }
+
+    .btn {
+      border: none; border-radius: 10px; padding: 10px 16px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #1A1A2E; }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-red { background: var(--red); color: #fff; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+    .btn-sm { padding: 7px 12px; font-size: 12px; border-radius: 8px; }
+    .btn-full { width: 100%; }
+
+    .login-form { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .input-label { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 4px; display: block; }
+    .input-row { display: flex; gap: 8px; }
+    .input-prefix {
+      padding: 10px 12px;
+      background: var(--card2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px; font-weight: 700; color: var(--text2);
+    }
+    input.text-input {
+      flex: 1; padding: 10px 12px;
+      background: var(--card2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px; color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input.text-input:focus { border-color: var(--primary); }
+    .otp-input { text-align: center; letter-spacing: 8px; font-size: 20px; font-weight: 700; }
+    .hint-text { font-size: 11px; color: var(--green); margin-top: 3px; }
+    .err-msg { font-size: 12px; color: var(--red); background: var(--red-light); border-radius: 8px; padding: 8px 10px; display: none; }
+
+    /* ── Ride request card ── */
+    .ride-card {
+      background: var(--card2);
+      border: 2px solid var(--primary);
+      border-radius: 12px;
+      padding: 14px;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .ride-card-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .pulse-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--primary);
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.6; transform:scale(1.3); } }
+    .timer { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--primary); }
+
+    .route-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .route-box { background: var(--card); border-radius: 8px; padding: 10px 12px; }
+    .route-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text3); margin-bottom: 3px; }
+    .route-addr { font-size: 12px; font-weight: 600; color: var(--text); }
+
+    .ride-meta { display: flex; gap: 14px; font-size: 13px; margin-bottom: 12px; }
+    .ride-meta strong { color: var(--primary); }
+
+    .action-row { display: flex; gap: 8px; }
+
+    /* ── Active ride card ── */
+    .active-ride-card {
+      background: var(--card2);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .active-ride-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .active-ride-title { font-size: 14px; font-weight: 800; }
+    .status-badge {
+      font-size: 11px; font-weight: 700; padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .badge-yellow { background: var(--yellow-light); color: var(--yellow); }
+    .badge-green { background: var(--green-light); color: var(--green); }
+
+    .otp-entry {
+      background: var(--yellow-light);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .otp-entry label { font-size: 12px; font-weight: 700; color: #D4A900; margin-bottom: 6px; display: block; }
+    .otp-row { display: flex; gap: 8px; }
+
+    .polling-bar {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--card2);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 12px; color: var(--text2);
+    }
+    .spin { animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* ── Completed ── */
+    .completed-card {
+      text-align: center;
+      padding: 20px;
+      background: var(--green-light);
+      border-radius: 12px;
+      border: 1.5px solid var(--green);
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .hidden { display: none !important; }
+
+    /* ── Footer note ── */
+    .footer-note {
+      text-align: center;
+      padding: 16px;
+      font-size: 12px;
+      color: var(--text3);
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">🛺</div>
+  <div>
+    <h1>Aye Auto — Live Demo</h1>
+    <p>Zero-commission auto-rickshaw booking · Taliparamba, Kannur</p>
+  </div>
+  <div class="header-badge">🟢 Live</div>
+</div>
+
+<div class="demo-grid">
+
+  <!-- ══ LEFT: WhatsApp Panel ══ -->
+  <div class="panel">
+    <div class="panel-header">
+      <span style="font-size:20px">💬</span>
+      <div>
+        <h2>WhatsApp Booking</h2>
+        <div class="subtitle">Senior-citizen friendly — no app needed</div>
+      </div>
+    </div>
+    <div class="panel-body">
+      <!-- WhatsApp UI -->
+      <div class="wa-header">
+        <div class="wa-avatar">🛺</div>
+        <div>
+          <div class="wa-name">Aye Auto</div>
+          <div class="wa-status" id="wa-status-text">online</div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="margin-left:auto" onclick="waReset()">↺ Reset</button>
+      </div>
+
+      <div class="wa-messages" id="wa-messages">
+        <div class="wa-msg incoming">
+          👋 Send "Hi" to start booking an auto!
+          <div class="time">now</div>
+        </div>
+      </div>
+
+      <div class="wa-typing" id="wa-typing">
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="wa-quick-replies" id="wa-quick-replies">
+        <button class="wa-qr" onclick="waSend('Hi')">👋 Hi</button>
+        <button class="wa-qr" onclick="waSend('1')">1️⃣ Book Auto</button>
+        <button class="wa-qr" onclick="waSend('bus stand')">🚌 Bus Stand</button>
+        <button class="wa-qr" onclick="waSend('hospital')">🏥 Hospital</button>
+        <button class="wa-qr" onclick="waSend('railway station')">🚂 Railway</button>
+        <button class="wa-qr" onclick="waSend('yes')">✅ Yes</button>
+        <button class="wa-qr" onclick="waSend('no')">❌ No</button>
+        <button class="wa-qr" onclick="waSend('2')">📋 Status</button>
+      </div>
+
+      <div class="wa-input-row">
+        <input class="wa-input" id="wa-input" type="text" placeholder="Type a message…"
+          onkeydown="if(event.key==='Enter') waSend()">
+        <button class="wa-send" onclick="waSend()">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RIGHT: Driver Panel ══ -->
+  <div class="panel">
+    <div class="panel-header">
+      <span style="font-size:20px">🛺</span>
+      <div>
+        <h2>Driver App</h2>
+        <div class="subtitle">Accept the ride after booking via WhatsApp</div>
+      </div>
+    </div>
+    <div class="panel-body">
+
+      <!-- Login form -->
+      <div id="drv-login" class="login-form">
+        <div style="font-size:13px;color:var(--text2)">
+          Login as a driver to receive and complete the ride booked via WhatsApp.
+          <br><br>Use test driver: <strong style="color:var(--primary)">8095481555</strong> / OTP <strong style="color:var(--primary)">123456</strong>
+        </div>
+        <div>
+          <label class="input-label">Driver Phone</label>
+          <div class="input-row">
+            <span class="input-prefix">+91</span>
+            <input class="text-input" id="drv-phone" type="tel" placeholder="8095481555" maxlength="10"
+              onkeydown="if(event.key==='Enter') drvSendOtp()">
+          </div>
+        </div>
+        <div id="drv-otp-row" class="hidden">
+          <label class="input-label">OTP</label>
+          <input class="text-input otp-input" id="drv-otp" type="text" placeholder="123456" maxlength="6"
+            onkeydown="if(event.key==='Enter') drvVerifyOtp()">
+          <div class="hint-text" id="drv-otp-hint"></div>
+        </div>
+        <div class="err-msg" id="drv-err"></div>
+        <button class="btn btn-primary btn-full" id="drv-login-btn" onclick="drvSendOtp()">Send OTP</button>
+      </div>
+
+      <!-- Driver panel (post-login) -->
+      <div id="drv-panel" class="hidden driver-inner">
+
+        <!-- Status row -->
+        <div class="driver-status-row">
+          <div class="driver-info">
+            <div class="driver-avatar">👤</div>
+            <div>
+              <div class="driver-name" id="drv-name">Driver</div>
+              <div class="driver-phone" id="drv-phone-display">—</div>
+            </div>
+          </div>
+          <div class="status-pill offline" id="drv-status-pill">
+            <div class="status-dot offline" id="drv-status-dot"></div>
+            <span id="drv-status-label">Offline</span>
+          </div>
+        </div>
+
+        <!-- Go online / offline buttons -->
+        <div id="drv-online-actions">
+          <button class="btn btn-green btn-full" id="drv-go-online-btn" onclick="drvGoOnline()">▶ Go Online</button>
+        </div>
+        <button class="btn btn-outline btn-full hidden" id="drv-go-offline-btn" onclick="drvGoOffline()">⏹ Go Offline</button>
+        <button class="btn btn-outline btn-sm" style="align-self:flex-start" onclick="drvLogout()">← Switch Driver</button>
+
+        <!-- Polling indicator -->
+        <div class="polling-bar hidden" id="drv-polling">
+          <span class="spin">⟳</span>
+          <span>Waiting for ride requests…</span>
+          <span id="drv-poll-time" style="margin-left:auto"></span>
+        </div>
+
+        <!-- Incoming ride request -->
+        <div class="ride-card hidden" id="drv-request-card">
+          <div class="ride-card-title">
+            <div class="pulse-dot"></div>
+            🛺 New Ride Request!
+            <span class="timer" id="drv-req-timer">30s</span>
+          </div>
+          <div class="route-grid">
+            <div class="route-box">
+              <div class="route-label">📍 Pickup</div>
+              <div class="route-addr" id="drv-req-pickup">—</div>
+            </div>
+            <div class="route-box">
+              <div class="route-label">🎯 Drop</div>
+              <div class="route-addr" id="drv-req-drop">—</div>
+            </div>
+          </div>
+          <div class="ride-meta">
+            <span>📏 <strong id="drv-req-dist">—</strong></span>
+            <span>💰 <strong id="drv-req-fare">—</strong></span>
+          </div>
+          <div class="action-row">
+            <button class="btn btn-red" style="flex:1" onclick="drvDecline()">✕ Decline</button>
+            <button class="btn btn-green" style="flex:2" onclick="drvAccept()">✓ Accept Ride</button>
+          </div>
+        </div>
+
+        <!-- Active ride -->
+        <div class="active-ride-card hidden" id="drv-ride-card">
+          <div class="active-ride-header">
+            <div class="active-ride-title">🚗 Active Ride</div>
+            <div class="status-badge badge-yellow" id="drv-ride-badge">Assigned</div>
+          </div>
+          <div class="route-grid" style="margin-bottom:10px">
+            <div class="route-box">
+              <div class="route-label">📍 Pickup</div>
+              <div class="route-addr" id="drv-ride-pickup">—</div>
+            </div>
+            <div class="route-box">
+              <div class="route-label">🎯 Drop</div>
+              <div class="route-addr" id="drv-ride-drop">—</div>
+            </div>
+          </div>
+          <div class="ride-meta">
+            <span>📏 <strong id="drv-ride-dist">—</strong></span>
+            <span>💰 <strong id="drv-ride-fare">—</strong></span>
+            <span>⏱ <strong id="drv-ride-dur">—</strong></span>
+          </div>
+          <div class="otp-entry hidden" id="drv-otp-entry">
+            <label>🔑 Enter OTP from rider to start ride</label>
+            <div class="otp-row">
+              <input class="text-input otp-input" id="drv-ride-otp" placeholder="0000" maxlength="4"
+                style="flex:1;font-size:22px;letter-spacing:10px">
+              <button class="btn btn-primary" onclick="drvVerifyRideOtp()">Verify</button>
+            </div>
+          </div>
+          <div id="drv-ride-actions"></div>
+        </div>
+
+        <!-- Completed -->
+        <div class="completed-card hidden" id="drv-completed-card">
+          <div style="font-size:36px">🎉</div>
+          <div style="font-size:16px;font-weight:800;color:var(--green);margin-top:8px">Ride Completed!</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:4px" id="drv-completed-amount"></div>
+          <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="drvResetAfterRide()">✓ Done</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer-note">
+  Aye Auto · Zero-commission auto booking · Taliparamba, Kannur ·
+  <a href="/admin" style="color:var(--primary);text-decoration:none">Admin Console</a>
+</div>
+
+<script>
+const API = '/api/v1';
+
+// ════════════════════════════════════════════
+//  WHATSAPP SIDE
+// ════════════════════════════════════════════
+
+const WA_PHONE = '+919900000001'; // demo phone for WhatsApp bot
+let waBusy = false;
+
+function waTime() {
+  return new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function waAppend(text, type) {
+  const box = document.getElementById('wa-messages');
+  const div = document.createElement('div');
+  div.className = 'wa-msg ' + type;
+  div.innerHTML = escapeHtml(text).replace(/\*(.*?)\*/g, '<strong>$1</strong>') +
+    `<div class="time">${waTime()}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function waShowTyping(show) {
+  document.getElementById('wa-typing').style.display = show ? 'flex' : 'none';
+  const box = document.getElementById('wa-messages');
+  box.scrollTop = box.scrollHeight;
+}
+
+async function waSend(preset) {
+  if (waBusy) return;
+  const input = document.getElementById('wa-input');
+  const text = preset ?? input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  waAppend(text, 'outgoing');
+  waBusy = true;
+  waShowTyping(true);
+
+  try {
+    // Send to WhatsApp webhook (Twilio format)
+    await fetch(`${API}/whatsapp/webhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `From=whatsapp%3A${encodeURIComponent(WA_PHONE)}&Body=${encodeURIComponent(text)}&To=whatsapp%3A%2B14155238886`,
+    });
+
+    // Poll dev-inbox for reply (up to 5s)
+    let reply = null;
+    for (let i = 0; i < 10; i++) {
+      await sleep(500);
+      const r = await fetch(`${API}/whatsapp/dev-inbox/${WA_PHONE}`);
+      const d = await r.json();
+      if (d.data?.message) { reply = d.data.message; break; }
+    }
+
+    waShowTyping(false);
+    if (reply) waAppend(reply, 'incoming');
+  } catch (e) {
+    waShowTyping(false);
+    waAppend('⚠ Could not reach server. Please try again.', 'incoming');
+  }
+
+  waBusy = false;
+}
+
+function waReset() {
+  document.getElementById('wa-messages').innerHTML =
+    '<div class="wa-msg incoming">👋 Send "Hi" to start booking an auto!<div class="time">now</div></div>';
+}
+
+// ════════════════════════════════════════════
+//  DRIVER SIDE
+// ════════════════════════════════════════════
+
+let drvToken = '';
+let drvRide = null;
+let drvPollInterval = null;
+let drvReqTimer = null;
+let drvIsOnline = false;
+
+async function drvApi(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (drvToken) opts.headers['Authorization'] = 'Bearer ' + drvToken;
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  return res.json();
+}
+
+async function drvSendOtp() {
+  const phone = document.getElementById('drv-phone').value.trim();
+  if (phone.length !== 10) { showDrvErr('Enter a valid 10-digit number'); return; }
+  const btn = document.getElementById('drv-login-btn');
+  btn.disabled = true; btn.textContent = '…';
+  const data = await drvApi('POST', '/auth/send-otp', { phone, role: 'DRIVER' });
+  btn.disabled = false;
+  if (data.success) {
+    document.getElementById('drv-otp-row').classList.remove('hidden');
+    const hint = data.data?.otp ? `Demo OTP: ${data.data.otp}` : '';
+    document.getElementById('drv-otp-hint').textContent = hint;
+    document.getElementById('drv-otp').value = data.data?.otp || '';
+    btn.textContent = 'Verify OTP';
+    btn.onclick = drvVerifyOtp;
+  } else {
+    showDrvErr(data.error?.message || 'Failed to send OTP');
+    btn.textContent = 'Send OTP';
+  }
+}
+
+async function drvVerifyOtp() {
+  const phone = document.getElementById('drv-phone').value.trim();
+  const otp = document.getElementById('drv-otp').value.trim();
+  const btn = document.getElementById('drv-login-btn');
+  btn.disabled = true; btn.textContent = '…';
+  const data = await drvApi('POST', '/auth/verify-otp', { phone, otp, role: 'DRIVER' });
+  btn.disabled = false; btn.textContent = 'Verify OTP';
+  if (data.success) {
+    drvToken = data.data.tokens.accessToken;
+    const user = data.data.user;
+    document.getElementById('drv-login').classList.add('hidden');
+    document.getElementById('drv-panel').classList.remove('hidden');
+    document.getElementById('drv-name').textContent = user.fullName || 'Driver';
+    document.getElementById('drv-phone-display').textContent = '+91' + phone;
+  } else {
+    showDrvErr(data.error?.message || 'Invalid OTP');
+  }
+}
+
+function showDrvErr(msg) {
+  const el = document.getElementById('drv-err');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 5000);
+}
+
+async function drvGoOnline() {
+  const data = await drvApi('POST', '/driver/go-online', { lat: 12.035, lng: 75.360 });
+  if (data.success) {
+    drvIsOnline = true;
+    document.getElementById('drv-status-dot').className = 'status-dot online';
+    document.getElementById('drv-status-label').textContent = 'Online';
+    document.getElementById('drv-status-pill').className = 'status-pill online';
+    document.getElementById('drv-go-online-btn').classList.add('hidden');
+    document.getElementById('drv-go-offline-btn').classList.remove('hidden');
+    document.getElementById('drv-polling').classList.remove('hidden');
+    drvStartPolling();
+  } else {
+    const msg = data.error?.message || 'Could not go online';
+    try {
+      const parsed = JSON.parse(msg);
+      showDrvErr(parsed.message || msg);
+    } catch { showDrvErr(msg); }
+  }
+}
+
+async function drvGoOffline() {
+  await drvApi('POST', '/driver/go-offline');
+  drvIsOnline = false;
+  drvStopPolling();
+  document.getElementById('drv-status-dot').className = 'status-dot offline';
+  document.getElementById('drv-status-label').textContent = 'Offline';
+  document.getElementById('drv-status-pill').className = 'status-pill offline';
+  document.getElementById('drv-go-online-btn').classList.remove('hidden');
+  document.getElementById('drv-go-offline-btn').classList.add('hidden');
+  document.getElementById('drv-polling').classList.add('hidden');
+}
+
+function drvStartPolling() { drvPollInterval = setInterval(drvPoll, 3000); }
+function drvStopPolling() { if (drvPollInterval) { clearInterval(drvPollInterval); drvPollInterval = null; } }
+
+async function drvPoll() {
+  if (!drvIsOnline) return;
+  if (drvRide && document.getElementById('drv-ride-card').classList.contains('hidden') === false) {
+    await drvRefreshRide(); return;
+  }
+  if (!document.getElementById('drv-request-card').classList.contains('hidden')) return;
+
+  // Check if server assigned a ride to this driver
+  const data = await drvApi('GET', '/driver/ride-request');
+  if (data.success && data.data) { drvShowRequest(data.data); return; }
+
+  // Fallback: check admin API for any recent REQUESTED ride
+  const admin = await fetch(API + '/admin/rides?status=REQUESTED&limit=1', {
+    headers: { 'Authorization': 'Bearer ' + drvToken }
+  });
+  const adminData = await admin.json();
+  if (adminData.success && adminData.data?.length) {
+    const ride = adminData.data[0];
+    const age = (Date.now() - new Date(ride.createdAt).getTime()) / 1000;
+    if (age < 30) {
+      drvShowRequest({
+        rideId: ride.id,
+        id: ride.id,
+        pickupAddress: ride.pickupAddress,
+        dropoffAddress: ride.dropoffAddress,
+        estimatedFare: ride.estimatedFare,
+        estimatedDistanceKm: ride.estimatedDistanceKm,
+        estimatedDurationMin: ride.estimatedDurationMin,
+      });
+      return;
+    }
+  }
+
+  document.getElementById('drv-poll-time').textContent = new Date().toLocaleTimeString('en-IN');
+}
+
+function drvShowRequest(ride) {
+  drvStopPolling();
+  drvRide = ride;
+  document.getElementById('drv-polling').classList.add('hidden');
+  document.getElementById('drv-request-card').classList.remove('hidden');
+  document.getElementById('drv-req-pickup').textContent = ride.pickupAddress || '—';
+  document.getElementById('drv-req-drop').textContent = ride.dropoffAddress || '—';
+  document.getElementById('drv-req-dist').textContent = ride.estimatedDistanceKm ? parseFloat(ride.estimatedDistanceKm).toFixed(1) + ' km' : '—';
+  document.getElementById('drv-req-fare').textContent = ride.estimatedFare ? '₹' + ride.estimatedFare : '—';
+
+  let t = 30;
+  document.getElementById('drv-req-timer').textContent = t + 's';
+  drvReqTimer = setInterval(() => {
+    t--;
+    document.getElementById('drv-req-timer').textContent = t + 's';
+    if (t <= 0) {
+      clearInterval(drvReqTimer);
+      document.getElementById('drv-request-card').classList.add('hidden');
+      drvRide = null;
+      document.getElementById('drv-polling').classList.remove('hidden');
+      drvStartPolling();
+    }
+  }, 1000);
+}
+
+async function drvAccept() {
+  if (!drvRide) return;
+  clearInterval(drvReqTimer);
+  const rideId = drvRide.rideId || drvRide.id;
+  const data = await drvApi('POST', `/rides/${rideId}/accept`);
+  if (data.success) {
+    document.getElementById('drv-request-card').classList.add('hidden');
+    drvRide = data.data || drvRide;
+    drvRide.id = rideId;
+    drvShowRideCard('DRIVER_ASSIGNED');
+    drvStartPolling();
+  } else {
+    showDrvErr(data.error?.message || 'Accept failed');
+  }
+}
+
+async function drvDecline() {
+  if (!drvRide) return;
+  clearInterval(drvReqTimer);
+  const rideId = drvRide.rideId || drvRide.id;
+  await drvApi('POST', `/rides/${rideId}/decline`);
+  drvRide = null;
+  document.getElementById('drv-request-card').classList.add('hidden');
+  document.getElementById('drv-polling').classList.remove('hidden');
+  drvStartPolling();
+}
+
+async function drvRefreshRide() {
+  if (!drvRide) return;
+  const rideId = drvRide.rideId || drvRide.id;
+  const data = await drvApi('GET', `/rides/${rideId}`);
+  if (data.success && data.data) { drvRide = data.data; drvShowRideCard(drvRide.status); }
+}
+
+function drvShowRideCard(status) {
+  document.getElementById('drv-ride-card').classList.remove('hidden');
+  document.getElementById('drv-polling').classList.add('hidden');
+  document.getElementById('drv-completed-card').classList.add('hidden');
+
+  document.getElementById('drv-ride-pickup').textContent = drvRide.pickupAddress || '—';
+  document.getElementById('drv-ride-drop').textContent = drvRide.dropoffAddress || '—';
+  document.getElementById('drv-ride-dist').textContent = drvRide.estimatedDistanceKm ? parseFloat(drvRide.estimatedDistanceKm).toFixed(1) + ' km' : '—';
+  document.getElementById('drv-ride-fare').textContent = drvRide.estimatedFare ? '₹' + drvRide.estimatedFare : '—';
+  document.getElementById('drv-ride-dur').textContent = drvRide.estimatedDurationMin ? drvRide.estimatedDurationMin + ' min' : '—';
+
+  const badge = document.getElementById('drv-ride-badge');
+  const labels = { DRIVER_ASSIGNED: 'Assigned', DRIVER_ARRIVED: 'Arrived', OTP_VERIFIED: 'OTP Verified', IN_PROGRESS: 'In Progress' };
+  badge.textContent = labels[status] || status;
+  badge.className = 'status-badge ' + (status === 'IN_PROGRESS' || status === 'OTP_VERIFIED' ? 'badge-green' : 'badge-yellow');
+
+  document.getElementById('drv-otp-entry').classList.add('hidden');
+  document.getElementById('drv-ride-actions').innerHTML = '';
+
+  if (status === 'DRIVER_ASSIGNED') {
+    document.getElementById('drv-ride-actions').innerHTML =
+      `<button class="btn btn-primary btn-full" onclick="drvArrived()">📍 I've Arrived at Pickup</button>`;
+  } else if (status === 'DRIVER_ARRIVED') {
+    document.getElementById('drv-otp-entry').classList.remove('hidden');
+  } else if (status === 'OTP_VERIFIED' || status === 'IN_PROGRESS') {
+    document.getElementById('drv-ride-actions').innerHTML =
+      `<button class="btn btn-green btn-full" onclick="drvComplete()">✓ Complete Ride</button>`;
+  } else if (status === 'COMPLETED') {
+    drvStopPolling();
+    document.getElementById('drv-ride-card').classList.add('hidden');
+    document.getElementById('drv-completed-card').classList.remove('hidden');
+    document.getElementById('drv-completed-amount').textContent =
+      'Total: ₹' + (drvRide.totalAmount || drvRide.estimatedFare);
+  }
+}
+
+async function drvArrived() {
+  const rideId = drvRide.rideId || drvRide.id;
+  const data = await drvApi('POST', `/rides/${rideId}/arrived`);
+  if (data.success) { drvRide = data.data || drvRide; drvShowRideCard('DRIVER_ARRIVED'); }
+}
+
+async function drvVerifyRideOtp() {
+  const otp = document.getElementById('drv-ride-otp').value.trim();
+  if (!otp || otp.length !== 4) { showDrvErr('Enter 4-digit OTP'); return; }
+  const rideId = drvRide.rideId || drvRide.id;
+  const data = await drvApi('POST', `/rides/${rideId}/start`, { otp });
+  if (data.success) {
+    drvRide = data.data || drvRide;
+    drvShowRideCard('IN_PROGRESS');
+  } else {
+    showDrvErr(data.error?.message || 'Wrong OTP');
+  }
+}
+
+async function drvComplete() {
+  const rideId = drvRide.rideId || drvRide.id;
+  const data = await drvApi('POST', `/rides/${rideId}/complete`);
+  if (data.success) { drvRide = data.data || drvRide; drvShowRideCard('COMPLETED'); }
+}
+
+function drvResetAfterRide() {
+  drvRide = null;
+  document.getElementById('drv-ride-card').classList.add('hidden');
+  document.getElementById('drv-completed-card').classList.add('hidden');
+  document.getElementById('drv-ride-otp').value = '';
+  if (drvIsOnline) {
+    document.getElementById('drv-polling').classList.remove('hidden');
+    drvStartPolling();
+  }
+}
+
+function drvLogout() {
+  drvStopPolling();
+  drvToken = ''; drvRide = null; drvIsOnline = false;
+  document.getElementById('drv-panel').classList.add('hidden');
+  document.getElementById('drv-login').classList.remove('hidden');
+  document.getElementById('drv-otp-row').classList.add('hidden');
+  document.getElementById('drv-phone').value = '';
+  document.getElementById('drv-otp').value = '';
+  document.getElementById('drv-login-btn').textContent = 'Send OTP';
+  document.getElementById('drv-login-btn').onclick = drvSendOtp;
+  document.getElementById('drv-request-card').classList.add('hidden');
+  document.getElementById('drv-ride-card').classList.add('hidden');
+  document.getElementById('drv-completed-card').classList.add('hidden');
+  document.getElementById('drv-polling').classList.add('hidden');
+  document.getElementById('drv-go-online-btn').classList.remove('hidden');
+  document.getElementById('drv-go-offline-btn').classList.add('hidden');
+}
+
+// ── Util ──
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>

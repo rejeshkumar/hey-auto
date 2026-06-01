@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert, TextInput, Platform, ScrollView } from 'react-native';
-import MapView, { Marker, Polyline } from 'react-native-maps';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
-import { Button } from '../../components';
+import { Button, StaticMapView } from '../../components';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useDriverStore } from '../../hooks/useDriverStore';
 import { useLocationStore } from '../../hooks/useLocationStore';
@@ -55,15 +54,16 @@ export function ActiveRideScreen({ navigation }: any) {
       setRiderLocation({ lat: data.lat, lng: data.lng });
     });
 
-    socketService.on('ride:cancelled_by_rider', (data: any) => {
-      Alert.alert(t('ride.cancelRide'), data.reason || 'Rider cancelled');
+    socketService.on('ride:cancelled', (data: any) => {
+      Alert.alert('Ride Cancelled', data.reason || 'Rider cancelled the ride');
       resetRide();
-      navigation.replace('MainTabs');
+      const rootNav = navigation.getParent() ?? navigation;
+      rootNav.navigate('MainTabs');
     });
 
     return () => {
       socketService.off('ride:rider_location');
-      socketService.off('ride:cancelled_by_rider');
+      socketService.off('ride:cancelled');
     };
   }, []);
 
@@ -128,6 +128,15 @@ export function ActiveRideScreen({ navigation }: any) {
     navigation.replace('MainTabs');
   };
 
+  const handleCancelRide = async () => {
+    if (!currentRideId) return;
+    try {
+      await driverApi.cancelRide(currentRideId, 'Driver cancelled');
+    } catch {}
+    resetRide();
+    navigation.replace('MainTabs');
+  };
+
   const handleCallRider = () => {
     if (incomingRequest?.riderPhone) {
       Linking.openURL(`tel:${incomingRequest.riderPhone}`);
@@ -144,22 +153,30 @@ export function ActiveRideScreen({ navigation }: any) {
     });
   };
 
-  const mapCenter = {
-    latitude: currentLat || 12.0368,
-    longitude: currentLng || 75.3614,
-    latitudeDelta: 0.015,
-    longitudeDelta: 0.015,
+  const driverCenter = {
+    lat: currentLat || 12.0368,
+    lng: currentLng || 75.3614,
   };
+
+  const mapMarkers = useMemo(() => {
+    const m: { lat: number; lng: number; color: string; label?: string }[] = [];
+    if (currentLat && currentLng) m.push({ lat: currentLat, lng: currentLng, color: '0xF5C800', label: 'D' });
+    if (phase === 'heading_to_pickup' && pickup) {
+      m.push({ lat: pickup.lat, lng: pickup.lng, color: '0x00C853', label: 'P' });
+    }
+    if (phase === 'on_trip' && dropoff) {
+      m.push({ lat: dropoff.lat, lng: dropoff.lng, color: '0xFF3B30', label: 'X' });
+    }
+    return m;
+  }, [currentLat, currentLng, phase, pickup, dropoff]);
 
   return (
     <View style={styles.container}>
-      <MapView style={styles.map} region={mapCenter} showsUserLocation>
-        {pickup && <Marker coordinate={{ latitude: pickup.lat, longitude: pickup.lng }} pinColor={colors.map.pickup} title={t('rideRequest.pickup')} />}
-        {dropoff && <Marker coordinate={{ latitude: dropoff.lat, longitude: dropoff.lng }} pinColor={colors.map.dropoff} title={t('rideRequest.dropoff')} />}
-        {routeCoords.length > 0 && (
-          <Polyline coordinates={routeCoords} strokeColor={colors.map.route} strokeWidth={4} />
-        )}
-      </MapView>
+      <StaticMapView
+        center={driverCenter}
+        markers={mapMarkers}
+        style={styles.map}
+      />
 
       {turnByTurn.length > 0 && currentStepIdx < turnByTurn.length && phase !== 'trip_completed' && (
         <View style={styles.navBanner}>
@@ -183,11 +200,13 @@ export function ActiveRideScreen({ navigation }: any) {
               <View style={styles.riderCard}>
                 <View style={styles.riderAvatar}><Text style={{ fontSize: 24 }}>👤</Text></View>
                 <View style={styles.riderInfo}>
-                  <Text style={styles.riderName}>{incomingRequest.riderName}</Text>
-                  <View style={styles.ratingRow}>
-                    <Icon name="star" size={14} color={colors.rating} />
-                    <Text style={styles.ratingText}>{incomingRequest.riderRating.toFixed(1)}</Text>
-                  </View>
+                  <Text style={styles.riderName}>{incomingRequest.riderName || 'Rider'}</Text>
+                  {incomingRequest.riderRating != null && (
+                    <View style={styles.ratingRow}>
+                      <Icon name="star" size={14} color={colors.rating} />
+                      <Text style={styles.ratingText}>{incomingRequest.riderRating.toFixed(1)}</Text>
+                    </View>
+                  )}
                 </View>
                 <TouchableOpacity style={styles.actionIcon} onPress={handleCallRider}>
                   <Icon name="phone" size={22} color={colors.secondary} />

@@ -1,6 +1,6 @@
 export default {
   common: {
-    appName: 'Aye Auto',
+    appName: 'Hey Auto',
     tagline: 'Your trusted auto ride in Kerala',
     ok: 'OK',
     cancel: 'Cancel',
@@ -16,7 +16,7 @@ export default {
   },
 
   auth: {
-    welcome: 'Welcome to Aye Auto',
+    welcome: 'Welcome to Hey Auto',
     welcomeSub: 'Enter your phone number to get started',
     phoneLabel: 'Phone Number',
     phonePlaceholder: 'Your 10-digit number',
@@ -41,12 +41,7 @@ export default {
     home: 'Home',
     work: 'Work',
     recentRides: 'Recent Rides',
-    quickRoutes: 'Popular Routes',
     nearbyAutos: 'Autos Nearby',
-    busStand: 'Bus Stand',
-    railwayStation: 'Railway Station',
-    hospital: 'Hospital',
-    temple: 'Trichambaram Temple',
   },
 
   booking: {
@@ -67,7 +62,7 @@ export default {
     cash: 'Cash',
     upi: 'UPI',
     wallet: 'Wallet',
-    bookAuto: 'Book Auto',
+    bookRide: 'Book Ride',
     govtRate: 'Govt. meter rate',
   },
 
@@ -75,8 +70,8 @@ export default {
     searchingDriver: 'Finding your auto...',
     searchingSub: 'Connecting with nearby drivers',
     driverAssigned: 'Driver found!',
-    driverOnWay: 'Driver is on the way',
-    driverArrived: 'Driver has arrived!',
+    driverOnWay: 'Your Sarathi is on the way',
+    driverArrived: 'Your Sarathi has arrived!',
     shareOtp: 'Share this OTP with your driver',
     rideStarted: 'Ride started',
     enjoyRide: 'Enjoy your ride!',
@@ -99,7 +94,7 @@ export default {
     paid: 'Paid',
     rateDriver: 'Rate your driver',
     addTip: 'Add a tip (optional)',
-    thankYou: 'Thank you for riding with Aye Auto!',
+    thankYou: 'Thank you for riding with Hey Auto!',
     submit: 'Submit',
   },
 
@@ -113,7 +108,7 @@ export default {
     settings: 'Settings',
     language: 'Language',
     help: 'Help & Support',
-    about: 'About Aye Auto',
+    about: 'About Hey Auto',
     logout: 'Logout',
     logoutConfirm: 'Are you sure you want to logout?',
     version: 'Version {{version}}',

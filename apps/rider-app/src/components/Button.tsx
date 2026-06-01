@@ -44,7 +44,7 @@ export function Button({
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' || variant === 'ghost' ? colors.primary : colors.white} />
+        <ActivityIndicator color={variant === 'primary' ? colors.text : colors.primary} />
       ) : (
         <>
           {icon}
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   size_md: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
   size_lg: { paddingVertical: spacing.base, paddingHorizontal: spacing.xl },
   text: { ...typography.button, textAlign: 'center' },
-  text_primary: { color: colors.white },
+  text_primary: { color: colors.text },
   text_secondary: { color: colors.white },
   text_outline: { color: colors.primary },
   text_ghost: { color: colors.primary },
