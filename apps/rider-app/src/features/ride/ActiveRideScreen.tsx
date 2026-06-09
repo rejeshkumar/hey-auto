@@ -56,8 +56,19 @@ export function ActiveRideScreen({ navigation }: any) {
     navigation.replace('BookingConfirm');
   };
 
-  const handleCancel = () => {
-    Alert.alert(t('ride.cancelConfirm'), '', [
+  const handleCancel = async () => {
+    // Check if a cancellation charge applies before confirming
+    let chargeMsg = '';
+    if (currentRide) {
+      try {
+        const preview = await rideApi.getCancelPreview(currentRide.id);
+        const p = preview.data.data;
+        if (p?.chargeApplies && p.amount > 0) {
+          chargeMsg = `\n\n₹${p.amount} cancellation fee applies (driver has been waiting ${Math.round(p.waitedMin)} min).`;
+        }
+      } catch {}
+    }
+    Alert.alert(t('ride.cancelConfirm'), chargeMsg || '', [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('common.confirm'), style: 'destructive', onPress: async () => {

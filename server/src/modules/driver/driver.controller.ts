@@ -126,6 +126,96 @@ export class DriverController {
       next(err);
     }
   }
+
+  async getNearbyStands(req: Request, res: Response, next: NextFunction) {
+    try {
+      const lat = parseFloat(req.query.lat as string);
+      const lng = parseFloat(req.query.lng as string);
+      const city = (req.query.city as string) || 'taliparamba';
+      if (isNaN(lat) || isNaN(lng)) {
+        res.status(400).json({ success: false, error: { message: 'lat and lng are required' } });
+        return;
+      }
+      const stands = await driverService.getNearbyStands(lat, lng, city);
+      res.json({ success: true, data: stands });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getQueueStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const status = await driverService.getQueueStatus(req.user!.userId);
+      res.json({ success: true, data: status });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async setHomeLocation(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { lat, lng, address } = req.body;
+      const result = await driverService.setHomeLocation(req.user!.userId, { lat, lng, address });
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async toggleGoHomeMode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { active } = req.body;
+      const result = await driverService.toggleGoHomeMode(req.user!.userId, !!active);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getDailyEarnings(req: Request, res: Response, next: NextFunction) {
+    try {
+      const days = parseInt((req.query.days as string) || '7', 10);
+      const result = await driverService.getDailyEarnings(req.user!.userId, days);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async redeemCoins(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { planId } = req.body;
+      const result = await driverService.redeemCoins(req.user!.userId, planId);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getLeaderboard(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await driverService.getLeaderboard(req.user!.userId);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getDemandHeatmap(req: Request, res: Response, next: NextFunction) {
+    try {
+      const lat = parseFloat(req.query.lat as string);
+      const lng = parseFloat(req.query.lng as string);
+      const radiusKm = parseFloat((req.query.radiusKm as string) || '5');
+      if (isNaN(lat) || isNaN(lng)) {
+        res.status(400).json({ success: false, error: { message: 'lat and lng are required' } });
+        return;
+      }
+      const data = await driverService.getDemandHeatmap(lat, lng, radiusKm);
+      res.json({ success: true, data });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const driverController = new DriverController();

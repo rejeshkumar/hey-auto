@@ -5,6 +5,16 @@ import { socketService } from '../services/socket';
 import { registerPushToken } from '../services/pushNotifications';
 import { setLoginGrace } from '../services/api';
 
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    // Consider expired if less than 60 seconds remaining
+    return payload.exp * 1000 < Date.now() + 60000;
+  } catch {
+    return true;
+  }
+}
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -16,7 +26,7 @@ interface AuthState {
   verifyOtp: (phone: string, otp: string) => Promise<void>;
   completeProfile: (data: { fullName: string; email?: string; language?: string }) => Promise<void>;
   logout: () => Promise<void>;
-  loadSession: () => void;
+  loadSession: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -70,20 +80,38 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null, isAuthenticated: false, isNewUser: false });
   },
 
-  loadSession: () => {
+  loadSession: async () => {
     const userStr = storage.getString('user');
     const token = storage.getString('accessToken');
+    const refreshToken = storage.getString('refreshToken');
 
-    if (userStr && token) {
+    if (!userStr) { set({ isLoading: false }); return; }
+
+    // If no access token but we have a refresh token, silently refresh on startup
+    if ((!token || isTokenExpired(token)) && refreshToken) {
       try {
-        const user = JSON.parse(userStr) as User;
-        set({ user, isAuthenticated: true, isLoading: false });
-        socketService.connect();
-        registerPushToken();
+        const axios = (await import('axios')).default;
+        const BASE_URL = 'https://hey-auto-server-production.up.railway.app/api/v1';
+        const { data } = await axios.post(`${BASE_URL}/auth/refresh-token`, { refreshToken });
+        const { accessToken: newAccess, refreshToken: newRefresh } = data.data.tokens;
+        storage.set('accessToken', newAccess);
+        storage.set('refreshToken', newRefresh);
       } catch {
+        // Refresh failed — clear everything and go to login
+        storage.delete('accessToken');
+        storage.delete('refreshToken');
+        storage.delete('user');
         set({ isLoading: false });
+        return;
       }
-    } else {
+    }
+
+    try {
+      const user = JSON.parse(userStr) as User;
+      set({ user, isAuthenticated: true, isLoading: false });
+      socketService.connect();
+      registerPushToken();
+    } catch {
       set({ isLoading: false });
     }
   },

@@ -43,6 +43,10 @@ interface RideState {
   rideOtp: string | null;
   paymentMethod: 'CASH' | 'UPI' | 'WALLET';
   completedRideData: any | null;
+  rideType: 'PASSENGER' | 'PARCEL';
+  parcelDescription?: string;
+  recipientName?: string;
+  recipientPhone?: string;
 
   setPhase: (phase: RidePhase) => void;
   setPickup: (location: Location) => void;
@@ -54,6 +58,8 @@ interface RideState {
   setRideOtp: (otp: string) => void;
   setPaymentMethod: (method: 'CASH' | 'UPI' | 'WALLET') => void;
   setCompletedRideData: (data: any) => void;
+  setRideType: (type: 'PASSENGER' | 'PARCEL') => void;
+  setParcelDetails: (details: { parcelDescription?: string; recipientName?: string; recipientPhone?: string }) => void;
   resetRide: () => void;
 }
 
@@ -68,6 +74,7 @@ export const useRideStore = create<RideState>((set) => ({
   rideOtp: null,
   paymentMethod: 'CASH',
   completedRideData: null,
+  rideType: 'PASSENGER',
 
   setPhase: (phase) => set({ phase }),
   setPickup: (pickup) => set({ pickup }),
@@ -79,6 +86,8 @@ export const useRideStore = create<RideState>((set) => ({
   setRideOtp: (rideOtp) => set({ rideOtp }),
   setPaymentMethod: (paymentMethod) => set({ paymentMethod }),
   setCompletedRideData: (completedRideData) => set({ completedRideData }),
+  setRideType: (rideType) => set({ rideType }),
+  setParcelDetails: (details) => set(details),
 
   resetRide: () =>
     set({

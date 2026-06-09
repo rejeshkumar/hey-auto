@@ -221,4 +221,49 @@ router.post('/fare-config', async (req: Request, res: Response, next: NextFuncti
   }
 });
 
+// ── Auto Stands ─────────────────────────────────────────────────────────────
+
+router.get('/stands', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { prisma } = await import('../../config/database');
+    const stands = await prisma.autoStand.findMany({
+      include: { _count: { select: { queueEntries: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+    res.json({ success: true, data: stands });
+  } catch (err) { next(err); }
+});
+
+router.post('/stands', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { prisma } = await import('../../config/database');
+    const { name, city, lat, lng, radiusMeters, maxCapacity } = req.body;
+    const stand = await prisma.autoStand.create({
+      data: { name, city: city.toLowerCase(), lat, lng, radiusMeters: radiusMeters ?? 100, maxCapacity: maxCapacity ?? 20 },
+    });
+    res.status(201).json({ success: true, data: stand });
+  } catch (err) { next(err); }
+});
+
+router.patch('/stands/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { prisma } = await import('../../config/database');
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const stand = await prisma.autoStand.update({
+      where: { id },
+      data: req.body,
+    });
+    res.json({ success: true, data: stand });
+  } catch (err) { next(err); }
+});
+
+router.delete('/stands/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { prisma } = await import('../../config/database');
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    await prisma.autoStand.delete({ where: { id } });
+    res.json({ success: true, data: { deleted: true } });
+  } catch (err) { next(err); }
+});
+
 export { router as adminRoutes };

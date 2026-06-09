@@ -69,8 +69,21 @@ export function RideRequestCard({ request, navigation }: Props) {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.newRideLabel}>{t('rideRequest.newRequest')}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.newRideLabel}>
+                {request.rideType === 'PARCEL' ? '📦 Parcel Delivery' : t('rideRequest.newRequest')}
+              </Text>
+              {request.standName && (
+                <Text style={styles.queueBadge}>🚏 Queue #{request.queuePosition}</Text>
+              )}
+            </View>
             <Text style={styles.riderName}>{request.riderName || 'Rider'}</Text>
+            {request.rideType === 'PARCEL' && request.recipientName && (
+              <Text style={styles.parcelInfo}>To: {request.recipientName}</Text>
+            )}
+            {request.rideType === 'PARCEL' && request.parcelDescription && (
+              <Text style={styles.parcelDesc}>{request.parcelDescription}</Text>
+            )}
           </View>
           <View style={styles.timerBlock}>
             <Text style={[styles.timerNum, isUrgent && { color: colors.error }]}>{countdown}</Text>
@@ -164,6 +177,9 @@ const styles = StyleSheet.create({
   },
   newRideLabel: { ...typography.captionBold, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 },
   riderName: { ...typography.h3, color: colors.text, marginTop: 2 },
+  queueBadge: { ...typography.caption, color: colors.primary, fontWeight: '700', backgroundColor: 'rgba(249,176,27,0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
+  parcelInfo: { ...typography.small, color: colors.text, fontWeight: '600', marginTop: 2 },
+  parcelDesc: { ...typography.caption, color: colors.textSecondary, marginTop: 1 },
   timerBlock: { alignItems: 'center' },
   timerNum: { fontSize: 32, fontWeight: '800', color: colors.text, lineHeight: 36 },
   timerSec: { ...typography.caption, color: colors.textSecondary },

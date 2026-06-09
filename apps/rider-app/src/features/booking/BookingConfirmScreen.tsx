@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, ScrollView, Alert, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -12,10 +12,11 @@ import { decodePolyline } from '../../utils/polyline';
 export function BookingConfirmScreen({ navigation }: any) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { pickup, dropoff, fareEstimate, setFareEstimate, setCurrentRide, setRideOtp, setPhase, paymentMethod, setPaymentMethod } = useRideStore();
+  const { pickup, dropoff, fareEstimate, setFareEstimate, setCurrentRide, setRideOtp, setPhase, paymentMethod, setPaymentMethod, rideType, setParcelDetails, parcelDescription, recipientName, recipientPhone } = useRideStore();
   const [loading, setLoading] = useState(true);
   const [estimateErrMsg, setEstimateErrMsg] = useState('');
   const [booking, setBooking] = useState(false);
+  const isParcel = rideType === 'PARCEL';
 
   useEffect(() => {
     if (pickup && dropoff) fetchEstimate();
@@ -28,6 +29,7 @@ export function BookingConfirmScreen({ navigation }: any) {
       const { data } = await rideApi.getFareEstimate({
         pickupLat: pickup.lat, pickupLng: pickup.lng,
         dropoffLat: dropoff.lat, dropoffLng: dropoff.lng,
+        rideType,
       });
       setFareEstimate(data.data);
     } catch (err: any) {
@@ -43,10 +45,19 @@ export function BookingConfirmScreen({ navigation }: any) {
     if (!pickup || !dropoff) return;
     setBooking(true);
     try {
+      if (isParcel && !recipientName?.trim()) {
+        Alert.alert('Required', 'Please enter the recipient name for parcel delivery');
+        setBooking(false);
+        return;
+      }
       const { data } = await rideApi.requestRide({
         pickupLat: pickup.lat, pickupLng: pickup.lng, pickupAddress: pickup.address,
         dropoffLat: dropoff.lat, dropoffLng: dropoff.lng, dropoffAddress: dropoff.address,
         paymentMethod,
+        rideType,
+        parcelDescription,
+        recipientName,
+        recipientPhone,
       });
       setCurrentRide(data.data);
       if (data.data.rideOtp) setRideOtp(data.data.rideOtp);
@@ -170,8 +181,38 @@ export function BookingConfirmScreen({ navigation }: any) {
               </View>
             </View>
 
+            {/* Parcel fields */}
+            {isParcel && (
+              <View style={styles.parcelSection}>
+                <Text style={styles.parcelSectionTitle}>📦 Parcel Details</Text>
+                <TextInput
+                  style={styles.parcelInput}
+                  placeholder="Recipient name *"
+                  placeholderTextColor={colors.textSecondary}
+                  value={recipientName || ''}
+                  onChangeText={(v) => setParcelDetails({ recipientName: v })}
+                />
+                <TextInput
+                  style={styles.parcelInput}
+                  placeholder="Recipient phone"
+                  placeholderTextColor={colors.textSecondary}
+                  value={recipientPhone || ''}
+                  onChangeText={(v) => setParcelDetails({ recipientPhone: v })}
+                  keyboardType="phone-pad"
+                />
+                <TextInput
+                  style={[styles.parcelInput, { minHeight: 60, textAlignVertical: 'top' }]}
+                  placeholder="Parcel description (optional)"
+                  placeholderTextColor={colors.textSecondary}
+                  value={parcelDescription || ''}
+                  onChangeText={(v) => setParcelDetails({ parcelDescription: v })}
+                  multiline
+                />
+              </View>
+            )}
+
             <Button
-              title={`${t('booking.bookRide')} · ₹${fareEstimate.totalFare}`}
+              title={isParcel ? `Send Parcel · ₹${fareEstimate.totalFare}` : `${t('booking.bookRide')} · ₹${fareEstimate.totalFare}`}
               onPress={handleBookRide}
               loading={booking}
             />
@@ -273,4 +314,11 @@ const styles = StyleSheet.create({
   },
   paymentBtnText: { ...typography.smallBold, color: colors.textSecondary },
   paymentBtnTextActive: { color: colors.primary, fontWeight: '600' },
+  parcelSection: { marginBottom: spacing.lg },
+  parcelSectionTitle: { ...typography.bodyBold, color: colors.text, marginBottom: spacing.sm },
+  parcelInput: {
+    borderWidth: 1.5, borderColor: colors.border, borderRadius: borderRadius.lg,
+    padding: spacing.base, ...typography.body, color: colors.text,
+    backgroundColor: colors.surface, marginBottom: spacing.sm,
+  },
 });

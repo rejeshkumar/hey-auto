@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Vibration, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Vibration, Alert, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
@@ -11,6 +12,8 @@ import { socketService } from '../../services/socket';
 import { storage } from '../../utils/storage';
 import { RideRequestCard } from './RideRequestCard';
 import { StaticMapView } from '../../components';
+import { LiveMapView } from '../../components/LiveMapView';
+import { driverApi } from '../../services/driver';
 
 const TALIPARAMBA_CENTER = { latitude: 12.0368, longitude: 75.3614 };
 
@@ -20,12 +23,32 @@ export function HomeScreen({ navigation }: any) {
   const { phase, isOnline, earnings, incomingRequest, goOnline, goOffline, setIncomingRequest, setPhase, loadEarnings } = useDriverStore();
   const { currentLat, currentLng, setCurrentLocation, setPermission } = useLocationStore();
   const [toggling, setToggling] = useState(false);
+  const insets = useSafeAreaInsets();
+  const [goHomeMode, setGoHomeMode] = useState(false);
+  const [homeLocation, setHomeLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [goHomeToggling, setGoHomeToggling] = useState(false);
+  const [queueStatus, setQueueStatus] = useState<{ standName: string; position: number } | null>(null);
   const locationSubscription = React.useRef<Location.LocationSubscription | null>(null);
 
   useEffect(() => {
     requestLocationPermission();
     loadEarnings();
-    return () => { locationSubscription.current?.remove(); };
+    // Load driver's home location and go-home state
+    driverApi.getProfile().then((res) => {
+      const p = res.data.data;
+      if (p?.homeLat && p?.homeLng) setHomeLocation({ lat: p.homeLat, lng: p.homeLng });
+      setGoHomeMode(!!p?.isGoHomeMode);
+    }).catch(() => {});
+    // Poll queue status every 30s when online
+    const pollQueue = () => {
+      driverApi.getQueueStatus().then((res) => {
+        const entries = res.data.data ?? [];
+        setQueueStatus(entries.length > 0 ? { standName: entries[0].standName, position: entries[0].position } : null);
+      }).catch(() => {});
+    };
+    pollQueue();
+    const queueInterval = setInterval(pollQueue, 30000);
+    return () => { locationSubscription.current?.remove(); clearInterval(queueInterval); };
   }, []);
 
   useEffect(() => {
@@ -94,6 +117,25 @@ export function HomeScreen({ navigation }: any) {
     }
   };
 
+  const handleGoHomeToggle = async () => {
+    if (!homeLocation && !goHomeMode) {
+      Alert.alert('Set Home First', 'Go to Profile → Home Location to set your home address.', [
+        { text: 'OK' },
+        { text: 'Go to Profile', onPress: () => navigation.navigate('ProfileTab') },
+      ]);
+      return;
+    }
+    setGoHomeToggling(true);
+    try {
+      const res = await driverApi.toggleGoHomeMode(!goHomeMode);
+      setGoHomeMode(res.data.data?.isGoHomeMode ?? !goHomeMode);
+    } catch {
+      Alert.alert('Error', 'Could not toggle Go Home mode');
+    } finally {
+      setGoHomeToggling(false);
+    }
+  };
+
   const handleLanguageToggle = () => {
     const newLang = i18n.language === 'ml' ? 'en' : 'ml';
     i18n.changeLanguage(newLang);
@@ -114,7 +156,15 @@ export function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <StaticMapView center={mapCenter} markers={mapMarkers} style={styles.map} />
+      <LiveMapView
+        lat={mapCenter.lat}
+        lng={mapCenter.lng}
+        isOnline={isOnline}
+        homeLat={homeLocation?.lat}
+        homeLng={homeLocation?.lng}
+        isGoHomeMode={goHomeMode}
+        style={styles.map}
+      />
 
       {/* Top bar */}
       <View style={styles.topBar}>
@@ -141,7 +191,7 @@ export function HomeScreen({ navigation }: any) {
 
       {/* Bottom card */}
       {phase !== 'ride_request' && (
-        <View style={styles.bottomCard}>
+        <View style={[styles.bottomCard, { paddingBottom: Math.max(insets.bottom + 8, 16) }]}>
           {isOnline && phase === 'online_idle' ? (
             <>
               {/* Earnings row — ink card */}
@@ -162,6 +212,15 @@ export function HomeScreen({ navigation }: any) {
                 </View>
               </View>
 
+              {/* Queue status banner */}
+              {queueStatus && (
+                <View style={styles.queueBanner}>
+                  <Text style={styles.queueBannerText}>
+                    🚏 #{queueStatus.position} in queue at {queueStatus.standName}
+                  </Text>
+                </View>
+              )}
+
               {/* Waiting row — ink card, green top border */}
               <View style={styles.waitingRow}>
                 <View style={styles.pulseDot} />
@@ -173,6 +232,21 @@ export function HomeScreen({ navigation }: any) {
               <Text style={styles.greetText}>Good {getTimeGreeting()}, {firstName}</Text>
               <Text style={styles.greetSub}>Go online to start accepting rides</Text>
             </View>
+          )}
+
+          {/* Go Home toggle — only shown when online */}
+          {isOnline && (
+            <TouchableOpacity
+              style={[styles.goHomeBtn, goHomeMode && styles.goHomeBtnActive]}
+              onPress={handleGoHomeToggle}
+              disabled={goHomeToggling}
+              activeOpacity={0.85}
+            >
+              <Icon name="home-outline" size={18} color={goHomeMode ? colors.ink : colors.primary} />
+              <Text style={[styles.goHomeBtnText, { color: goHomeMode ? colors.ink : colors.primary }]}>
+                {goHomeMode ? 'Go Home: ON' : 'Go Home'}
+              </Text>
+            </TouchableOpacity>
           )}
 
           <TouchableOpacity
@@ -207,7 +281,7 @@ const styles = StyleSheet.create({
   topBar: {
     position: 'absolute', top: 0, left: 0, right: 0,
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingTop: Platform.OS === 'ios' ? 56 : 44,
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.sm,
   },
@@ -236,8 +310,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderTopLeftRadius: borderRadius.xxl,
     borderTopRightRadius: borderRadius.xxl,
-    padding: spacing.lg,
-    paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl,
+    paddingTop: spacing.base,
+    paddingHorizontal: spacing.base,
     elevation: 12,
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: -4 },
@@ -245,8 +319,8 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
   },
 
-  greetRow: { marginBottom: spacing.lg },
-  greetText: { ...typography.h3, color: colors.text },
+  greetRow: { marginBottom: spacing.base },
+  greetText: { ...typography.h4, color: colors.text },
   greetSub: { ...typography.small, color: colors.textSecondary, marginTop: 2 },
 
   earningsRow: {
@@ -254,27 +328,44 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink, borderRadius: borderRadius.xl,
     borderTopWidth: 2, borderTopColor: colors.primary,
     overflow: 'hidden',
-    padding: spacing.base, marginBottom: spacing.base,
+    paddingVertical: spacing.sm, paddingHorizontal: spacing.base, marginBottom: spacing.sm,
   },
   earningsStat: { flex: 1, alignItems: 'center' },
-  earningsAmount: { fontSize: 28, fontWeight: '900', color: colors.primary },
-  earningsLabel: { ...typography.caption, color: colors.primary, fontWeight: '600', marginTop: 2 },
-  statValue: { ...typography.h4, fontWeight: '700', color: colors.primary },
-  divider: { width: 1, height: 36, backgroundColor: 'rgba(249,176,27,0.25)' },
+  earningsAmount: { fontSize: 22, fontWeight: '900', color: colors.primary },
+  earningsLabel: { ...typography.caption, color: colors.primary, fontWeight: '600', marginTop: 1 },
+  statValue: { ...typography.body, fontWeight: '700', color: colors.primary },
+  divider: { width: 1, height: 28, backgroundColor: 'rgba(249,176,27,0.25)' },
+
+  queueBanner: {
+    backgroundColor: 'rgba(249,176,27,0.12)', borderRadius: borderRadius.lg,
+    paddingVertical: spacing.xs, paddingHorizontal: spacing.base,
+    marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: colors.primary,
+  },
+  queueBannerText: { ...typography.small, color: colors.text, fontWeight: '600' },
 
   waitingRow: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm,
     backgroundColor: colors.ink, borderRadius: borderRadius.xl,
     borderTopWidth: 2, borderTopColor: colors.secondary,
     overflow: 'hidden',
-    paddingVertical: spacing.sm + 2, paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm, paddingHorizontal: spacing.base,
   },
   pulseDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.secondary },
   waitingText: { ...typography.small, color: colors.primary, fontWeight: '600' },
 
+  goHomeBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: spacing.xs, paddingVertical: spacing.xs + 2, paddingHorizontal: spacing.base,
+    borderRadius: borderRadius.lg, marginBottom: spacing.sm,
+    backgroundColor: colors.ink,
+    borderTopWidth: 2, borderTopColor: colors.primary, overflow: 'hidden',
+  },
+  goHomeBtnActive: { backgroundColor: colors.primary, borderTopColor: colors.ink },
+  goHomeBtnText: { ...typography.caption, fontWeight: '700' },
+
   onlineBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: spacing.sm, paddingVertical: spacing.base + 2, borderRadius: borderRadius.xl,
+    gap: spacing.sm, paddingVertical: spacing.base, borderRadius: borderRadius.xl,
     elevation: 4, shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8,
   },
@@ -284,5 +375,5 @@ const styles = StyleSheet.create({
     borderTopWidth: 2, borderTopColor: colors.primary,
     overflow: 'hidden',
   },
-  onlineBtnText: { ...typography.h4 },
+  onlineBtnText: { ...typography.body, fontWeight: '700' },
 });

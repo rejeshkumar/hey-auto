@@ -18,6 +18,8 @@ import { ProfileScreen } from '../features/profile/ProfileScreen';
 import { DocumentsScreen } from '../features/profile/DocumentsScreen';
 import { SubscriptionScreen } from '../features/profile/SubscriptionScreen';
 import { VehicleScreen } from '../features/profile/VehicleScreen';
+import { SetHomeLocationScreen } from '../features/profile/SetHomeLocationScreen';
+import { RewardsScreen } from '../features/earnings/RewardsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -31,8 +33,9 @@ function MainTabs() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textLight,
-        tabBarStyle: { borderTopColor: colors.borderLight, paddingBottom: 8, paddingTop: 8, height: 64 },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
+        tabBarStyle: { borderTopColor: colors.borderLight, paddingBottom: 6, paddingTop: 6, height: 68 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginTop: 2 },
+        tabBarIconStyle: { marginBottom: 0 },
       }}
     >
       <Tab.Screen
@@ -99,6 +102,8 @@ export function Navigation() {
             <Stack.Screen name="Documents" component={DocumentsScreen} />
             <Stack.Screen name="Subscription" component={SubscriptionScreen} />
             <Stack.Screen name="Vehicle" component={VehicleScreen} />
+            <Stack.Screen name="SetHomeLocation" component={SetHomeLocationScreen} />
+            <Stack.Screen name="Rewards" component={RewardsScreen} />
           </>
         )}
       </Stack.Navigator>

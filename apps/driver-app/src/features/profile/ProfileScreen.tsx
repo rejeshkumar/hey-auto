@@ -1,11 +1,12 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Switch, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../components';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useDriverStore } from '../../hooks/useDriverStore';
+import { driverApi } from '../../services/driver';
 
 interface MenuItemProps {
   icon: string;
@@ -32,8 +33,12 @@ export function ProfileScreen({ navigation }: any) {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuthStore();
   const { profile, loadProfile } = useDriverStore();
+  const [acceptsParcels, setAcceptsParcels] = useState(false);
 
-  useEffect(() => { loadProfile(); }, []);
+  useEffect(() => {
+    loadProfile();
+    driverApi.getProfile().then((r) => setAcceptsParcels(!!r.data.data?.acceptsParcels)).catch(() => {});
+  }, []);
 
   const handleLogout = () => {
     Alert.alert(t('profile.logout'), t('profile.logoutConfirm'), [
@@ -53,7 +58,7 @@ export function ProfileScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 32 : 80 }}>
         <Text style={styles.screenTitle}>{t('profile.title')}</Text>
 
         <View style={styles.profileCard}>
@@ -94,6 +99,23 @@ export function ProfileScreen({ navigation }: any) {
           <MenuItem icon="car" label="My Vehicle" onPress={() => navigation.navigate('Vehicle')} rightText={profile?.vehicles?.[0]?.registrationNo} />
           <MenuItem icon="file-document" label={t('profile.documents')} onPress={() => navigation.navigate('Documents')} />
           <MenuItem icon="star-circle" label="Subscription" onPress={() => navigation.navigate('Subscription')} rightText={profile?.verificationStatus === 'VERIFIED' ? 'Active' : undefined} />
+          <MenuItem icon="home-outline" label="Home Location" onPress={() => navigation.navigate('SetHomeLocation')} rightText={profile?.homeAddress ? 'Set' : 'Not set'} />
+          <MenuItem icon="circle-multiple-outline" label="Rewards & Coins" onPress={() => navigation.navigate('Rewards')} rightText={profile?.coinsBalance ? `${profile.coinsBalance} 🪙` : undefined} />
+          <View style={styles.parcelToggleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.parcelToggleLabel}>Accept Parcel Deliveries</Text>
+              <Text style={styles.parcelToggleSub}>Receive parcel booking requests</Text>
+            </View>
+            <Switch
+              value={acceptsParcels}
+              onValueChange={async (val) => {
+                setAcceptsParcels(val);
+                try { await driverApi.updateProfile({ acceptsParcels: val } as any); } catch {}
+              }}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.white}
+            />
+          </View>
           <MenuItem icon="cash-multiple" label={t('profile.myEarnings')} onPress={() => navigation.navigate('EarningsTab')} />
           <MenuItem icon="history" label={t('profile.rideHistory')} onPress={() => navigation.navigate('HistoryTab')} />
         </View>
@@ -119,7 +141,7 @@ export function ProfileScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  screenTitle: { ...typography.h2, color: colors.text, marginTop: spacing.lg, marginBottom: spacing.lg },
+  screenTitle: { ...typography.h2, color: colors.text, marginTop: spacing.base, marginBottom: spacing.base },
   profileCard: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white, borderRadius: borderRadius.xl,
     padding: spacing.lg, marginBottom: spacing.base, gap: spacing.base, elevation: 2,
@@ -156,4 +178,11 @@ const styles = StyleSheet.create({
   menuLabel: { ...typography.body, color: colors.text, flex: 1 },
   rightText: { ...typography.smallBold, color: colors.primary, marginRight: spacing.sm },
   version: { ...typography.caption, color: colors.textLight, textAlign: 'center', marginVertical: spacing.xl },
+  parcelToggleRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: spacing.base, paddingHorizontal: spacing.base,
+    borderBottomWidth: 1, borderBottomColor: colors.borderLight,
+  },
+  parcelToggleLabel: { ...typography.body, color: colors.text, fontWeight: '600' },
+  parcelToggleSub: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
 });

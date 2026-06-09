@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../components';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useDriverStore } from '../../hooks/useDriverStore';
+import { driverApi, DailyEarning } from '../../services/driver';
 
 type Period = 'today' | 'thisWeek' | 'thisMonth';
 
@@ -13,9 +14,11 @@ export function EarningsScreen() {
   const { earnings, loadEarnings } = useDriverStore();
   const [period, setPeriod] = useState<Period>('today');
   const [loading, setLoading] = useState(true);
+  const [dailyEarnings, setDailyEarnings] = useState<DailyEarning[]>([]);
 
   useEffect(() => {
     loadEarnings().finally(() => setLoading(false));
+    driverApi.getDailyEarnings(7).then((r) => setDailyEarnings(r.data.data ?? [])).catch(() => {});
   }, []);
 
   const getAmount = () => {
@@ -46,7 +49,7 @@ export function EarningsScreen() {
 
   return (
     <ScreenWrapper>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 32 : 80 }}>
         <Text style={styles.screenTitle}>{t('earnings.title')}</Text>
 
         <View style={styles.periodTabs}>
@@ -86,13 +89,35 @@ export function EarningsScreen() {
             </View>
           </View>
         </View>
+
+        {dailyEarnings.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Last 7 Days</Text>
+            {dailyEarnings.map((day) => {
+              const d = new Date(day.date);
+              const label = d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+              return (
+                <View key={day.date} style={styles.dayCard}>
+                  <View style={styles.dayLeft}>
+                    <Text style={styles.dayLabel}>{label}</Text>
+                    <Text style={styles.dayRides}>{day.rides} ride{day.rides !== 1 ? 's' : ''}</Text>
+                  </View>
+                  <View style={styles.dayRight}>
+                    <Text style={styles.dayAmount}>₹{Math.round(day.totalEarnings)}</Text>
+                    {day.tips > 0 && <Text style={styles.dayTips}>+₹{Math.round(day.tips)} tips</Text>}
+                  </View>
+                </View>
+              );
+            })}
+          </>
+        )}
       </ScrollView>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  screenTitle: { ...typography.h2, color: colors.text, marginTop: spacing.lg, marginBottom: spacing.base },
+  screenTitle: { ...typography.h2, color: colors.text, marginTop: spacing.base, marginBottom: spacing.base },
   periodTabs: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   tab: {
     flex: 1, paddingVertical: spacing.md, borderRadius: borderRadius.lg,
@@ -113,4 +138,18 @@ const styles = StyleSheet.create({
   mainStatValue: { ...typography.h4, color: colors.text },
   mainStatLabel: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
   mainStatDivider: { width: 1, backgroundColor: colors.border },
+  sectionTitle: { ...typography.h4, color: colors.text, marginTop: spacing.xl, marginBottom: spacing.base },
+  dayCard: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    backgroundColor: colors.white, borderRadius: borderRadius.lg, padding: spacing.base,
+    marginBottom: spacing.sm, elevation: 1,
+    shadowColor: colors.black, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2,
+    borderLeftWidth: 3, borderLeftColor: colors.primary,
+  },
+  dayLeft: { flex: 1 },
+  dayLabel: { ...typography.body, color: colors.text, fontWeight: '600' },
+  dayRides: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  dayRight: { alignItems: 'flex-end' },
+  dayAmount: { ...typography.h4, color: colors.earnings, fontWeight: '700' },
+  dayTips: { ...typography.caption, color: colors.secondary },
 });

@@ -93,7 +93,7 @@ export function setupSocketHandlers(io: Server) {
             distance: event.distance,
             riderName: event.riderName,
             riderPhone: event.riderPhone,
-            timeoutSec: 15,
+            timeoutSec: event.timeoutSec ?? 15,
           });
           break;
 

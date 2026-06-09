@@ -21,7 +21,7 @@ const FAVE_SLOTS = [
 export function HomeScreen({ navigation }: any) {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
-  const { setPickup, setPhase } = useRideStore();
+  const { setPickup, setPhase, rideType, setRideType } = useRideStore();
   const { currentLat, currentLng, setCurrentLocation, setPermission } = useLocationStore();
   const [favourites, setFavourites] = useState<SavedPlace[]>([]);
 
@@ -92,6 +92,24 @@ export function HomeScreen({ navigation }: any) {
 
       {/* Bottom sheet */}
       <View style={styles.bottomSheet}>
+        {/* Booking type selector */}
+        <View style={styles.typeSelector}>
+          <TouchableOpacity
+            style={[styles.typeTab, rideType === 'PASSENGER' && styles.typeTabActive]}
+            onPress={() => setRideType('PASSENGER')}
+          >
+            <MaterialCommunityIcons name="car" size={16} color={rideType === 'PASSENGER' ? colors.ink : colors.textSecondary} />
+            <Text style={[styles.typeTabText, rideType === 'PASSENGER' && styles.typeTabTextActive]}>Book Ride</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.typeTab, rideType === 'PARCEL' && styles.typeTabActive]}
+            onPress={() => setRideType('PARCEL')}
+          >
+            <MaterialCommunityIcons name="package-variant" size={16} color={rideType === 'PARCEL' ? colors.ink : colors.textSecondary} />
+            <Text style={[styles.typeTabText, rideType === 'PARCEL' && styles.typeTabTextActive]}>Send Parcel</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Search bar */}
         <TouchableOpacity style={styles.searchBar} onPress={handleSearchPress} activeOpacity={0.85}>
           <View style={styles.searchIconWrap}>
@@ -204,6 +222,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 16,
   },
+
+  typeSelector: {
+    flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.base,
+  },
+  typeTab: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: spacing.xs, paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg, borderWidth: 1.5, borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  typeTabActive: {
+    backgroundColor: colors.primary, borderColor: colors.primary,
+  },
+  typeTabText: { ...typography.smallBold, color: colors.textSecondary },
+  typeTabTextActive: { color: colors.ink },
 
   searchBar: {
     flexDirection: 'row', alignItems: 'center',

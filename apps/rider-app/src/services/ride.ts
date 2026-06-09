@@ -52,7 +52,8 @@ export const rideApi = {
     dropoffLat: number;
     dropoffLng: number;
     city?: string;
-  }) => api.post<ApiResponse<FareEstimate>>('/rides/estimate', { city: 'taliparamba', ...data }),
+    rideType?: 'PASSENGER' | 'PARCEL';
+  }) => api.post<ApiResponse<FareEstimate>>('/rides/estimate', { city: 'taliparamba', rideType: 'PASSENGER', ...data }),
 
   requestRide: (data: {
     pickupLat: number;
@@ -62,7 +63,11 @@ export const rideApi = {
     dropoffLng: number;
     dropoffAddress: string;
     paymentMethod?: string;
-  }) => api.post<ApiResponse<Ride>>('/rides/request', { city: 'taliparamba', paymentMethod: 'CASH', ...data }),
+    rideType?: 'PASSENGER' | 'PARCEL';
+    parcelDescription?: string;
+    recipientName?: string;
+    recipientPhone?: string;
+  }) => api.post<ApiResponse<Ride>>('/rides/request', { city: 'taliparamba', paymentMethod: 'CASH', rideType: 'PASSENGER', ...data }),
 
   getRideDetails: (rideId: string) =>
     api.get<ApiResponse<RideWithDriver>>(`/rides/${rideId}`),
@@ -75,4 +80,7 @@ export const rideApi = {
 
   createShareToken: (rideId: string) =>
     api.post<ApiResponse<{ url: string }>>(`/rides/${rideId}/share`, {}),
+
+  getCancelPreview: (rideId: string) =>
+    api.get<ApiResponse<{ chargeApplies: boolean; amount: number; waitedMin: number; gracePeriodMin: number }>>(`/rides/${rideId}/cancel-preview`),
 };

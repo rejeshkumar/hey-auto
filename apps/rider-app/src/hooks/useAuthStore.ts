@@ -5,6 +5,15 @@ import { socketService } from '../services/socket';
 import { registerPushToken } from '../services/pushNotifications';
 import { setLoginGrace } from '../services/api';
 
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 < Date.now() + 60000;
+  } catch {
+    return true;
+  }
+}
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -16,7 +25,7 @@ interface AuthState {
   verifyOtp: (phone: string, otp: string) => Promise<void>;
   completeProfile: (data: { fullName: string; email?: string; language?: string }) => Promise<void>;
   logout: () => Promise<void>;
-  loadSession: () => void;
+  loadSession: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -81,21 +90,38 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     useRideStore.getState().resetRide();
   },
 
-  loadSession: () => {
+  loadSession: async () => {
     const userStr = storage.getString('user');
     const token = storage.getString('accessToken');
+    const refreshToken = storage.getString('refreshToken');
 
-    if (userStr && token) {
+    if (!userStr) { set({ isLoading: false }); return; }
+
+    // Proactively refresh if token is missing or about to expire
+    if ((!token || isTokenExpired(token)) && refreshToken) {
       try {
-        const user = JSON.parse(userStr) as User;
-        setLoginGrace();
-        set({ user, isAuthenticated: true, isLoading: false });
-        socketService.connect();
-        registerPushToken().catch(() => {});
+        const axios = (await import('axios')).default;
+        const BASE_URL = 'https://hey-auto-server-production.up.railway.app/api/v1';
+        const { data } = await axios.post(`${BASE_URL}/auth/refresh-token`, { refreshToken });
+        const { accessToken: newAccess, refreshToken: newRefresh } = data.data.tokens;
+        storage.set('accessToken', newAccess);
+        storage.set('refreshToken', newRefresh);
       } catch {
+        storage.delete('accessToken');
+        storage.delete('refreshToken');
+        storage.delete('user');
         set({ isLoading: false });
+        return;
       }
-    } else {
+    }
+
+    try {
+      const user = JSON.parse(userStr) as User;
+      setLoginGrace();
+      set({ user, isAuthenticated: true, isLoading: false });
+      socketService.connect();
+      registerPushToken().catch(() => {});
+    } catch {
       set({ isLoading: false });
     }
   },

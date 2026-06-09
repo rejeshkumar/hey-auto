@@ -30,4 +30,13 @@ router.put('/location', validate(updateLocationSchema), driverController.updateL
 router.get('/ride-request', driverController.getPendingRideRequest);
 router.get('/earnings', driverController.getEarnings);
 
+router.put('/home-location', driverController.setHomeLocation);
+router.post('/go-home', driverController.toggleGoHomeMode);
+router.get('/demand-heatmap', driverController.getDemandHeatmap);
+router.get('/earnings/daily', driverController.getDailyEarnings);
+router.post('/coins/redeem', driverController.redeemCoins);
+router.get('/leaderboard', driverController.getLeaderboard);
+router.get('/nearby-stands', driverController.getNearbyStands);
+router.get('/queue-status', driverController.getQueueStatus);
+
 export { router as driverRoutes };

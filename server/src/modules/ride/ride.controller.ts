@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { rideService } from './ride.service';
 import { redis } from '../../config/redis';
+import { env } from '../../config/env';
+import { logger } from '../../utils/logger';
 import crypto from 'crypto';
 
 const SHARE_TOKEN_PREFIX = 'share_token:';
@@ -117,6 +119,46 @@ export class RideController {
     }
   }
 
+  // GET /rides/:id/cancel-preview — returns whether a cancellation charge applies
+  async getCancelPreview(req: Request, res: Response, next: NextFunction) {
+    try {
+      const rideId = paramId(req);
+      const { prisma } = await import('../../config/database');
+      const ride = await prisma.ride.findUnique({ where: { id: rideId } });
+      if (!ride || ride.riderId !== req.user!.userId) {
+        res.status(404).json({ success: false, error: { message: 'Ride not found' } });
+        return;
+      }
+
+      if (ride.status !== 'DRIVER_ASSIGNED' || !ride.acceptedAt) {
+        res.json({ success: true, data: { chargeApplies: false, amount: 0 } });
+        return;
+      }
+
+      const fareConfig = await prisma.fareConfig.findFirst({
+        where: { city: ride.city, isActive: true },
+        orderBy: { effectiveFrom: 'desc' },
+      });
+      const chargeEnabled = fareConfig?.cancellationChargeEnabled ?? true;
+      const chargeAmount = fareConfig?.cancellationChargeAmount ?? 20;
+      const gracePeriodMin = fareConfig?.cancellationGracePeriodMin ?? 3;
+      const waitedMin = (Date.now() - ride.acceptedAt.getTime()) / 60000;
+      const chargeApplies = chargeEnabled && waitedMin >= gracePeriodMin;
+
+      res.json({
+        success: true,
+        data: {
+          chargeApplies,
+          amount: chargeApplies ? chargeAmount : 0,
+          waitedMin: Math.round(waitedMin * 10) / 10,
+          gracePeriodMin,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   // POST /rides/:id/share  — generates a short-lived share token (rider only)
   async createShareToken(req: Request, res: Response, next: NextFunction) {
     try {
@@ -141,7 +183,12 @@ export class RideController {
       await redis.setex(`${SHARE_RIDE_PREFIX}${rideId}`, SHARE_TTL_SEC, token);
 
       const baseUrl = req.protocol + '://' + req.get('host');
-      res.json({ success: true, data: { url: `${baseUrl}/track/${token}` } });
+      const trackUrl = `${baseUrl}/track/${token}`;
+
+      // Notify emergency contacts via SMS (fire-and-forget)
+      this.notifyEmergencyContacts(req.user!.userId, trackUrl).catch(() => {});
+
+      res.json({ success: true, data: { url: trackUrl } });
     } catch (err) {
       next(err);
     }
@@ -196,6 +243,31 @@ export class RideController {
       });
     } catch (err) {
       next(err);
+    }
+  }
+
+  private async notifyEmergencyContacts(riderId: string, trackUrl: string): Promise<void> {
+    if (!env.FAST2SMS_API_KEY) return; // skip in demo mode
+    const { prisma } = await import('../../config/database');
+    const contacts = await prisma.emergencyContact.findMany({ where: { userId: riderId } });
+    if (contacts.length === 0) return;
+    for (const contact of contacts) {
+      const digits = contact.phone.replace(/^\+91/, '').replace(/\D/g, '');
+      if (digits.length !== 10) continue;
+      try {
+        await fetch('https://www.fast2sms.com/dev/bulkV2', {
+          method: 'POST',
+          headers: { authorization: env.FAST2SMS_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            route: 'q',
+            message: `Aye Auto: Your contact has shared a live trip with you. Track here: ${trackUrl}`,
+            numbers: digits,
+          }),
+        });
+        logger.info({ digits: digits.slice(-4) }, 'FollowRide SMS sent to emergency contact');
+      } catch (err) {
+        logger.warn({ err, digits: digits.slice(-4) }, 'FollowRide SMS failed');
+      }
     }
   }
 }

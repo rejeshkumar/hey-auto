@@ -484,6 +484,7 @@ async function processMessage(
         dropoffLat:  geo.lat,
         dropoffLng:  geo.lng,
         city:        DEFAULT_CITY,
+        rideType:    'PASSENGER',
       });
       ctx.estimatedFare = estimate.totalFare;
       ctx.distanceKm    = estimate.distanceKm;
@@ -526,6 +527,7 @@ async function processMessage(
           dropoffAddress: ctx.dropoffAddress!,
           paymentMethod:  'CASH',
           city:           DEFAULT_CITY,
+          rideType:       'PASSENGER',
         });
 
         ctx.rideId = ride.id;

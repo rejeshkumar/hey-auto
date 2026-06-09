@@ -102,10 +102,21 @@ export function ActiveRideScreen({ navigation }: any) {
     setLoading(true);
     try {
       const { data } = await driverApi.completeRide(currentRideId);
-      setCompletedFare(data.data?.totalAmount || incomingRequest?.estimatedFare || 0);
+      const result = data.data;
+      const actualFare = result?.totalAmount || 0;
+      const estimatedFare = incomingRequest?.estimatedFare || 0;
+      setCompletedFare(actualFare);
       completedRideId.current = currentRideId;
       setPhase('trip_completed');
       loadEarnings();
+      // Extra-fare warning if actual is 30%+ above estimate
+      if (estimatedFare > 0 && actualFare > estimatedFare * 1.3) {
+        Alert.alert(
+          '⚠️ Fare Alert',
+          `Actual fare (₹${Math.round(actualFare)}) is significantly above estimate (₹${Math.round(estimatedFare)}). Please confirm the route was correct.`,
+          [{ text: 'OK' }],
+        );
+      }
     } catch (err) {
       console.error('Complete ride error:', err);
     } finally {

@@ -54,10 +54,28 @@ const envSchema = z.object({
   WHATSAPP_ACCESS_TOKEN: z.string().optional(),
   WHATSAPP_API_VERSION: z.string().default('v19.0'),
 
-  DRIVER_SEARCH_RADIUS_KM: z.coerce.number().default(3),
+  // Matching — stepped radius expansion
+  MIN_SEARCH_RADIUS_KM:    z.coerce.number().default(0.5),
+  RADIUS_STEP_KM:          z.coerce.number().default(0.05),
+  MAX_SEARCH_RADIUS_KM:    z.coerce.number().default(5),
+  // Matching — batch dispatch
+  BATCH_SIZE:              z.coerce.number().int().default(3),
+  MAX_BATCH_ROUNDS:        z.coerce.number().int().default(4),
   RIDE_REQUEST_TIMEOUT_SEC: z.coerce.number().default(15),
-  MAX_MATCHING_ROUNDS: z.coerce.number().default(3),
-  OTP_EXPIRY_SEC: z.coerce.number().default(300),
+  // Scoring weights (relative integers — normalized internally)
+  ARRIVAL_PROXIMITY_THRESHOLD_KM: z.coerce.number().default(0.15),
+  SCORE_W_PROXIMITY:       z.coerce.number().int().default(35),
+  SCORE_W_RATING:          z.coerce.number().int().default(20),
+  SCORE_W_ACCEPTANCE:      z.coerce.number().int().default(15),
+  SCORE_W_CANCELLATION:    z.coerce.number().int().default(15),
+  SCORE_W_AVAILABLE_TIME:  z.coerce.number().int().default(10),
+  SCORE_W_RIDE_FREQUENCY:  z.coerce.number().int().default(5),
+  SCORE_W_GO_HOME:         z.coerce.number().int().default(20),
+  // Sliding window for cancellation rate
+  ACCEPTANCE_WINDOW_HOURS: z.coerce.number().int().default(24),
+  // Pool state TTL in Redis
+  POOL_STATE_TTL_SEC:      z.coerce.number().int().default(600),
+  OTP_EXPIRY_SEC:          z.coerce.number().default(300),
 
   // Comma-separated phone numbers exempt from subscription check (testing only)
   BYPASS_SUBSCRIPTION_PHONES: z.string().optional(),

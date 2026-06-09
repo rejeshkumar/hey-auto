@@ -10,7 +10,8 @@
         "buildType": "apk"
       },
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "distribution": "internal"
       }
     },
     "production": {
@@ -27,9 +28,8 @@
         "track": "internal"
       },
       "ios": {
-        "appleId": "your@apple.id",
-        "ascAppId": "YOUR_APP_STORE_APP_ID",
-        "appleTeamId": "YOUR_TEAM_ID"
+        "appleId": "rejesh.cybermak@makharafi.net",
+        "appleTeamId": "JVYD479K44"
       }
     }
   }

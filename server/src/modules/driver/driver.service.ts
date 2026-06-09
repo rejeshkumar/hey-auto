@@ -2,6 +2,7 @@ import { prisma } from '../../config/database';
 import { redis } from '../../config/redis';
 import { env } from '../../config/env';
 import { NotFoundError, BadRequestError } from '../../utils/errors';
+import { haversineDistance } from '../../utils/helpers';
 import type {
   UpdateDriverProfileInput,
   VehicleInput,
@@ -200,7 +201,7 @@ export class DriverService {
 
     await prisma.driverProfile.update({
       where: { userId },
-      data: { isOnline: true },
+      data: { isOnline: true, onlineSince: new Date() },
     });
 
     await redis.geoadd(
@@ -211,17 +212,27 @@ export class DriverService {
     );
     await redis.set(`${DRIVER_ONLINE_PREFIX}${userId}`, '1');
 
+    // Trigger initial stand queue sync
+    this.syncStandQueue(userId, profile.currentLat, profile.currentLng).catch(() => {});
+
     return { isOnline: true };
   }
 
   async goOffline(userId: string) {
+    const profile = await prisma.driverProfile.findUnique({ where: { userId } });
+
     await prisma.driverProfile.update({
       where: { userId },
-      data: { isOnline: false },
+      data: { isOnline: false, onlineSince: null },
     });
 
     await redis.zrem(DRIVER_LOCATION_KEY, userId);
     await redis.del(`${DRIVER_ONLINE_PREFIX}${userId}`);
+
+    // Remove from all stand queues
+    if (profile) {
+      await prisma.standQueueEntry.deleteMany({ where: { driverId: profile.id } });
+    }
 
     return { isOnline: false };
   }
@@ -235,9 +246,40 @@ export class DriverService {
     const isOnline = await redis.get(`${DRIVER_ONLINE_PREFIX}${userId}`);
     if (isOnline) {
       await redis.geoadd(DRIVER_LOCATION_KEY, input.lng, input.lat, userId);
+      // Auto-join/leave stand queues based on proximity
+      this.syncStandQueue(userId, input.lat, input.lng).catch(() => {});
     }
 
     return { lat: input.lat, lng: input.lng };
+  }
+
+  private async syncStandQueue(userId: string, lat: number, lng: number) {
+    const profile = await prisma.driverProfile.findUnique({ where: { userId } });
+    if (!profile) return;
+
+    const stands = await prisma.autoStand.findMany({
+      where: { city: profile.city, isActive: true },
+    });
+
+    for (const stand of stands) {
+      const distM = haversineDistance(lat, lng, stand.lat, stand.lng) * 1000;
+      const inZone = distM <= stand.radiusMeters;
+      const farAway = distM > stand.radiusMeters * 2;
+
+      if (inZone) {
+        // Auto-join if not already in queue
+        await prisma.standQueueEntry.upsert({
+          where: { driverId_standId: { driverId: profile.id, standId: stand.id } },
+          update: {},
+          create: { driverId: profile.id, standId: stand.id },
+        });
+      } else if (farAway) {
+        // Auto-leave if too far
+        await prisma.standQueueEntry.deleteMany({
+          where: { driverId: profile.id, standId: stand.id },
+        });
+      }
+    }
   }
 
   async getEarnings(userId: string, period: 'today' | 'week' | 'month' = 'today') {
@@ -321,6 +363,237 @@ export class DriverService {
       estimatedDurationMin: ride.estimatedDurationMin,
       riderName:            ride.rider?.fullName ?? 'Rider',
     };
+  }
+
+  async getDailyEarnings(userId: string, days = 7) {
+    const windowStart = new Date(Date.now() - days * 24 * 3600 * 1000);
+    const rides = await prisma.ride.findMany({
+      where: { driverId: userId, status: 'COMPLETED', completedAt: { gte: windowStart } },
+      select: { totalAmount: true, tipAmount: true, completedAt: true },
+      orderBy: { completedAt: 'desc' },
+    });
+
+    // Group by IST date string
+    const map = new Map<string, { totalEarnings: number; tips: number; rides: number }>();
+    for (const r of rides) {
+      if (!r.completedAt) continue;
+      // IST = UTC + 5:30
+      const istDate = new Date(r.completedAt.getTime() + 5.5 * 3600 * 1000);
+      const key = istDate.toISOString().slice(0, 10); // YYYY-MM-DD
+      const existing = map.get(key) ?? { totalEarnings: 0, tips: 0, rides: 0 };
+      map.set(key, {
+        totalEarnings: existing.totalEarnings + (r.totalAmount ?? 0),
+        tips: existing.tips + r.tipAmount,
+        rides: existing.rides + 1,
+      });
+    }
+
+    return Array.from(map.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([date, stats]) => ({ date, ...stats }));
+  }
+
+  async setHomeLocation(userId: string, input: { lat: number; lng: number; address: string }) {
+    await prisma.driverProfile.update({
+      where: { userId },
+      data: { homeLat: input.lat, homeLng: input.lng, homeAddress: input.address },
+    });
+    return { homeLat: input.lat, homeLng: input.lng, homeAddress: input.address };
+  }
+
+  async toggleGoHomeMode(userId: string, active: boolean) {
+    const profile = await prisma.driverProfile.findUnique({ where: { userId } });
+    if (!profile) throw new NotFoundError('Driver profile not found');
+    if (active && (!profile.homeLat || !profile.homeLng)) {
+      throw new BadRequestError('Please set your home location before enabling Go Home mode');
+    }
+    await prisma.driverProfile.update({
+      where: { userId },
+      data: { isGoHomeMode: active },
+    });
+    return { isGoHomeMode: active };
+  }
+
+  async getDemandHeatmap(lat: number, lng: number, radiusKm = 5) {
+    const { prisma: db } = await import('../../config/database');
+    const ngeohash = await import('ngeohash');
+    const windowStart = new Date(Date.now() - 30 * 60 * 1000); // last 30 min
+
+    // Bounding box approximation (1 deg lat ≈ 111km)
+    const latDelta = radiusKm / 111;
+    const lngDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
+
+    const rides = await db.ride.findMany({
+      where: {
+        status: { in: ['REQUESTED', 'NO_DRIVERS'] },
+        createdAt: { gte: windowStart },
+        pickupLat: { gte: lat - latDelta, lte: lat + latDelta },
+        pickupLng: { gte: lng - lngDelta, lte: lng + lngDelta },
+      },
+      select: { pickupLat: true, pickupLng: true },
+    });
+
+    // Count per geohash cell (precision 7 ≈ 150m cells)
+    const cells = new Map<string, number>();
+    for (const ride of rides) {
+      const hash = ngeohash.encode(ride.pickupLat, ride.pickupLng, 7);
+      cells.set(hash, (cells.get(hash) ?? 0) + 1);
+    }
+
+    return Array.from(cells.entries()).map(([hash, count]) => {
+      const { latitude, longitude } = ngeohash.decode(hash);
+      return { geohash: hash, lat: latitude, lng: longitude, count };
+    });
+  }
+
+  async redeemCoins(userId: string, planId: string) {
+    const profile = await prisma.driverProfile.findUnique({ where: { userId } });
+    if (!profile) throw new NotFoundError('Driver profile not found');
+
+    const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+    if (!plan) throw new NotFoundError('Subscription plan not found');
+
+    const coinsNeeded = Math.ceil(plan.price);
+    if (profile.coinsBalance < coinsNeeded) {
+      throw new BadRequestError(`You need ${coinsNeeded} coins to redeem this plan. You have ${profile.coinsBalance}.`);
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + plan.durationDays * 24 * 3600 * 1000);
+
+    await prisma.$transaction([
+      prisma.driverProfile.update({
+        where: { userId },
+        data: {
+          coinsBalance: { decrement: coinsNeeded },
+          coinsRedeemed: { increment: coinsNeeded },
+        },
+      }),
+      prisma.coinTransaction.create({
+        data: {
+          driverId: profile.id,
+          amount: coinsNeeded,
+          type: 'REDEEMED',
+          description: `Redeemed for ${plan.name} subscription`,
+        },
+      }),
+      prisma.driverSubscription.create({
+        data: {
+          driverId: profile.id,
+          planId,
+          startsAt: now,
+          expiresAt,
+          status: 'ACTIVE',
+        },
+      }),
+    ]);
+
+    return { message: `${plan.name} activated via ${coinsNeeded} coins`, expiresAt };
+  }
+
+  async getLeaderboard(userId: string) {
+    const profile = await prisma.driverProfile.findUnique({ where: { userId } });
+    if (!profile) throw new NotFoundError('Driver profile not found');
+
+    const windowStart = new Date(Date.now() - 30 * 24 * 3600 * 1000);
+
+    // Count rides per driver in city in last 30 days
+    const rideCounts = await prisma.ride.groupBy({
+      by: ['driverId'],
+      where: {
+        status: 'COMPLETED',
+        completedAt: { gte: windowStart },
+        city: profile.city,
+        driverId: { not: null },
+      },
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 10,
+    });
+
+    const driverIds = rideCounts.map((r) => r.driverId!);
+    const profiles = await prisma.driverProfile.findMany({
+      where: { id: { in: driverIds } },
+      select: { id: true, userId: true, rating: true, coinsEarned: true },
+    });
+    const users = await prisma.user.findMany({
+      where: { id: { in: profiles.map((p) => p.userId) } },
+      select: { id: true, fullName: true },
+    });
+
+    const profileMap = new Map(profiles.map((p) => [p.id, p]));
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const board = rideCounts.map((r, i) => {
+      const p = profileMap.get(r.driverId!);
+      const u = p ? userMap.get(p.userId) : null;
+      return {
+        rank: i + 1,
+        name: u?.fullName?.split(' ')[0] ?? 'Driver',
+        rides: r._count.id,
+        rating: p?.rating ?? 5,
+        coinsEarned: p?.coinsEarned ?? 0,
+        isYou: p?.userId === userId,
+      };
+    });
+
+    // If current driver not in top 10, find their rank
+    const myEntry = board.find((b) => b.isYou);
+    if (!myEntry) {
+      const myRides = await prisma.ride.count({
+        where: { driverId: userId, status: 'COMPLETED', completedAt: { gte: windowStart } },
+      });
+      const aboveMe = await prisma.ride.groupBy({
+        by: ['driverId'],
+        where: { status: 'COMPLETED', completedAt: { gte: windowStart }, city: profile.city },
+        _count: { id: true },
+        having: { id: { _count: { gt: myRides } } },
+      });
+      board.push({
+        rank: aboveMe.length + 1,
+        name: users.find((u) => u.id === userId)?.fullName?.split(' ')[0] ?? 'You',
+        rides: myRides,
+        rating: profile.rating,
+        coinsEarned: profile.coinsEarned,
+        isYou: true,
+      });
+    }
+
+    return board;
+  }
+
+  async getNearbyStands(lat: number, lng: number, city: string) {
+    const stands = await prisma.autoStand.findMany({ where: { city, isActive: true } });
+    return stands
+      .map((s) => ({
+        ...s,
+        distanceM: Math.round(haversineDistance(lat, lng, s.lat, s.lng) * 1000),
+      }))
+      .filter((s) => s.distanceM <= 1000)
+      .sort((a, b) => a.distanceM - b.distanceM);
+  }
+
+  async getQueueStatus(userId: string) {
+    const profile = await prisma.driverProfile.findUnique({ where: { userId } });
+    if (!profile) return [];
+
+    const entries = await prisma.standQueueEntry.findMany({
+      where: { driverId: profile.id },
+      include: { stand: true },
+    });
+
+    return Promise.all(entries.map(async (entry) => {
+      const totalInQueue = await prisma.standQueueEntry.count({ where: { standId: entry.standId } });
+      const position = await prisma.standQueueEntry.count({
+        where: { standId: entry.standId, joinedAt: { lte: entry.joinedAt } },
+      });
+      return {
+        standId: entry.standId,
+        standName: entry.stand.name,
+        position,
+        totalInQueue,
+      };
+    }));
   }
 
   async getNearbyDrivers(lat: number, lng: number, radiusKm = 3) {

@@ -15,6 +15,7 @@ router.use(authenticate);
 router.post('/estimate', authorize('RIDER'), validate(fareEstimateSchema), rideController.getFareEstimate);
 router.post('/request', authorize('RIDER'), validate(requestRideSchema), rideController.requestRide);
 router.get('/:id', rideController.getRideDetails);
+router.get('/:id/cancel-preview', authorize('RIDER'), rideController.getCancelPreview);
 router.post('/:id/cancel', validate(cancelRideSchema), rideController.cancelRide);
 router.post('/:id/rate', validate(rateRideSchema), rideController.rateRide);
 router.post('/:id/share', authorize('RIDER'), rideController.createShareToken);

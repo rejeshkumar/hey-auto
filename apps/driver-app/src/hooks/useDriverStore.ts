@@ -28,6 +28,11 @@ export interface IncomingRideRequest {
   distance?: number;
   estimatedDurationMin?: number;
   expiresAt?: number;
+  rideType?: 'PASSENGER' | 'PARCEL';
+  parcelDescription?: string;
+  recipientName?: string;
+  queuePosition?: number;
+  standName?: string;
 }
 
 interface DriverState {

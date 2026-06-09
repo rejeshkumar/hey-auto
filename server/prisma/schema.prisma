@@ -96,12 +96,24 @@ model DriverProfile {
   verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
   verifiedAt         DateTime?          @map("verified_at")
   acceptanceRate     Float              @default(100) @map("acceptance_rate")
+  cancellationRate   Float              @default(0)   @map("cancellation_rate")
+  onlineSince        DateTime?                        @map("online_since")
+  homeLat            Float?                           @map("home_lat")
+  homeLng            Float?                           @map("home_lng")
+  homeAddress        String?            @db.VarChar(255) @map("home_address")
+  isGoHomeMode       Boolean            @default(false) @map("is_go_home_mode")
+  coinsBalance       Int                @default(0)     @map("coins_balance")
+  coinsEarned        Int                @default(0)     @map("coins_earned")
+  coinsRedeemed      Int                @default(0)     @map("coins_redeemed")
+  acceptsParcels     Boolean            @default(false) @map("accepts_parcels")
   createdAt          DateTime           @default(now()) @map("created_at")
 
-  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vehicles      Vehicle[]
-  documents     DriverDocument[]
-  subscriptions DriverSubscription[]
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicles         Vehicle[]
+  documents        DriverDocument[]
+  subscriptions    DriverSubscription[]
+  coinTransactions CoinTransaction[]
+  standQueueEntries StandQueueEntry[]
 
   @@index([isOnline, isOnRide, city])
   @@map("driver_profiles")
@@ -198,7 +210,14 @@ model Ride {
   startedAt          DateTime? @map("started_at")
   completedAt        DateTime? @map("completed_at")
   cancelledAt        DateTime? @map("cancelled_at")
-  cancellationReason String?   @map("cancellation_reason")
+  cancellationReason  String?  @map("cancellation_reason")
+  cancellationCharge  Float    @default(0) @map("cancellation_charge")
+
+  // Parcel delivery
+  rideType            RideType @default(PASSENGER) @map("ride_type")
+  parcelDescription   String?  @db.VarChar(255) @map("parcel_description")
+  recipientName       String?  @db.VarChar(100) @map("recipient_name")
+  recipientPhone      String?  @db.VarChar(15)  @map("recipient_phone")
 
   // Payment
   paymentMethod PaymentMethod @default(CASH) @map("payment_method")
@@ -407,6 +426,14 @@ model FareConfig {
   waitingChargePerQuarterHour Float @default(10) @map("waiting_charge_per_quarter_hour")
   waitingChargeMaxPerDay      Float @default(250) @map("waiting_charge_max_per_day")
 
+  // Cancellation charge
+  cancellationChargeEnabled   Boolean @default(true)  @map("cancellation_charge_enabled")
+  cancellationChargeAmount    Float   @default(20)    @map("cancellation_charge_amount")
+  cancellationGracePeriodMin  Float   @default(3)     @map("cancellation_grace_period_min")
+
+  // Parcel surcharge
+  parcelSurcharge             Float   @default(20)    @map("parcel_surcharge")
+
   isActive        Boolean     @default(true) @map("is_active")
   effectiveFrom   DateTime    @map("effective_from") @db.Date
   createdAt       DateTime    @default(now()) @map("created_at")
@@ -433,6 +460,60 @@ model Notification {
 
   @@index([userId, isRead, createdAt(sort: Desc)])
   @@map("notifications")
+}
+
+// ──────────────────────────────────────────
+// Auto-Stand Queue
+// ──────────────────────────────────────────
+
+model AutoStand {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(100)
+  city         String   @db.VarChar(50)
+  lat          Float
+  lng          Float
+  radiusMeters Int      @default(100)
+  maxCapacity  Int      @default(20)  @map("max_capacity")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  queueEntries StandQueueEntry[]
+
+  @@index([city, isActive])
+  @@map("auto_stands")
+}
+
+model StandQueueEntry {
+  id       String   @id @default(uuid()) @db.Uuid
+  driverId String   @map("driver_id") @db.Uuid
+  standId  String   @map("stand_id") @db.Uuid
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  driver DriverProfile @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  stand  AutoStand     @relation(fields: [standId], references: [id], onDelete: Cascade)
+
+  @@unique([driverId, standId])
+  @@index([standId, joinedAt])
+  @@map("stand_queue_entries")
+}
+
+// ──────────────────────────────────────────
+// Driver Coins / Gamification
+// ──────────────────────────────────────────
+
+model CoinTransaction {
+  id          String     @id @default(uuid()) @db.Uuid
+  driverId    String     @map("driver_id") @db.Uuid
+  amount      Int
+  type        CoinTxType
+  description String?
+  rideId      String?    @map("ride_id") @db.Uuid
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  driver DriverProfile @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId, createdAt(sort: Desc)])
+  @@map("coin_transactions")
 }
 
 // ──────────────────────────────────────────
@@ -533,4 +614,14 @@ enum NotificationType {
   PROMO
   SAFETY
   SYSTEM
+}
+
+enum CoinTxType {
+  EARNED
+  REDEEMED
+}
+
+enum RideType {
+  PASSENGER
+  PARCEL
 }

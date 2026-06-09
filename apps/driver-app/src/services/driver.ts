@@ -16,6 +16,35 @@ export interface DriverProfile {
   licenseExpiry?: string;
   verificationStatus: string;
   vehicles?: Vehicle[];
+  homeLat?: number;
+  homeLng?: number;
+  homeAddress?: string;
+  isGoHomeMode?: boolean;
+  acceptsParcels?: boolean;
+  coinsBalance?: number;
+}
+
+export interface HeatmapCell {
+  geohash: string;
+  lat: number;
+  lng: number;
+  count: number;
+}
+
+export interface DailyEarning {
+  date: string;
+  totalEarnings: number;
+  tips: number;
+  rides: number;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  name: string;
+  rides: number;
+  rating: number;
+  coinsEarned: number;
+  isYou: boolean;
 }
 
 export interface Vehicle {
@@ -142,4 +171,25 @@ export const driverApi = {
 
   getDocuments: () =>
     api.get<ApiResponse<any>>('/driver/documents'),
+
+  setHomeLocation: (lat: number, lng: number, address: string) =>
+    api.put<ApiResponse<any>>('/driver/home-location', { lat, lng, address }),
+
+  toggleGoHomeMode: (active: boolean) =>
+    api.post<ApiResponse<{ isGoHomeMode: boolean }>>('/driver/go-home', { active }),
+
+  getDemandHeatmap: (lat: number, lng: number, radiusKm = 5) =>
+    api.get<ApiResponse<HeatmapCell[]>>(`/driver/demand-heatmap?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`),
+
+  getQueueStatus: () =>
+    api.get<ApiResponse<{ standId: string; standName: string; position: number; totalInQueue: number }[]>>('/driver/queue-status'),
+
+  getDailyEarnings: (days = 7) =>
+    api.get<ApiResponse<DailyEarning[]>>(`/driver/earnings/daily?days=${days}`),
+
+  redeemCoins: (planId: string) =>
+    api.post<ApiResponse<{ message: string; expiresAt: string }>>('/driver/coins/redeem', { planId }),
+
+  getLeaderboard: () =>
+    api.get<ApiResponse<LeaderboardEntry[]>>('/driver/leaderboard'),
 };
