@@ -290,10 +290,15 @@ export class RideService {
     const validCandidates = nearbyDrivers.filter((d) => {
       if (excluded.has(d.userId)) return false;
       const p = profileMap.get(d.userId);
-      if (!p || !p.isOnline || p.isOnRide || p.city.toLowerCase() !== city.toLowerCase()) return false;
+      if (!p) { logger.info({ userId: d.userId }, 'prepareDriverBatch: no profile found'); return false; }
+      if (!p.isOnline) { logger.info({ userId: d.userId, isOnline: p.isOnline }, 'prepareDriverBatch: driver not online'); return false; }
+      if (p.isOnRide) { logger.info({ userId: d.userId }, 'prepareDriverBatch: driver on ride'); return false; }
+      if (p.city.toLowerCase() !== city.toLowerCase()) { logger.info({ driverCity: p.city, searchCity: city }, 'prepareDriverBatch: city mismatch'); return false; }
       if (rideType === 'PARCEL' && !p.acceptsParcels) return false;
       return true;
     });
+
+    logger.info({ nearbyCount: nearbyDrivers.length, candidateCount: candidateIds.length, validCount: validCandidates.length, city, radiusKm }, 'prepareDriverBatch: filter results');
 
     if (validCandidates.length === 0) return [];
 
