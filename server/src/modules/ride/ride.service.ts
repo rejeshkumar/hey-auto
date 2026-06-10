@@ -379,6 +379,17 @@ export class RideService {
       select: { fullName: true, phone: true },
     });
 
+    // Always rebuild Redis geo from DB on each findDriver call to handle server restarts
+    const onlineDrivers = await prisma.driverProfile.findMany({
+      where: { isOnline: true, currentLat: { not: null }, currentLng: { not: null } },
+      select: { userId: true, currentLat: true, currentLng: true },
+    });
+    logger.info({ count: onlineDrivers.length, city }, 'findDriver: syncing Redis geo from DB');
+    for (const d of onlineDrivers) {
+      await redis.geoadd('driver_locations', d.currentLng!, d.currentLat!, d.userId);
+      await redis.set(`driver_online:${d.userId}`, '1');
+    }
+
     // Queue-first: if pickup is near a stand, offer queue members sequentially (#1 → #2 → #3 → city batch)
     let nearbyStands: any[] = [];
     try {
