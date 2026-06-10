@@ -420,7 +420,8 @@ export class DriverService {
 
   async getDemandHeatmap(lat: number, lng: number, radiusKm = 5) {
     const { prisma: db } = await import('../../config/database');
-    const ngeohash = await import('ngeohash');
+    const ngeohashMod = await import('ngeohash');
+    const ngeohash = ngeohashMod.default ?? ngeohashMod;
     const windowStart = new Date(Date.now() - 30 * 60 * 1000); // last 30 min
 
     // Bounding box approximation (1 deg lat ≈ 111km)
