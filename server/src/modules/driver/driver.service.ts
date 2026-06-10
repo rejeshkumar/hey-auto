@@ -628,15 +628,13 @@ export class DriverService {
       const distance = parseFloat(item[1]);
       const [driverLng, driverLat] = item[2];
 
-      const isOnline = await redis.get(`${DRIVER_ONLINE_PREFIX}${userId}`);
-      if (isOnline) {
-        drivers.push({
-          userId,
-          distance,
-          lat: parseFloat(driverLat),
-          lng: parseFloat(driverLng),
-        });
-      }
+      // Include all drivers in geo set — DB isOnline/isOnRide check happens in prepareDriverBatch
+      drivers.push({
+        userId,
+        distance,
+        lat: parseFloat(driverLat),
+        lng: parseFloat(driverLng),
+      });
     }
 
     return drivers;
