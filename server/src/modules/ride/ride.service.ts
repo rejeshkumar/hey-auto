@@ -253,18 +253,18 @@ export class RideService {
 
     // Rebuild Redis geo index from DB if empty (redeploy recovery)
     if (nearbyDrivers.length === 0) {
-      const onlineInDb = await prisma.driverProfile.findMany({
-        where: { isOnline: true, currentLat: { not: null }, currentLng: { not: null } },
-        select: { userId: true, currentLat: true, currentLng: true },
+      const allWithLocation = await prisma.driverProfile.findMany({
+        where: { currentLat: { not: null }, currentLng: { not: null } },
+        select: { userId: true, currentLat: true, currentLng: true, isOnline: true },
       });
-      if (onlineInDb.length > 0) {
-        logger.info({ count: onlineInDb.length }, 'prepareDriverBatch: Redis geo empty, rebuilding from DB');
-        for (const d of onlineInDb) {
-          await redis.geoadd('driver_locations', d.currentLng!, d.currentLat!, d.userId);
-          await redis.set(`driver_online:${d.userId}`, '1');
-        }
-        nearbyDrivers = await driverService.getNearbyDrivers(pickupLat, pickupLng, radiusKm);
+      logger.info({ total: allWithLocation.length, online: allWithLocation.filter(d => d.isOnline).length }, 'prepareDriverBatch: Redis geo empty, rebuilding from DB');
+      for (const d of allWithLocation) {
+        await redis.geoadd('driver_locations', d.currentLng!, d.currentLat!, d.userId);
+        // Set online key for ALL drivers with location — let DB filter handle online state
+        await redis.set(`driver_online:${d.userId}`, '1');
       }
+      nearbyDrivers = await driverService.getNearbyDrivers(pickupLat, pickupLng, radiusKm);
+      logger.info({ nearbyCount: nearbyDrivers.length, radiusKm }, 'prepareDriverBatch: after rebuild');
     }
 
     // Load all 3 blocklists and build excluded set
