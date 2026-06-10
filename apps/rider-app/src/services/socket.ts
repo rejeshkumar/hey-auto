@@ -14,8 +14,10 @@ class SocketService {
       auth: { token },
       transports: ['polling', 'websocket'],
       reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 2000,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 45000,
     });
 
     this.socket.on('connect', () => {
