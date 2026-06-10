@@ -27,4 +27,4 @@ COPY --from=builder /app/apps/demo-dashboard ./public/demo
 COPY --from=builder /app/public/demo.html ./public/demo.html
 
 EXPOSE ${PORT:-3000}
-CMD ["sh", "-c", "cd server && npx prisma migrate deploy && node -e \"const{PrismaClient}=require('@prisma/client');const p=new PrismaClient();p.\$executeRawUnsafe('ALTER TABLE auto_stands ADD COLUMN IF NOT EXISTS radius_meters INTEGER NOT NULL DEFAULT 100').catch(()=>{}).then(()=>p.\$disconnect())\" && npx tsx src/app.ts"]
+CMD ["sh", "-c", "cd server && npx prisma migrate deploy && npx tsx src/app.ts"]

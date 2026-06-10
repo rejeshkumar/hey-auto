@@ -377,7 +377,13 @@ export class RideService {
     // Queue-first: if pickup is near a stand, offer queue members sequentially (#1 → #2 → #3 → city batch)
     let nearbyStands: any[] = [];
     try {
-      nearbyStands = await prisma.autoStand.findMany({ where: { city, isActive: true } });
+      nearbyStands = await prisma.$queryRaw`
+        SELECT id, name, city, lat, lng,
+               COALESCE(radius_meters, 100) as "radiusMeters",
+               is_active as "isActive"
+        FROM auto_stands
+        WHERE city = ${city} AND is_active = true
+      `;
     } catch {
       // auto_stands table may not exist yet — skip queue logic
     }

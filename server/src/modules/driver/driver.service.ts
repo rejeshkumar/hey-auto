@@ -257,9 +257,13 @@ export class DriverService {
     const profile = await prisma.driverProfile.findUnique({ where: { userId } });
     if (!profile) return;
 
-    const stands = await prisma.autoStand.findMany({
-      where: { city: profile.city, isActive: true },
-    });
+    let stands: any[] = [];
+    try {
+      stands = await prisma.$queryRaw`
+        SELECT id, lat, lng, COALESCE(radius_meters, 100) as "radiusMeters"
+        FROM auto_stands WHERE city = ${profile.city} AND is_active = true
+      `;
+    } catch { return; }
 
     for (const stand of stands) {
       const distM = haversineDistance(lat, lng, stand.lat, stand.lng) * 1000;
@@ -564,7 +568,12 @@ export class DriverService {
 
   async getNearbyStands(lat: number, lng: number, city: string) {
     let stands: any[] = [];
-    try { stands = await prisma.autoStand.findMany({ where: { city, isActive: true } }); } catch { return []; }
+    try {
+      stands = await prisma.$queryRaw`
+        SELECT id, name, lat, lng, COALESCE(radius_meters, 100) as "radiusMeters", max_capacity as "maxCapacity"
+        FROM auto_stands WHERE city = ${city} AND is_active = true
+      `;
+    } catch { return []; }
     return stands
       .map((s) => ({
         ...s,
