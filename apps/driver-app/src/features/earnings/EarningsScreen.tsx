@@ -12,7 +12,7 @@ type Period = 'today' | 'thisWeek' | 'thisMonth';
 export function EarningsScreen() {
   const { t } = useTranslation();
   const { earnings, loadEarnings } = useDriverStore();
-  const [period, setPeriod] = useState<Period>('today');
+  const [period, setPeriod] = useState<Period>('thisWeek');
   const [loading, setLoading] = useState(true);
   const [dailyEarnings, setDailyEarnings] = useState<DailyEarning[]>([]);
 
@@ -131,8 +131,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', elevation: 2,
     shadowColor: colors.black, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4,
   },
-  amountLabel: { ...typography.small, color: colors.textSecondary },
-  amount: { ...typography.bigNumber, color: colors.earnings, marginVertical: spacing.sm },
+  amountLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: colors.textSecondary },
+  amount: { fontSize: 52, fontWeight: '900', color: colors.primary, letterSpacing: -2, lineHeight: 56, marginTop: spacing.sm },
   mainStats: { flexDirection: 'row', marginTop: spacing.lg, gap: spacing.base },
   mainStat: { flex: 1, alignItems: 'center', gap: spacing.xs },
   mainStatValue: { ...typography.h4, color: colors.text },

@@ -109,6 +109,6 @@ const styles = StyleSheet.create({
   title: { ...typography.h1, color: colors.text, textAlign: 'center' },
   subtitle: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm },
   form: { gap: spacing.lg },
-  prefix: { ...typography.bodyBold, color: colors.text },
+  prefix: { fontSize: 15, fontWeight: '400', color: colors.text, lineHeight: 22 },
   terms: { ...typography.caption, color: colors.textLight, textAlign: 'center', marginTop: spacing.xxl },
 });

@@ -173,7 +173,7 @@ export function HomeScreen({ navigation }: any) {
         {/* USP strip */}
         <View style={styles.uspStrip}>
           <MaterialCommunityIcons name="shield-check" size={16} color={colors.primary} />
-          <Text style={styles.uspText}>Govt. rates · Zero surge · Zero commission</Text>
+          <Text style={styles.uspText}>Fair rates · No surge · No hidden fees</Text>
         </View>
       </View>
     </View>

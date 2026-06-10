@@ -45,7 +45,7 @@ export function ProfileScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 96 }}>
         <Text style={styles.screenTitle}>{t('profile.title')}</Text>
 
         <View style={styles.profileCard}>
@@ -62,10 +62,10 @@ export function ProfileScreen({ navigation }: any) {
         </View>
 
         <View style={styles.menuSection}>
-          <MenuItem icon="history" label={t('profile.myRides')} onPress={() => navigation.navigate('History')} />
-          <MenuItem icon="map-marker-star" label={t('profile.savedPlaces')} onPress={() => navigation.navigate('SavedPlaces')} />
-          <MenuItem icon="credit-card" label={t('profile.paymentMethods')} onPress={() => navigation.navigate('PaymentMethods')} />
-          <MenuItem icon="phone-alert" label={t('profile.emergencyContacts')} onPress={() => navigation.navigate('EmergencyContacts')} />
+          <MenuItem icon="history" label="My Rides" onPress={() => navigation.navigate('History')} />
+          <MenuItem icon="map-marker-star" label="Saved Places" onPress={() => navigation.navigate('SavedPlaces')} />
+          <MenuItem icon="credit-card" label="Payment Options" onPress={() => navigation.navigate('PaymentMethods')} />
+          <MenuItem icon="shield-account" label="Safety Contacts" onPress={() => navigation.navigate('EmergencyContacts')} />
         </View>
 
         <View style={styles.menuSection}>

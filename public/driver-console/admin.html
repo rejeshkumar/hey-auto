@@ -259,7 +259,7 @@
           <div class="card-actions">
             <select class="filter-select" id="ride-status-filter" onchange="loadRides()">
               <option value="">All Status</option>
-              <option value="REQUESTED">Requested</option>
+              <option value="REQUESTED" selected>Requested</option>
               <option value="DRIVER_ASSIGNED">Driver Assigned</option>
               <option value="IN_PROGRESS">In Progress</option>
               <option value="COMPLETED">Completed</option>
@@ -398,7 +398,32 @@ let currentDriverUserId = null;
 let driverSearchTimer = null;
 
 // ── Init ──────────────────────────────────────
-if (token) showApp();
+async function init() {
+  if (!token) return; // not logged in
+  // Try a lightweight auth check — if token is valid, show app
+  try {
+    const res = await fetch(`${API}/admin/dashboard`, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) { showApp(); return; }
+    // Token expired — try refresh
+    const refreshToken = localStorage.getItem('admin_refresh_token');
+    if (!refreshToken) { localStorage.removeItem('admin_token'); localStorage.removeItem('admin_phone'); return; }
+    const r2 = await fetch(`${API}/auth/refresh-token`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken })
+    });
+    const d2 = await r2.json();
+    if (d2.success) {
+      token = d2.data.tokens.accessToken;
+      localStorage.setItem('admin_token', token);
+      localStorage.setItem('admin_refresh_token', d2.data.tokens.refreshToken);
+      showApp();
+    } else {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_refresh_token');
+    }
+  } catch { showApp(); } // network error — try anyway
+}
+init();
 
 // ── Auth ──────────────────────────────────────
 async function sendOtp() {
@@ -447,6 +472,7 @@ async function verifyOtp() {
       token = data.data.tokens.accessToken;
       adminPhone = '+91' + phone;
       localStorage.setItem('admin_token', token);
+      localStorage.setItem('admin_refresh_token', data.data.tokens.refreshToken);
       localStorage.setItem('admin_phone', adminPhone);
       showApp();
     } else {
@@ -806,21 +832,24 @@ async function loadRides() {
     <table>
       <thead><tr>
         <th>Time</th><th>Rider</th><th>Driver</th><th>Pickup</th><th>Dropoff</th>
-        <th>Dist</th><th>Fare</th><th>Status</th>
+        <th>Dist</th><th>Fare</th><th>Status</th><th>Action</th>
       </tr></thead>
       <tbody>
-        ${rides.map(r => `
+        ${rides.map(r => {
+          const isActive = ['REQUESTED','DRIVER_ASSIGNED','DRIVER_ARRIVED','OTP_VERIFIED','IN_PROGRESS'].includes(r.status);
+          return `
           <tr>
             <td style="white-space:nowrap">${fmtTime(r.createdAt)}</td>
             <td>${r.rider?.phone || '-'}</td>
             <td>${r.driver?.phone || '<em style="color:#bbb">—</em>'}</td>
-            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${r.pickupAddress || '-'}</td>
-            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${r.dropoffAddress || '-'}</td>
+            <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${r.pickupAddress || '-'}</td>
+            <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${r.dropoffAddress || '-'}</td>
             <td>${r.estimatedDistanceKm ? r.estimatedDistanceKm + ' km' : '-'}</td>
             <td>₹${r.totalAmount || r.estimatedFare || 0}</td>
             <td>${rideBadge(r.status)}</td>
-          </tr>
-        `).join('')}
+            <td>${isActive ? `<button class="btn" style="padding:4px 10px;font-size:11px;background:#fee2e2;color:#dc2626;border:none;border-radius:6px;cursor:pointer" onclick="cancelRideAdmin('${r.id}')">Cancel</button>` : ''}</td>
+          </tr>`;
+        }).join('')}
       </tbody>
     </table>
   `;
@@ -834,6 +863,18 @@ function rideBadge(status) {
     CANCELLED_DRIVER: 'badge-red', NO_DRIVERS: 'badge-gray'
   };
   return `<span class="badge ${map[status] || 'badge-gray'}">${(status || '').replace(/_/g, ' ')}</span>`;
+}
+
+// ── Admin cancel ride ─────────────────────────
+async function cancelRideAdmin(rideId) {
+  if (!confirm('Force-cancel this ride?')) return;
+  try {
+    await apiCall(`/admin/rides/${rideId}/cancel`, { method: 'POST' });
+    showAlert('Ride cancelled successfully');
+    loadRides();
+  } catch(e) {
+    showAlert('Failed to cancel: ' + (e.message || 'unknown'), 'error');
+  }
 }
 
 // ── Fare Config ───────────────────────────────

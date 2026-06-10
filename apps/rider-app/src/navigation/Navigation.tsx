@@ -33,17 +33,26 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textLight,
-        tabBarStyle: { borderTopColor: colors.borderLight, paddingBottom: 8, paddingTop: 8, height: 64 },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.45)',
+        tabBarStyle: {
+          backgroundColor: '#111111',
+          borderTopColor: 'rgba(255,255,255,0.08)',
+          paddingBottom: 8, paddingTop: 8, height: 72,
+          elevation: 16,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 12,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', marginTop: 2, letterSpacing: 0.3 },
       }}
     >
       <Tab.Screen name="HomeTab" component={HomeScreen}
-        options={{ tabBarLabel: t('home.whereTo'), tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="home" size={size} color={color} /> }} />
+        options={{ tabBarLabel: 'Home', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="home" size={size} color={color} /> }} />
       <Tab.Screen name="HistoryTab" component={HistoryScreen}
-        options={{ tabBarLabel: t('profile.myRides'), tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="history" size={size} color={color} /> }} />
+        options={{ tabBarLabel: 'My Rides', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="history" size={size} color={color} /> }} />
       <Tab.Screen name="ProfileTab" component={ProfileScreen}
-        options={{ tabBarLabel: t('profile.title'), tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="account" size={size} color={color} /> }} />
+        options={{ tabBarLabel: 'Profile', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="account" size={size} color={color} /> }} />
     </Tab.Navigator>
   );
 }

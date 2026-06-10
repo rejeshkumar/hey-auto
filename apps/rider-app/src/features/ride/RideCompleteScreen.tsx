@@ -42,9 +42,9 @@ export function RideCompleteScreen({ navigation }: any) {
     <ScreenWrapper>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.successIcon}>
-          <Icon name="check-circle" size={64} color={colors.success} />
+          <Text style={{ fontSize: 56 }}>🎉</Text>
         </View>
-        <Text style={styles.title}>{t('rideComplete.title')}</Text>
+        <Text style={styles.title}>You've arrived!</Text>
 
         <View style={styles.fareCard}>
           <View style={styles.fareMain}>
@@ -104,7 +104,7 @@ export function RideCompleteScreen({ navigation }: any) {
 
         {driverInfo && (
           <View style={styles.rateSection}>
-            <Text style={styles.rateLabel}>{t('rideComplete.rateDriver')}</Text>
+            <Text style={styles.rateLabel}>How was your ride?</Text>
             <Text style={styles.driverName}>{driverInfo.driverName}</Text>
             <View style={styles.stars}>
               {[1, 2, 3, 4, 5].map((star) => (
@@ -121,7 +121,7 @@ export function RideCompleteScreen({ navigation }: any) {
         )}
 
         <View style={styles.tipSection}>
-          <Text style={styles.tipLabel}>{t('rideComplete.addTip')}</Text>
+          <Text style={styles.tipLabel}>Thank your driver</Text>
           <View style={styles.tipOptions}>
             {tipOptions.map((tip) => (
               <TouchableOpacity
@@ -130,7 +130,7 @@ export function RideCompleteScreen({ navigation }: any) {
                 onPress={() => setTipAmount(tip)}
               >
                 <Text style={[styles.tipBtnText, tipAmount === tip && styles.tipBtnTextActive]}>
-                  {tip === 0 ? 'No tip' : `₹${tip}`}
+                  {tip === 0 ? 'Skip' : `₹${tip}`}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -138,7 +138,7 @@ export function RideCompleteScreen({ navigation }: any) {
         </View>
 
         <Button title={t('rideComplete.submit')} onPress={handleSubmit} loading={submitting} />
-        <Text style={styles.thankYou}>{t('rideComplete.thankYou')}</Text>
+        <Text style={styles.thankYou}>Thanks for riding with Aye Auto. See you next time! 🛺</Text>
       </ScrollView>
     </ScreenWrapper>
   );

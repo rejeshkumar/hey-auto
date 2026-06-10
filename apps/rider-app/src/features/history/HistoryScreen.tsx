@@ -82,7 +82,7 @@ export function HistoryScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper>
-      <Text style={styles.screenTitle}>{t('history.title')}</Text>
+      <Text style={styles.screenTitle}>Your Rides</Text>
 
       {loading ? (
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 100 }} />
@@ -96,8 +96,9 @@ export function HistoryScreen({ navigation }: any) {
           onEndReachedThreshold={0.3}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Icon name="car-off" size={60} color={colors.textLight} />
-              <Text style={styles.emptyText}>{t('history.noRides')}</Text>
+              <Text style={{ fontSize: 48, marginBottom: 12 }}>🛺</Text>
+              <Text style={styles.emptyTitle}>No rides yet</Text>
+              <Text style={styles.emptyText}>Time for your first adventure!</Text>
             </View>
           }
         />
@@ -108,7 +109,7 @@ export function HistoryScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   screenTitle: { ...typography.h2, color: colors.text, marginTop: spacing.lg, marginBottom: spacing.base },
-  list: { paddingBottom: spacing.xxl },
+  list: { paddingBottom: 96 },
   rideCard: {
     backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
@@ -133,6 +134,7 @@ const styles = StyleSheet.create({
   rideFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.borderLight, paddingTop: spacing.sm },
   rideAmount: { ...typography.h4, color: colors.primary },
   driverLabel: { ...typography.small, color: colors.textSecondary },
-  empty: { alignItems: 'center', marginTop: 100, gap: spacing.base },
-  emptyText: { ...typography.body, color: colors.textLight },
+  empty: { alignItems: 'center', marginTop: 80, gap: spacing.sm },
+  emptyTitle: { ...typography.h4, color: colors.text },
+  emptyText: { ...typography.body, color: colors.textSecondary },
 });

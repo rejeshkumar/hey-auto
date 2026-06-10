@@ -123,6 +123,23 @@ router.get('/rides', async (req: Request, res: Response, next: NextFunction) => 
   }
 });
 
+router.post('/rides/:id/cancel', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { prisma } = await import('../../config/database');
+    const { redis } = await import('../../config/redis');
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const ride = await prisma.ride.findUnique({ where: { id } });
+    if (!ride) { res.status(404).json({ success: false, error: { message: 'Ride not found' } }); return; }
+    await prisma.ride.update({ where: { id }, data: { status: 'CANCELLED_RIDER', cancelledAt: new Date(), cancellationReason: 'Admin force-cancel' } });
+    await redis.del(`active_ride:${ride.riderId}`);
+    if (ride.driverId) {
+      await prisma.driverProfile.update({ where: { userId: ride.driverId }, data: { isOnRide: false } });
+    }
+    await redis.publish('ride_events', JSON.stringify({ type: 'ride:cancelled', rideId: id, riderId: ride.riderId, driverId: ride.driverId, cancelledBy: 'ADMIN' }));
+    res.json({ success: true, data: { cancelled: true } });
+  } catch (err) { next(err); }
+});
+
 router.get('/riders', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await adminService.getRiders({

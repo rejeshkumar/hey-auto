@@ -1,8 +1,8 @@
 export const colors = {
   // Brand
-  primary:       '#f9b01b',
-  primaryDark:   '#c98a00',
-  primaryLight:  '#f9b01b1a',   // 10% tint for chip backgrounds
+  primary:       '#DAA520',
+  primaryDark:   '#b8861a',
+  primaryLight:  '#DAA5201a',   // 10% tint for chip backgrounds
 
   // Ink — every highlighted card background
   ink:           '#0A0A0A',
@@ -42,14 +42,14 @@ export const colors = {
   white:         '#FFFFFF',
   transparent:   'transparent',
   overlay:       'rgba(0,0,0,0.5)',
-  rating:        '#f9b01b',
+  rating:        '#DAA520',
   online:        '#00C96B',
   offline:       '#F03A3A',
 
   map: {
     pickup:      '#00C96B',
     dropoff:     '#F03A3A',
-    route:       '#f9b01b',
-    driverMarker:'#f9b01b',
+    route:       '#DAA520',
+    driverMarker:'#DAA520',
   },
 } as const;

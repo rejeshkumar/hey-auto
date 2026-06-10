@@ -563,7 +563,8 @@ export class DriverService {
   }
 
   async getNearbyStands(lat: number, lng: number, city: string) {
-    const stands = await prisma.autoStand.findMany({ where: { city, isActive: true } });
+    let stands: any[] = [];
+    try { stands = await prisma.autoStand.findMany({ where: { city, isActive: true } }); } catch { return []; }
     return stands
       .map((s) => ({
         ...s,

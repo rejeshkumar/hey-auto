@@ -32,17 +32,27 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textLight,
-        tabBarStyle: { borderTopColor: colors.borderLight, paddingBottom: 6, paddingTop: 6, height: 68 },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginTop: 2 },
-        tabBarIconStyle: { marginBottom: 0 },
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.45)',
+        tabBarStyle: {
+          backgroundColor: '#111111',
+          borderTopColor: 'rgba(255,255,255,0.08)',
+          paddingBottom: 8,
+          paddingTop: 8,
+          height: 72,
+          elevation: 16,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 12,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', marginTop: 3, letterSpacing: 0.3 },
       }}
     >
       <Tab.Screen
         name="HomeTab"
         component={HomeScreen}
         options={{
-          tabBarLabel: t('home.goOnline'),
+          tabBarLabel: 'Drive',
           tabBarIcon: ({ color, size }) => <Icon name="steering" size={size} color={color} />,
         }}
       />
@@ -50,7 +60,7 @@ function MainTabs() {
         name="EarningsTab"
         component={EarningsScreen}
         options={{
-          tabBarLabel: t('earnings.title'),
+          tabBarLabel: 'Earnings',
           tabBarIcon: ({ color, size }) => <Icon name="cash-multiple" size={size} color={color} />,
         }}
       />
@@ -58,7 +68,7 @@ function MainTabs() {
         name="HistoryTab"
         component={HistoryScreen}
         options={{
-          tabBarLabel: t('history.title'),
+          tabBarLabel: 'History',
           tabBarIcon: ({ color, size }) => <Icon name="history" size={size} color={color} />,
         }}
       />
@@ -66,7 +76,7 @@ function MainTabs() {
         name="ProfileTab"
         component={ProfileScreen}
         options={{
-          tabBarLabel: t('profile.title'),
+          tabBarLabel: 'Profile',
           tabBarIcon: ({ color, size }) => <Icon name="account" size={size} color={color} />,
         }}
       />

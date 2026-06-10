@@ -375,9 +375,12 @@ export class RideService {
     });
 
     // Queue-first: if pickup is near a stand, offer queue members sequentially (#1 → #2 → #3 → city batch)
-    const nearbyStands = await prisma.autoStand.findMany({
-      where: { city, isActive: true },
-    });
+    let nearbyStands: any[] = [];
+    try {
+      nearbyStands = await prisma.autoStand.findMany({ where: { city, isActive: true } });
+    } catch {
+      // auto_stands table may not exist yet — skip queue logic
+    }
     for (const stand of nearbyStands) {
       const distM = haversineDistance(pickupLat, pickupLng, stand.lat, stand.lng) * 1000;
       if (distM <= stand.radiusMeters * 2) {

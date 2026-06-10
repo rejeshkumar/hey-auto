@@ -18,7 +18,8 @@
       "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Aye Auto needs your location to find nearby drivers and show your position on the map.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Aye Auto needs your location to track your ride."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Aye Auto needs your location to track your ride.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

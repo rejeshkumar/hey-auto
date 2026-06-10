@@ -193,73 +193,66 @@ export function HomeScreen({ navigation }: any) {
       {phase !== 'ride_request' && (
         <View style={[styles.bottomCard, { paddingBottom: Math.max(insets.bottom + 8, 16) }]}>
           {isOnline && phase === 'online_idle' ? (
+            /* Online state — compact, warm */
             <>
-              {/* Earnings row — ink card */}
-              <View style={styles.earningsRow}>
-                <View style={styles.earningsStat}>
-                  <Text style={styles.earningsAmount}>₹{earnings?.today || 0}</Text>
-                  <Text style={styles.earningsLabel}>{t('home.todayEarnings')}</Text>
-                </View>
-                <View style={styles.divider} />
-                <View style={styles.earningsStat}>
-                  <Text style={styles.statValue}>{earnings?.totalRidesToday || 0}</Text>
-                  <Text style={styles.earningsLabel}>{t('home.ridesCompleted')}</Text>
-                </View>
-                <View style={styles.divider} />
-                <View style={styles.earningsStat}>
-                  <Text style={styles.statValue}>₹{earnings?.tipsToday || 0}</Text>
-                  <Text style={styles.earningsLabel}>{t('earnings.tips')}</Text>
-                </View>
-              </View>
-
-              {/* Queue status banner */}
-              {queueStatus && (
-                <View style={styles.queueBanner}>
-                  <Text style={styles.queueBannerText}>
-                    🚏 #{queueStatus.position} in queue at {queueStatus.standName}
-                  </Text>
-                </View>
-              )}
-
-              {/* Waiting row — ink card, green top border */}
               <View style={styles.waitingRow}>
                 <View style={styles.pulseDot} />
-                <Text style={styles.waitingText}>{t('home.waitingForRides')}</Text>
+                <Text style={styles.waitingText}>Waiting for rides...</Text>
               </View>
+              {queueStatus && (
+                <View style={styles.queueBanner}>
+                  <Text style={styles.queueBannerText}>🚏 #{queueStatus.position} in queue at {queueStatus.standName}</Text>
+                </View>
+              )}
+              <TouchableOpacity
+                style={[styles.onlineBtn, styles.btnEndShift]}
+                onPress={handleToggleOnline}
+                disabled={toggling}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.btnEndShiftText}>{toggling ? '...' : 'End Shift'}</Text>
+              </TouchableOpacity>
             </>
           ) : (
-            <View style={styles.greetRow}>
-              <Text style={styles.greetText}>Good {getTimeGreeting()}, {firstName}</Text>
-              <Text style={styles.greetSub}>Go online to start accepting rides</Text>
-            </View>
+            /* Offline state — Jobs style: greeting + weekly card */
+            <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+              <Text style={styles.greetText}>Good {getTimeGreeting()}, {firstName} 👋</Text>
+              <Text style={styles.greetSub}>Ready to start your shift?</Text>
+              {earnings && (
+                <View style={styles.weeklyCard}>
+                  <Text style={styles.weeklyLabel}>This Week</Text>
+                  <Text style={styles.weeklyAmount}>₹{earnings.thisWeek || 0}</Text>
+                  <Text style={styles.weeklyRides}>{earnings.totalRidesWeek || 0} rides completed</Text>
+                  <View style={styles.weeklyDivider} />
+                  <View style={styles.weeklyStats}>
+                    <View style={styles.weeklyStat}>
+                      <Text style={styles.weeklyStatVal}>₹{Math.round(earnings.averagePerRide || 0)}</Text>
+                      <Text style={styles.weeklyStatLabel}>Avg fare</Text>
+                    </View>
+                    <View style={styles.weeklyStatDivider} />
+                    <View style={styles.weeklyStat}>
+                      <Text style={styles.weeklyStatVal}>₹{earnings.today || 0}</Text>
+                      <Text style={styles.weeklyStatLabel}>Today</Text>
+                    </View>
+                    <View style={styles.weeklyStatDivider} />
+                    <View style={styles.weeklyStat}>
+                      <Text style={styles.weeklyStatVal}>₹{earnings.tipsToday || 0}</Text>
+                      <Text style={styles.weeklyStatLabel}>Tips</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+              <TouchableOpacity
+                style={[styles.onlineBtn, styles.btnStartEarning]}
+                onPress={handleToggleOnline}
+                disabled={toggling}
+                activeOpacity={0.85}
+              >
+                <Icon name={toggling ? 'loading' : 'lightning-bolt'} size={20} color={colors.ink} />
+                <Text style={styles.onlineBtnText}>{toggling ? '...' : "Let's Go Online"}</Text>
+              </TouchableOpacity>
+            </ScrollView>
           )}
-
-          {/* Go Home toggle — only shown when online */}
-          {isOnline && (
-            <TouchableOpacity
-              style={[styles.goHomeBtn, goHomeMode && styles.goHomeBtnActive]}
-              onPress={handleGoHomeToggle}
-              disabled={goHomeToggling}
-              activeOpacity={0.85}
-            >
-              <Icon name="home-outline" size={18} color={goHomeMode ? colors.ink : colors.primary} />
-              <Text style={[styles.goHomeBtnText, { color: goHomeMode ? colors.ink : colors.primary }]}>
-                {goHomeMode ? 'Go Home: ON' : 'Go Home'}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={[styles.onlineBtn, isOnline ? styles.btnOffline : styles.btnOnline]}
-            onPress={handleToggleOnline}
-            disabled={toggling}
-            activeOpacity={0.85}
-          >
-            <Icon name={isOnline ? 'power-off' : 'power'} size={22} color={isOnline ? colors.primary : colors.ink} />
-            <Text style={[styles.onlineBtnText, { color: isOnline ? colors.primary : colors.ink }]}>
-              {toggling ? '...' : isOnline ? t('home.goOffline') : t('home.goOnline')}
-            </Text>
-          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -319,61 +312,49 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
   },
 
-  greetRow: { marginBottom: spacing.base },
-  greetText: { ...typography.h4, color: colors.text },
-  greetSub: { ...typography.small, color: colors.textSecondary, marginTop: 2 },
+  // Offline — Jobs style
+  greetText: { ...typography.h3, color: colors.text, marginBottom: 4 },
+  greetSub: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.lg },
 
-  earningsRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: colors.ink, borderRadius: borderRadius.xl,
-    borderTopWidth: 2, borderTopColor: colors.primary,
-    overflow: 'hidden',
-    paddingVertical: spacing.sm, paddingHorizontal: spacing.base, marginBottom: spacing.sm,
+  weeklyCard: {
+    backgroundColor: colors.surface, borderRadius: borderRadius.xl,
+    padding: spacing.lg, marginBottom: spacing.lg,
+    borderWidth: 1, borderColor: colors.borderLight,
   },
-  earningsStat: { flex: 1, alignItems: 'center' },
-  earningsAmount: { fontSize: 22, fontWeight: '900', color: colors.primary },
-  earningsLabel: { ...typography.caption, color: colors.primary, fontWeight: '600', marginTop: 1 },
-  statValue: { ...typography.body, fontWeight: '700', color: colors.primary },
-  divider: { width: 1, height: 28, backgroundColor: 'rgba(249,176,27,0.25)' },
+  weeklyLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 4 },
+  weeklyAmount: { fontSize: 42, fontWeight: '900', color: colors.primary, letterSpacing: -1.5, lineHeight: 46 },
+  weeklyRides: { ...typography.small, color: colors.textSecondary, marginTop: 2, marginBottom: spacing.base },
+  weeklyDivider: { height: 1, backgroundColor: colors.borderLight, marginBottom: spacing.base },
+  weeklyStats: { flexDirection: 'row', alignItems: 'center' },
+  weeklyStat: { flex: 1, alignItems: 'center' },
+  weeklyStatVal: { ...typography.h4, color: colors.text },
+  weeklyStatLabel: { fontSize: 9, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 2 },
+  weeklyStatDivider: { width: 1, height: 28, backgroundColor: colors.borderLight },
+
+  // Online state
+  waitingRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm,
+  },
+  pulseDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.secondary },
+  waitingText: { ...typography.body, color: colors.textSecondary },
 
   queueBanner: {
-    backgroundColor: 'rgba(249,176,27,0.12)', borderRadius: borderRadius.lg,
+    backgroundColor: colors.surface, borderRadius: borderRadius.lg,
     paddingVertical: spacing.xs, paddingHorizontal: spacing.base,
     marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: colors.primary,
   },
   queueBannerText: { ...typography.small, color: colors.text, fontWeight: '600' },
 
-  waitingRow: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm,
-    backgroundColor: colors.ink, borderRadius: borderRadius.xl,
-    borderTopWidth: 2, borderTopColor: colors.secondary,
-    overflow: 'hidden',
-    paddingVertical: spacing.sm, paddingHorizontal: spacing.base,
-  },
-  pulseDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.secondary },
-  waitingText: { ...typography.small, color: colors.primary, fontWeight: '600' },
-
-  goHomeBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: spacing.xs, paddingVertical: spacing.xs + 2, paddingHorizontal: spacing.base,
-    borderRadius: borderRadius.lg, marginBottom: spacing.sm,
-    backgroundColor: colors.ink,
-    borderTopWidth: 2, borderTopColor: colors.primary, overflow: 'hidden',
-  },
-  goHomeBtnActive: { backgroundColor: colors.primary, borderTopColor: colors.ink },
-  goHomeBtnText: { ...typography.caption, fontWeight: '700' },
-
   onlineBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: spacing.sm, paddingVertical: spacing.base, borderRadius: borderRadius.xl,
+    gap: spacing.sm, paddingVertical: spacing.base + 2, borderRadius: borderRadius.xl,
     elevation: 4, shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8,
   },
-  btnOnline: { backgroundColor: colors.primary },
-  btnOffline: {
-    backgroundColor: colors.ink,
-    borderTopWidth: 2, borderTopColor: colors.primary,
-    overflow: 'hidden',
+  btnStartEarning: { backgroundColor: colors.primary },
+  btnEndShift: {
+    backgroundColor: colors.white, borderWidth: 1.5, borderColor: colors.border, elevation: 0,
   },
-  onlineBtnText: { ...typography.body, fontWeight: '700' },
+  btnEndShiftText: { ...typography.h4, color: colors.textSecondary },
+  onlineBtnText: { ...typography.h4, color: colors.ink },
 });
