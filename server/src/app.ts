@@ -39,8 +39,11 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
     credentials: true,
   },
-  pingInterval: 10000,
-  pingTimeout: 5000,
+  transports: ['polling', 'websocket'],
+  pingInterval: 25000,
+  pingTimeout: 20000,
+  connectTimeout: 45000,
+  upgradeTimeout: 30000,
 });
 
 // Security
