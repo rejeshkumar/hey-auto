@@ -219,6 +219,8 @@ export class DriverService {
   }
 
   async goOffline(userId: string) {
+    const { logger } = await import('../../utils/logger');
+    logger.warn({ userId, stack: new Error().stack?.split('\n').slice(1,4).join(' | ') }, 'goOffline called');
     const profile = await prisma.driverProfile.findUnique({ where: { userId } });
 
     await prisma.driverProfile.update({
