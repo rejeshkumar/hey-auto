@@ -279,7 +279,7 @@ export class RideService {
       if (!p) { logger.info({ userId: d.userId }, 'prepareDriverBatch: no profile found'); return false; }
       if (!p.isOnline) { logger.info({ userId: d.userId, isOnline: p.isOnline }, 'prepareDriverBatch: driver not online'); return false; }
       if (p.isOnRide) { logger.info({ userId: d.userId }, 'prepareDriverBatch: driver on ride'); return false; }
-      if (p.city.toLowerCase() !== city.toLowerCase()) { logger.info({ driverCity: p.city, searchCity: city }, 'prepareDriverBatch: city mismatch'); return false; }
+      // City string match removed — radius-based geospatial filter is sufficient
       if (rideType === 'PARCEL' && !p.acceptsParcels) return false;
       return true;
     });
