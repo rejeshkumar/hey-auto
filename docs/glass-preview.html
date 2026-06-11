@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aye Auto — Liquid Glass UI Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif; background: #0a0a12; color: #fff; }
+
+    h1 { text-align: center; padding: 36px 16px 6px; font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #DAA520, #fff 60%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    p.sub { text-align: center; color: rgba(255,255,255,0.4); font-size: 13px; margin-bottom: 32px; }
+
+    .screens-row { display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; padding: 0 24px 60px; }
+
+    /* ── Phone Shell ── */
+    .phone {
+      width: 300px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .phone-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
+      color: rgba(255,255,255,0.35); margin-bottom: 14px;
+    }
+    .phone-shell {
+      width: 280px;
+      background: #1a1a2e;
+      border-radius: 44px;
+      border: 2.5px solid rgba(255,255,255,0.12);
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.1);
+      position: relative;
+    }
+    .dynamic-island {
+      width: 100px; height: 30px;
+      background: #000;
+      border-radius: 0 0 20px 20px;
+      margin: 0 auto;
+      position: relative; z-index: 10;
+    }
+
+    /* ── SCREEN 1: Login ── */
+    .login-bg {
+      width: 100%; min-height: 560px;
+      background: linear-gradient(160deg, #1a0533 0%, #0d1a3a 40%, #001a2e 70%, #0a1a10 100%);
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 30px 22px 32px;
+    }
+    .login-bg::before {
+      content: '';
+      position: absolute; width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(218,165,32,0.25) 0%, transparent 70%);
+      top: -60px; left: 50%; transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .login-bg::after {
+      content: '';
+      position: absolute; width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(100,50,200,0.2) 0%, transparent 70%);
+      bottom: 40px; right: -40px;
+      pointer-events: none;
+    }
+    .glass-logo {
+      width: 72px; height: 72px; border-radius: 22px;
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.18);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 5px; margin-bottom: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+    .logo-line { height: 3px; border-radius: 2px; background: #DAA520; }
+    .app-title { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 3px; }
+    .app-title span { color: #DAA520; }
+    .app-subtitle { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 32px; }
+
+    /* Glass input */
+    .glass-input-wrap {
+      width: 100%;
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 4px 16px rgba(0,0,0,0.2);
+    }
+    .input-field-label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.5px; align-self: flex-start; margin-bottom: 4px; }
+    .prefix { font-size: 15px; color: rgba(255,255,255,0.6); }
+    .number { font-size: 15px; color: #fff; font-weight: 500; }
+
+    /* Glass button */
+    .glass-btn-primary {
+      width: 100%; padding: 15px;
+      background: linear-gradient(135deg, #DAA520, #b8861a);
+      border-radius: 16px; border: none;
+      font-size: 15px; font-weight: 800; color: #0A0A0A;
+      box-shadow: 0 8px 24px rgba(218,165,32,0.35), inset 0 1px 0 rgba(255,255,255,0.3);
+      cursor: pointer;
+    }
+    .terms-text { font-size: 10px; color: rgba(255,255,255,0.25); margin-top: 14px; }
+
+    /* ── SCREEN 2: Home Offline ── */
+    .home-bg {
+      width: 100%; height: 580px;
+      position: relative; overflow: hidden;
+    }
+    .map-layer {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, #0d1f0d 0%, #1a3a1a 40%, #0d2a1a 100%);
+    }
+    /* Fake map roads */
+    .road { position: absolute; background: rgba(255,255,255,0.06); }
+    .road-h { height: 7px; left: 0; right: 0; border-radius: 4px; }
+    .road-v { width: 7px; top: 0; bottom: 0; border-radius: 4px; }
+    /* Glow orbs on map */
+    .map-glow { position: absolute; border-radius: 50%; pointer-events: none; }
+
+    /* Floating top bar */
+    .float-topbar {
+      position: absolute; top: 14px; left: 14px; right: 14px;
+      display: flex; justify-content: space-between; align-items: center;
+      z-index: 10;
+    }
+    .glass-pill {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 50px;
+      padding: 7px 14px;
+      display: flex; align-items: center; gap: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    .glass-icon-btn {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.18);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    .top-icons { display: flex; gap: 8px; }
+    .status-dot-sm { width: 7px; height: 7px; border-radius: 50%; }
+    .status-label { font-size: 12px; font-weight: 700; }
+
+    /* Driver dot on map */
+    .driver-marker {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #DAA520;
+      border: 3px solid rgba(255,255,255,0.9);
+      box-shadow: 0 0 0 6px rgba(218,165,32,0.25), 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    /* Glass bottom panel */
+    .glass-bottom {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(10,10,20,0.65);
+      backdrop-filter: blur(32px) saturate(180%);
+      -webkit-backdrop-filter: blur(32px) saturate(180%);
+      border-top: 1px solid rgba(255,255,255,0.12);
+      border-radius: 28px 28px 0 0;
+      padding: 20px 18px 24px;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .panel-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 3px; }
+    .panel-sub { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 16px; }
+
+    .glass-btn-go {
+      width: 100%; padding: 15px;
+      background: linear-gradient(135deg, #DAA520 0%, #c8981a 100%);
+      border-radius: 16px; border: none;
+      font-size: 15px; font-weight: 800; color: #0A0A0A;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 8px 24px rgba(218,165,32,0.4), 0 0 0 1px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.35);
+      cursor: pointer;
+    }
+    .glass-btn-offline {
+      width: 100%; padding: 15px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 16px;
+      border: 1px solid rgba(218,165,32,0.5);
+      font-size: 15px; font-weight: 700; color: #DAA520;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    /* Glass tab bar */
+    .glass-tabbar {
+      display: flex;
+      background: rgba(10,10,20,0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 0 12px;
+    }
+    .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .tab-icon { font-size: 20px; }
+    .tab-label { font-size: 9px; font-weight: 600; }
+
+    /* ── SCREEN 3: Home Online ── */
+    .earnings-float {
+      position: absolute; bottom: 115px; left: 50%; transform: translateX(-50%);
+      background: rgba(10,10,20,0.55);
+      backdrop-filter: blur(24px) saturate(200%);
+      -webkit-backdrop-filter: blur(24px) saturate(200%);
+      border: 1px solid rgba(218,165,32,0.4);
+      border-radius: 50px;
+      padding: 8px 18px;
+      display: flex; align-items: center; gap: 10px;
+      white-space: nowrap;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .ef-amount { font-size: 14px; font-weight: 900; color: #DAA520; }
+    .ef-div { width: 1px; height: 14px; background: rgba(218,165,32,0.3); }
+    .ef-stat { font-size: 11px; font-weight: 600; color: rgba(218,165,32,0.8); }
+
+    .waiting-row-glass { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .pulse-dot-glass { width: 9px; height: 9px; border-radius: 50%; background: #00C96B; box-shadow: 0 0 8px rgba(0,201,107,0.6); }
+    .waiting-text-glass { font-size: 13px; color: rgba(255,255,255,0.6); }
+
+    /* ── SCREEN 4: Ride Request ── */
+    .ride-req-bg {
+      width: 100%; height: 580px;
+      position: relative; overflow: hidden;
+      background: linear-gradient(180deg, #0d1f0d 0%, #1a3a1a 50%, #0d2a1a 100%);
+    }
+    .ride-glass-card {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(8,8,18,0.72);
+      backdrop-filter: blur(40px) saturate(200%);
+      -webkit-backdrop-filter: blur(40px) saturate(200%);
+      border-top: 1px solid rgba(255,255,255,0.12);
+      border-radius: 28px 28px 0 0;
+      padding: 14px 16px 20px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .progress-glass { height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-bottom: 14px; overflow: hidden; }
+    .progress-fill { height: 100%; width: 60%; background: linear-gradient(90deg, #DAA520, #f0c040); border-radius: 2px; }
+    .req-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .req-tag { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.8px; }
+    .req-name { font-size: 16px; font-weight: 800; color: #fff; margin-top: 2px; }
+    .timer-glass { text-align: center; }
+    .timer-num-glass { font-size: 26px; font-weight: 900; color: #DAA520; line-height: 1; }
+    .timer-sec-glass { font-size: 9px; color: rgba(255,255,255,0.3); }
+
+    /* Fare hero — glass card within card */
+    .fare-glass {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(218,165,32,0.3);
+      border-radius: 16px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .fare-amount-glass { font-size: 28px; font-weight: 900; color: #DAA520; }
+    .fare-label-glass { font-size: 9px; font-weight: 600; color: rgba(218,165,32,0.6); margin-bottom: 2px; }
+    .fare-meta-glass { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 3px; margin-bottom: 4px; }
+    .route-text-glass { font-size: 10px; color: rgba(255,255,255,0.3); margin-bottom: 12px; }
+
+    .btns-glass { display: flex; gap: 10px; }
+    .btn-decline-glass {
+      flex: 1; padding: 12px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.4);
+      text-align: center;
+    }
+    .btn-accept-glass {
+      flex: 2; padding: 12px;
+      background: linear-gradient(135deg, #DAA520, #c8981a);
+      border-radius: 14px; border: none;
+      font-size: 13px; font-weight: 800; color: #0A0A0A;
+      text-align: center;
+      box-shadow: 0 6px 20px rgba(218,165,32,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+
+    /* ── SCREEN 5: Booking Confirm ── */
+    .booking-bg {
+      width: 100%; min-height: 560px;
+      background: linear-gradient(160deg, #0d1a3a 0%, #001a2e 50%, #0a1a10 100%);
+      position: relative; overflow: hidden;
+      padding: 16px 16px 24px;
+    }
+    .booking-bg::before {
+      content: '';
+      position: absolute; width: 250px; height: 250px;
+      background: radial-gradient(circle, rgba(218,165,32,0.15) 0%, transparent 70%);
+      top: -80px; right: -40px;
+    }
+    .glass-route-card {
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 12px;
+      display: flex; gap: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .route-dots-glass { display: flex; flex-direction: column; align-items: center; padding-top: 3px; }
+    .rdot-glass { width: 8px; height: 8px; border-radius: 50%; }
+    .rline-glass { width: 2px; height: 22px; background: rgba(255,255,255,0.1); margin: 2px 0; }
+    .route-stop-label { font-size: 9px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.5px; }
+    .route-stop-addr { font-size: 12px; font-weight: 600; color: #fff; margin-top: 1px; }
+
+    .glass-fare-card {
+      background: rgba(218,165,32,0.07);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(218,165,32,0.25);
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .gfc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .gfc-title { font-size: 12px; font-weight: 700; color: #DAA520; }
+    .gfc-badge { font-size: 9px; font-weight: 700; color: #DAA520; background: rgba(218,165,32,0.15); padding: 2px 8px; border-radius: 8px; }
+    .gfc-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .gfc-label { font-size: 11px; color: rgba(255,255,255,0.5); }
+    .gfc-val { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.7); }
+    .gfc-total { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(218,165,32,0.2); padding-top: 10px; margin-top: 4px; }
+    .gfc-total-label { font-size: 13px; font-weight: 700; color: #DAA520; }
+    .gfc-total-val { font-size: 24px; font-weight: 900; color: #DAA520; }
+
+    /* note box */
+    .note-box {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin: 0 auto 40px;
+      max-width: 980px;
+    }
+    .note-title { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.8); margin-bottom: 12px; }
+    .note-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+    .note-item { font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.6; }
+    .note-item strong { color: rgba(255,255,255,0.7); display: block; margin-bottom: 4px; }
+
+    .section-divider {
+      text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: rgba(255,255,255,0.2);
+      padding: 16px 0 24px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Aye Auto — Liquid Glass UI</h1>
+<p class="sub">iOS 26 Liquid Glass + Glassmorphism · #DAA520 brand colour · Dark map backgrounds</p>
+
+<div class="screens-row">
+
+  <!-- ── Screen 1: Login ── -->
+  <div class="phone">
+    <div class="phone-label">Login Screen</div>
+    <div class="phone-shell">
+      <div class="dynamic-island"></div>
+      <div class="login-bg">
+        <div class="glass-logo">
+          <div class="logo-line" style="width:30px"></div>
+          <div class="logo-line" style="width:22px"></div>
+          <div class="logo-line" style="width:14px"></div>
+        </div>
+        <div class="app-title">Hey <span>Auto</span> Driver</div>
+        <div class="app-subtitle">നിങ്ങളുടെ ഫോൺ നമ്പർ നൽകുക</div>
+
+        <div class="input-field-label">ഫോൺ നമ്പർ</div>
+        <div class="glass-input-wrap">
+          <span class="prefix">+91</span>
+          <span class="number">8095481555</span>
+        </div>
+        <button class="glass-btn-primary">OTP അയക്കുക</button>
+        <div class="terms-text">By continuing, you agree to our Terms of Service</div>
+      </div>
+      <div class="glass-tabbar">
+        <div class="tab-item"><div class="tab-icon">🚗</div><div class="tab-label" style="color:#DAA520">Drive</div></div>
+        <div class="tab-item"><div class="tab-icon">💰</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">Earnings</div></div>
+        <div class="tab-item"><div class="tab-icon">⏱</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">History</div></div>
+        <div class="tab-item"><div class="tab-icon">👤</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 2: Home Offline ── -->
+  <div class="phone">
+    <div class="phone-label">Home — Offline</div>
+    <div class="phone-shell">
+      <div class="dynamic-island"></div>
+      <div class="home-bg">
+        <div class="map-layer">
+          <!-- Roads -->
+          <div class="road road-h" style="top:38%"></div>
+          <div class="road road-h" style="top:62%"></div>
+          <div class="road road-v" style="left:28%"></div>
+          <div class="road road-v" style="left:58%"></div>
+          <!-- Map glows -->
+          <div class="map-glow" style="width:120px;height:120px;background:radial-gradient(circle,rgba(0,100,50,0.25),transparent);top:20%;left:10%"></div>
+          <div class="map-glow" style="width:80px;height:80px;background:radial-gradient(circle,rgba(218,165,32,0.1),transparent);top:60%;right:15%"></div>
+        </div>
+        <!-- Driver marker -->
+        <div class="driver-marker"></div>
+        <!-- Top bar -->
+        <div class="float-topbar">
+          <div class="glass-pill">
+            <div class="status-dot-sm" style="background:#F03A3A;box-shadow:0 0 6px rgba(240,58,58,0.6)"></div>
+            <span class="status-label" style="color:#F03A3A">Offline</span>
+          </div>
+          <div class="top-icons">
+            <div class="glass-icon-btn" style="font-size:11px">EN</div>
+            <div class="glass-icon-btn">👤</div>
+          </div>
+        </div>
+        <!-- Bottom glass panel -->
+        <div class="glass-bottom">
+          <div class="panel-title">Ready to earn?</div>
+          <div class="panel-sub">Tap to go online</div>
+          <button class="glass-btn-go">⚡ Go Online</button>
+        </div>
+      </div>
+      <div class="glass-tabbar">
+        <div class="tab-item"><div class="tab-icon">🚗</div><div class="tab-label" style="color:#DAA520">Drive</div></div>
+        <div class="tab-item"><div class="tab-icon">💰</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">Earnings</div></div>
+        <div class="tab-item"><div class="tab-icon">⏱</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">History</div></div>
+        <div class="tab-item"><div class="tab-icon">👤</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 3: Home Online ── -->
+  <div class="phone">
+    <div class="phone-label">Home — Online</div>
+    <div class="phone-shell">
+      <div class="dynamic-island"></div>
+      <div class="home-bg">
+        <div class="map-layer">
+          <div class="road road-h" style="top:38%"></div>
+          <div class="road road-h" style="top:62%"></div>
+          <div class="road road-v" style="left:28%"></div>
+          <div class="road road-v" style="left:58%"></div>
+          <!-- Demand circles — glassy -->
+          <div class="map-glow" style="width:70px;height:70px;background:radial-gradient(circle,rgba(218,165,32,0.3),transparent);top:25%;left:18%;border-radius:50%;border:1px solid rgba(218,165,32,0.25)"></div>
+          <div class="map-glow" style="width:90px;height:90px;background:radial-gradient(circle,rgba(220,50,50,0.25),transparent);top:55%;right:12%;border-radius:50%;border:1px solid rgba(220,50,50,0.2)"></div>
+          <div class="map-glow" style="width:50px;height:50px;background:radial-gradient(circle,rgba(218,165,32,0.2),transparent);top:68%;left:25%;border-radius:50%;border:1px solid rgba(218,165,32,0.2)"></div>
+        </div>
+        <div class="driver-marker"></div>
+        <div class="float-topbar">
+          <div class="glass-pill">
+            <div class="status-dot-sm" style="background:#00C96B;box-shadow:0 0 6px rgba(0,201,107,0.7)"></div>
+            <span class="status-label" style="color:#00C96B">Online</span>
+          </div>
+          <div class="top-icons">
+            <div class="glass-icon-btn" style="font-size:11px">EN</div>
+            <div class="glass-icon-btn">👤</div>
+          </div>
+        </div>
+        <!-- Floating earnings pill -->
+        <div class="earnings-float">
+          <span class="ef-amount">₹240</span>
+          <div class="ef-div"></div>
+          <span class="ef-stat">🚗 3 rides</span>
+        </div>
+        <!-- Bottom glass panel — online state -->
+        <div class="glass-bottom">
+          <div class="waiting-row-glass">
+            <div class="pulse-dot-glass"></div>
+            <span class="waiting-text-glass">Waiting for rides...</span>
+          </div>
+          <button class="glass-btn-offline">⚪ Go Offline</button>
+        </div>
+      </div>
+      <div class="glass-tabbar">
+        <div class="tab-item"><div class="tab-icon">🚗</div><div class="tab-label" style="color:#DAA520">Drive</div></div>
+        <div class="tab-item"><div class="tab-icon">💰</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">Earnings</div></div>
+        <div class="tab-item"><div class="tab-icon">⏱</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">History</div></div>
+        <div class="tab-item"><div class="tab-icon">👤</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 4: Ride Request ── -->
+  <div class="phone">
+    <div class="phone-label">Ride Request</div>
+    <div class="phone-shell">
+      <div class="dynamic-island"></div>
+      <div class="ride-req-bg">
+        <div style="position:absolute;inset:0">
+          <div class="road road-h" style="top:38%"></div>
+          <div class="road road-v" style="left:45%"></div>
+          <div class="map-glow" style="width:100px;height:100px;background:radial-gradient(circle,rgba(0,100,50,0.2),transparent);top:15%;left:20%"></div>
+        </div>
+        <div class="driver-marker" style="top:40%"></div>
+        <div class="float-topbar">
+          <div class="glass-pill">
+            <div class="status-dot-sm" style="background:#00C96B;box-shadow:0 0 6px rgba(0,201,107,0.7)"></div>
+            <span class="status-label" style="color:#00C96B">Online</span>
+          </div>
+          <div class="top-icons">
+            <div class="glass-icon-btn" style="font-size:11px">EN</div>
+          </div>
+        </div>
+        <div class="ride-glass-card">
+          <div class="progress-glass"><div class="progress-fill"></div></div>
+          <div class="req-header">
+            <div>
+              <div class="req-tag">New Ride Request</div>
+              <div class="req-name">Adarsh Kumar</div>
+            </div>
+            <div class="timer-glass">
+              <div class="timer-num-glass">42</div>
+              <div class="timer-sec-glass">sec</div>
+            </div>
+          </div>
+          <div class="fare-glass">
+            <div>
+              <div class="fare-label-glass">Fare</div>
+              <div class="fare-amount-glass">₹71</div>
+            </div>
+            <div>
+              <div class="fare-meta-glass">📍 <span>1.2 km away</span></div>
+              <div class="fare-meta-glass">🕐 <span>8 min ride</span></div>
+              <div class="fare-meta-glass">⭐ <span>4.8</span></div>
+            </div>
+          </div>
+          <div class="route-text-glass">📍 Current Location → Taliparamba Bus Stand</div>
+          <div class="btns-glass">
+            <div class="btn-decline-glass">Decline</div>
+            <button class="btn-accept-glass">Accept Ride</button>
+          </div>
+        </div>
+      </div>
+      <div class="glass-tabbar">
+        <div class="tab-item"><div class="tab-icon">🚗</div><div class="tab-label" style="color:#DAA520">Drive</div></div>
+        <div class="tab-item"><div class="tab-icon">💰</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">Earnings</div></div>
+        <div class="tab-item"><div class="tab-icon">⏱</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">History</div></div>
+        <div class="tab-item"><div class="tab-icon">👤</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screen 5: Booking Confirm (Rider) ── -->
+  <div class="phone">
+    <div class="phone-label">Booking Confirm — Rider</div>
+    <div class="phone-shell">
+      <div class="dynamic-island"></div>
+      <div class="booking-bg">
+        <!-- Fake mini map top -->
+        <div style="height:120px;background:linear-gradient(180deg,#0d1f0d,#1a3a1a);border-radius:16px;margin-bottom:14px;position:relative;overflow:hidden">
+          <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,0.03) 0,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 28px),repeating-linear-gradient(90deg,rgba(255,255,255,0.03) 0,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 28px)"></div>
+          <div style="position:absolute;top:50%;left:35%;width:10px;height:10px;border-radius:50%;background:#00C96B;box-shadow:0 0 8px rgba(0,201,107,0.7);transform:translate(-50%,-50%)"></div>
+          <div style="position:absolute;top:50%;left:65%;width:10px;height:10px;border-radius:50%;background:#F03A3A;box-shadow:0 0 8px rgba(240,58,58,0.7);transform:translate(-50%,-50%)"></div>
+          <div style="position:absolute;top:50%;left:35%;right:35%;height:2px;background:linear-gradient(90deg,#00C96B,#DAA520,#F03A3A);transform:translateY(-50%)"></div>
+        </div>
+        <div class="glass-route-card">
+          <div class="route-dots-glass">
+            <div class="rdot-glass" style="background:#00C96B"></div>
+            <div class="rline-glass"></div>
+            <div class="rdot-glass" style="background:#F03A3A"></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:10px">
+            <div><div class="route-stop-label">From</div><div class="route-stop-addr">Current Location</div></div>
+            <div><div class="route-stop-label">To</div><div class="route-stop-addr">Taliparamba Bus Stand</div></div>
+          </div>
+        </div>
+        <div class="glass-fare-card">
+          <div class="gfc-header">
+            <span class="gfc-title">Fare Estimate</span>
+            <span class="gfc-badge">Govt. Rate</span>
+          </div>
+          <div class="gfc-row"><span class="gfc-label">Base fare</span><span class="gfc-val">₹30</span></div>
+          <div class="gfc-row"><span class="gfc-label">Distance · 3.2 km</span><span class="gfc-val">₹27</span></div>
+          <div class="gfc-row"><span class="gfc-label">Onward surcharge</span><span class="gfc-val">₹14</span></div>
+          <div class="gfc-total">
+            <span class="gfc-total-label">Total</span>
+            <span class="gfc-total-val">₹71</span>
+          </div>
+        </div>
+        <button class="glass-btn-primary" style="margin-top:4px">Book Ride · ₹71</button>
+      </div>
+      <div class="glass-tabbar">
+        <div class="tab-item"><div class="tab-icon">🚗</div><div class="tab-label" style="color:#DAA520">Home</div></div>
+        <div class="tab-item"><div class="tab-icon">⏱</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">History</div></div>
+        <div class="tab-item"><div class="tab-icon">👤</div><div class="tab-label" style="color:rgba(255,255,255,0.3)">Profile</div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /screens-row -->
+
+<div class="section-divider">Design Notes</div>
+
+<div style="max-width:960px;margin:0 auto;padding:0 24px 60px">
+  <div class="note-box">
+    <div class="note-title">What changes vs current design</div>
+    <div class="note-grid">
+      <div class="note-item">
+        <strong>Background</strong>
+        White → Dark gradient (deep navy/green for map feel). All screens become immersive.
+      </div>
+      <div class="note-item">
+        <strong>Cards & panels</strong>
+        Solid black ink cards → frosted glass (rgba + backdrop-filter blur). Depth and translucency.
+      </div>
+      <div class="note-item">
+        <strong>Buttons</strong>
+        Flat solid → gradient with inner highlight + shadow glow. Feels 3D and pressable.
+      </div>
+      <div class="note-item">
+        <strong>Tab bar</strong>
+        White bg → dark frosted glass. Blends into the map below.
+      </div>
+      <div class="note-item">
+        <strong>Status pill</strong>
+        Flat border → glass pill with blur. Floats over the map naturally.
+      </div>
+      <div class="note-item">
+        <strong>Trade-off</strong>
+        Looks stunning on iOS (native blur support). Android blur is heavier on battery — may need fallback.
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

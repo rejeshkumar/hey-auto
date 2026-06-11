@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Switch, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Switch, Platform, TextInput, Modal } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../components';
@@ -34,10 +34,17 @@ export function ProfileScreen({ navigation }: any) {
   const { user, logout } = useAuthStore();
   const { profile, loadProfile } = useDriverStore();
   const [acceptsParcels, setAcceptsParcels] = useState(false);
+  const [city, setCity] = useState('');
+  const [cityModalVisible, setCityModalVisible] = useState(false);
+  const [cityInput, setCityInput] = useState('');
+  const [savingCity, setSavingCity] = useState(false);
 
   useEffect(() => {
     loadProfile();
-    driverApi.getProfile().then((r) => setAcceptsParcels(!!r.data.data?.acceptsParcels)).catch(() => {});
+    driverApi.getProfile().then((r) => {
+      setAcceptsParcels(!!r.data.data?.acceptsParcels);
+      setCity(r.data.data?.city || '');
+    }).catch(() => {});
   }, []);
 
   const handleLogout = () => {
@@ -56,8 +63,53 @@ export function ProfileScreen({ navigation }: any) {
 
   const isVerified = profile?.verificationStatus === 'VERIFIED';
 
+  const handleSaveCity = async () => {
+    const trimmed = cityInput.trim().toLowerCase();
+    if (!trimmed) return;
+    setSavingCity(true);
+    try {
+      await driverApi.updateProfile({ city: trimmed });
+      setCity(trimmed);
+      setCityModalVisible(false);
+    } catch {
+      Alert.alert('Error', 'Could not update city. Please try again.');
+    } finally {
+      setSavingCity(false);
+    }
+  };
+
   return (
     <ScreenWrapper>
+      <Modal visible={cityModalVisible} transparent animationType="fade" onRequestClose={() => setCityModalVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setCityModalVisible(false)}>
+          <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
+            <Text style={styles.modalTitle}>Update City</Text>
+            <Text style={styles.modalSub}>Enter your city name (e.g. bangalore, taliparamba)</Text>
+            <TextInput
+              style={styles.cityInput}
+              value={cityInput}
+              onChangeText={setCityInput}
+              placeholder="Enter city"
+              placeholderTextColor={colors.textLight}
+              autoCapitalize="none"
+              autoFocus
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setCityModalVisible(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalSaveBtn, savingCity && { opacity: 0.6 }]}
+                onPress={handleSaveCity}
+                disabled={savingCity}
+              >
+                <Text style={styles.modalSaveText}>{savingCity ? 'Saving...' : 'Save'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 32 : 80 }}>
         <Text style={styles.screenTitle}>{t('profile.title')}</Text>
 
@@ -96,6 +148,7 @@ export function ProfileScreen({ navigation }: any) {
         )}
 
         <View style={styles.menuSection}>
+          <MenuItem icon="map-marker-outline" label="City" onPress={() => { setCityInput(city); setCityModalVisible(true); }} rightText={city || 'Not set'} />
           <MenuItem icon="car" label="My Vehicle" onPress={() => navigation.navigate('Vehicle')} rightText={profile?.vehicles?.[0]?.registrationNo} />
           <MenuItem icon="file-document" label={t('profile.documents')} onPress={() => navigation.navigate('Documents')} />
           <MenuItem icon="star-circle" label="Subscription" onPress={() => navigation.navigate('Subscription')} rightText={profile?.verificationStatus === 'VERIFIED' ? 'Active' : undefined} />
@@ -185,4 +238,18 @@ const styles = StyleSheet.create({
   },
   parcelToggleLabel: { ...typography.body, color: colors.text, fontWeight: '600' },
   parcelToggleSub: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
+  modalCard: { backgroundColor: colors.white, borderRadius: borderRadius.xl, padding: spacing.xl, width: '100%' },
+  modalTitle: { ...typography.h4, color: colors.text, marginBottom: spacing.xs },
+  modalSub: { ...typography.caption, color: colors.textSecondary, marginBottom: spacing.lg },
+  cityInput: {
+    borderWidth: 1.5, borderColor: colors.border, borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
+    fontSize: 16, color: colors.text, marginBottom: spacing.lg,
+  },
+  modalActions: { flexDirection: 'row', gap: spacing.md },
+  modalCancelBtn: { flex: 1, paddingVertical: spacing.sm, alignItems: 'center', borderRadius: borderRadius.lg, backgroundColor: colors.surface },
+  modalCancelText: { ...typography.button, color: colors.textSecondary },
+  modalSaveBtn: { flex: 1, paddingVertical: spacing.sm, alignItems: 'center', borderRadius: borderRadius.lg, backgroundColor: colors.primary },
+  modalSaveText: { ...typography.button, color: colors.ink },
 });

@@ -10,7 +10,7 @@ import { useRideStore } from '../../hooks/useRideStore';
 import { useLocationStore } from '../../hooks/useLocationStore';
 import { riderApi, SavedPlace } from '../../services/rider';
 
-const TALIPARAMBA_CENTER = { latitude: 11.9462, longitude: 75.4928 };
+const TALIPARAMBA_CENTER = { latitude: 12.9716, longitude: 77.5946 };
 
 const FAVE_SLOTS = [
   { key: 'Home',  icon: 'home'      as const },

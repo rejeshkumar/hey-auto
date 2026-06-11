@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aye Auto — v4 · #f9b01b · Light & Dark</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #060606;
+  color: #fff;
+  padding: 48px 16px 80px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── TOKENS ── */
+:root {
+  --gold:      #f9b01b;
+  --gold-dk:   #c98a00;
+  --gold-dkr:  #a06c00;
+
+  /* LIGHT MODE */
+  --l-bg:      #FFFFFF;
+  --l-surface: #F7F7F5;
+  --l-card:    #F0EFec;
+  --l-border:  #E8E6E0;
+  --l-ink:     #0A0A0A;
+  --l-ink2:    #1A1A1A;
+  --l-sub:     #666;
+  --l-muted:   #999;
+  --l-gold-lt: #FEF5DC;
+  --l-gold-md: #FDEAB0;
+
+  /* DARK MODE */
+  --d-bg:      #0D0D0D;
+  --d-surface: #141414;
+  --d-card:    #1C1C1C;
+  --d-card2:   #242424;
+  --d-border:  #2A2A2A;
+  --d-border2: #1E1E1E;
+  --d-sub:     #888;
+  --d-muted:   #444;
+  --d-gold-lt: #261900;
+  --d-gold-gl: rgba(249,176,27,0.12);
+
+  /* SHARED */
+  --green:     #00C96B;
+  --green-lt-l:#E4F9EE;
+  --green-lt-d:rgba(0,201,107,0.12);
+  --red:       #F03A3A;
+  --red-lt-l:  #FEECEC;
+  --red-lt-d:  rgba(240,58,58,0.12);
+}
+
+/* ─── PAGE CHROME ─── */
+.page-header { text-align:center; margin-bottom:56px; }
+.eyebrow { font-size:11px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--gold); margin-bottom:16px; }
+.headline { font-size:40px; font-weight:900; letter-spacing:-1.5px; margin-bottom:12px; line-height:1.1; }
+.tagline  { font-size:15px; color:#444; max-width:540px; margin:0 auto; line-height:1.7; }
+
+.sep { height:1px; background:#111; margin:64px 0; }
+.section-label { font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--gold); text-align:center; margin-bottom:44px; }
+
+/* ─── MODE HEADER STRIP ─── */
+.mode-strip {
+  display:flex; gap:40px; justify-content:center; align-items:center;
+  margin-bottom:32px;
+}
+.mode-badge {
+  display:flex; align-items:center; gap:8px;
+  font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+}
+.mode-dot { width:10px; height:10px; border-radius:50%; }
+
+/* ─── DUAL LAYOUT ─── */
+.dual-row {
+  display:flex; flex-wrap:wrap; gap:48px;
+  justify-content:center; margin-bottom:72px;
+}
+.mode-col {
+  display:flex; flex-direction:column; align-items:center; gap:32px;
+}
+.mode-col-label {
+  font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase;
+  padding:6px 20px; border-radius:999px; margin-bottom:0;
+}
+.mode-col-label.light { background:#fff; color:#0A0A0A; border:1px solid #E8E8E8; }
+.mode-col-label.dark  { background:#1C1C1C; color:#888; border:1px solid #2A2A2A; }
+.screens-row { display:flex; flex-wrap:wrap; gap:28px; justify-content:center; }
+
+/* ─── PHONE ─── */
+.phone-wrap { display:flex; flex-direction:column; align-items:center; gap:12px; }
+.phone-label { font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; }
+.phone-label.lbl-light { color:#333; }
+.phone-label.lbl-dark  { color:#444; }
+
+.phone {
+  width:300px; min-height:620px;
+  border-radius:42px; overflow:hidden; position:relative;
+  font-family:'Inter',sans-serif;
+}
+.phone.light {
+  background:#FFFFFF;
+  border:1.5px solid #e0e0e0;
+  box-shadow:0 0 0 5px #111, 0 0 0 6px #1a1a1a, 0 32px 80px rgba(0,0,0,0.7);
+}
+.phone.dark {
+  background:#0D0D0D;
+  border:1.5px solid #1e1e1e;
+  box-shadow:0 0 0 5px #111, 0 0 0 6px #1a1a1a, 0 32px 80px rgba(0,0,0,0.8),
+             0 0 60px rgba(249,176,27,0.04);
+}
+/* dynamic island */
+.phone::before {
+  content:''; position:absolute;
+  top:11px; left:50%; transform:translateX(-50%);
+  width:82px; height:26px; border-radius:18px; z-index:300;
+}
+.phone.light::before { background:#111; }
+.phone.dark::before  { background:#000; }
+
+/* ─── MAP ─── */
+.map { width:100%; position:relative; overflow:hidden; }
+.map.light { background:#EEF2E8; }
+.map.dark  { background:#0C140F; }
+.map::after {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(128,128,128,0.04) 28px,rgba(128,128,128,0.04) 29px),
+    repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(128,128,128,0.04) 28px,rgba(128,128,128,0.04) 29px);
+}
+.road-h { position:absolute; left:0; right:0; }
+.road-v { position:absolute; top:0; bottom:0; }
+.map.light .road-h, .map.light .road-v { background:#fff; opacity:0.85; }
+.map.dark  .road-h, .map.dark  .road-v { background:#1a2a1e; opacity:1; }
+
+/* ─── AUTO MARKER ─── */
+.auto-pin {
+  position:absolute; z-index:10;
+  display:flex; flex-direction:column; align-items:center;
+}
+.auto-bubble {
+  width:42px; height:42px; border-radius:50%;
+  background:var(--gold);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; border:3px solid #fff;
+  box-shadow:0 4px 16px rgba(249,176,27,0.5), 0 0 0 8px rgba(249,176,27,0.12);
+}
+.auto-tail { width:2px; height:9px; background:var(--gold); opacity:0.4; }
+
+/* ─── SHEET ─── */
+.sheet {
+  border-radius:28px 28px 0 0;
+  padding:12px 18px 28px;
+}
+.sheet.light {
+  background:#fff;
+  box-shadow:0 -2px 20px rgba(0,0,0,0.06);
+  border-top:1px solid #F0F0F0;
+}
+.sheet.dark {
+  background:#141414;
+  box-shadow:0 -2px 20px rgba(0,0,0,0.4);
+  border-top:1px solid #1E1E1E;
+}
+.handle {
+  width:34px; height:3px; border-radius:2px; margin:0 auto 18px;
+}
+.sheet.light .handle { background:#E0E0E0; }
+.sheet.dark  .handle { background:#2A2A2A; }
+
+/* ─── TOP BAR ─── */
+.top-bar {
+  position:absolute; top:48px; left:0; right:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 16px; z-index:50;
+}
+.status-pill {
+  height:34px; border-radius:17px;
+  display:flex; align-items:center; padding:0 12px; gap:6px;
+  font-size:11px; font-weight:700;
+  backdrop-filter:blur(12px);
+}
+.status-pill.light { background:rgba(255,255,255,0.9); border:1px solid #e0e0e0; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+.status-pill.dark  { background:rgba(20,20,20,0.9);   border:1px solid #2a2a2a; }
+.status-pill .dot  { width:7px; height:7px; border-radius:50%; }
+.status-pill.online  .dot  { background:var(--green); }
+.status-pill.offline .dot  { background:var(--red); }
+.status-pill.online  span  { color:var(--green); }
+.status-pill.offline span  { color:var(--red); }
+.top-actions { display:flex; gap:7px; }
+.icon-btn {
+  width:34px; height:34px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; backdrop-filter:blur(12px);
+}
+.icon-btn.light { background:rgba(255,255,255,0.9); border:1px solid #e0e0e0; color:#0A0A0A; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+.icon-btn.dark  { background:rgba(20,20,20,0.9);   border:1px solid #2a2a2a; color:#888; }
+
+/* ─── BUTTONS ─── */
+.btn-gold {
+  width:100%; padding:16px; border:none; border-radius:15px;
+  font-family:'Inter',sans-serif; font-size:15px; font-weight:800;
+  background:var(--gold); color:#1A1A1A;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px;
+  letter-spacing:0.1px; box-shadow:0 6px 24px rgba(249,176,27,0.35);
+}
+.btn-dark {
+  width:100%; padding:15px; border:none; border-radius:15px;
+  font-family:'Inter',sans-serif; font-size:14px; font-weight:700;
+  background:#0A0A0A; color:#fff;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px;
+}
+.btn-ghost-light {
+  width:100%; padding:14px; background:transparent; border-radius:15px;
+  font-family:'Inter',sans-serif; font-size:14px; font-weight:600;
+  color:#666; cursor:pointer; border:1.5px solid #E8E8E8;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn-ghost-dark {
+  width:100%; padding:14px; background:transparent; border-radius:15px;
+  font-family:'Inter',sans-serif; font-size:14px; font-weight:600;
+  color:#555; cursor:pointer; border:1.5px solid #2A2A2A;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+
+/* ─── FARE SLAB ─── */
+.fare-slab {
+  border-radius:18px; padding:18px;
+  margin-bottom:14px;
+  display:flex; align-items:flex-end; justify-content:space-between;
+}
+.fare-slab.light { background:#FEF5DC; border:1.5px solid #FDEAB0; }
+.fare-slab.dark  { background:rgba(249,176,27,0.10); border:1.5px solid rgba(249,176,27,0.20); }
+.fare-num  { font-size:60px; font-weight:900; color:var(--gold); line-height:1; letter-spacing:-3px; }
+.fare-meta { display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+.fare-chip {
+  display:flex; align-items:center; gap:5px;
+  border-radius:8px; padding:5px 9px;
+  font-size:11px; font-weight:600;
+}
+.fare-chip.light { background:rgba(249,176,27,0.15); color:var(--gold-dkr); }
+.fare-chip.dark  { background:#242424; color:#888; }
+
+/* ─── STATS ─── */
+.stat-slab {
+  display:grid; grid-template-columns:1fr 1fr 1fr;
+  gap:1px; border-radius:14px; overflow:hidden; margin-bottom:14px;
+}
+.stat-slab.light { background:#E8E8E8; }
+.stat-slab.dark  { background:#2A2A2A; }
+.stat-cell.light { background:#F7F7F5; padding:13px 8px; text-align:center; }
+.stat-cell.dark  { background:#1C1C1C; padding:13px 8px; text-align:center; }
+.stat-big  { font-size:24px; font-weight:900; color:var(--gold); letter-spacing:-1px; }
+.stat-norm { font-size:18px; font-weight:800; }
+.stat-norm.light { color:#0A0A0A; }
+.stat-norm.dark  { color:#fff; }
+.stat-label { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-top:3px; }
+.stat-label.light { color:#bbb; }
+.stat-label.dark  { color:#444; }
+
+/* ─── ROUTE ─── */
+.route-wrap  { display:flex; gap:11px; margin-bottom:14px; }
+.route-spine { display:flex; flex-direction:column; align-items:center; padding-top:11px; }
+.r-dot       { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.r-line      { width:1.5px; flex:1; min-height:16px; margin:4px 0; }
+.r-line.light{ background:#E8E8E8; }
+.r-line.dark { background:#2A2A2A; }
+.route-stops { flex:1; display:flex; flex-direction:column; gap:7px; }
+.route-stop  { border-radius:10px; border:1px solid; padding:7px 11px; }
+.route-stop.light { background:#F7F7F5; border-color:#E8E8E8; }
+.route-stop.dark  { background:#1C1C1C; border-color:#2A2A2A; }
+.stop-lbl  { font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:2px; }
+.stop-addr { font-size:12px; font-weight:600; }
+.stop-addr.light { color:#0A0A0A; }
+.stop-addr.dark  { color:#FFFFFF; }
+
+/* ─── SEARCH BAR ─── */
+.search-bar {
+  display:flex; align-items:center; gap:9px;
+  border-radius:13px; padding:12px 13px; margin-bottom:18px;
+}
+.search-bar.light {
+  background:#fff; border:2px solid var(--gold);
+  box-shadow:0 0 0 4px rgba(249,176,27,0.10);
+}
+.search-bar.dark {
+  background:#1C1C1C; border:1.5px solid rgba(249,176,27,0.35);
+  box-shadow:0 0 0 3px rgba(249,176,27,0.06);
+}
+.s-icon {
+  width:30px; height:30px; border-radius:9px;
+  display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0;
+}
+.s-icon.light { background:#FEF5DC; border:1px solid #FDEAB0; }
+.s-icon.dark  { background:#261900; border:1px solid rgba(249,176,27,0.2); }
+.s-text { font-size:13px; flex:1; font-weight:500; }
+.s-text.light { color:#bbb; }
+.s-text.dark  { color:#444; }
+.s-arrow {
+  width:26px; height:26px; border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:800; flex-shrink:0;
+}
+.s-arrow.light { background:#0A0A0A; color:#fff; }
+.s-arrow.dark  { background:var(--gold); color:#1A1A1A; }
+
+/* ─── FAV ROW ─── */
+.fav-row { display:flex; gap:7px; margin-bottom:18px; }
+.fav-chip {
+  flex:1; border-radius:12px; padding:9px;
+  display:flex; flex-direction:column; gap:3px;
+}
+.fav-chip.light       { background:#F7F7F5; border:1px solid #E8E8E8; }
+.fav-chip.dark        { background:#1C1C1C; border:1px solid #2A2A2A; }
+.fav-chip.empty.light { border-style:dashed; }
+.fav-chip.empty.dark  { border-style:dashed; }
+.fav-icon-w {
+  width:28px; height:28px; border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; margin-bottom:2px;
+}
+.fav-name { font-size:10px; font-weight:700; }
+.fav-name.light { color:#0A0A0A; }
+.fav-name.dark  { color:#FFFFFF; }
+.fav-name.empty { color:#bbb !important; }
+.fav-addr { font-size:9px; }
+.fav-addr.light { color:#999; }
+.fav-addr.dark  { color:#555; }
+
+/* ─── QUICK ROUTES ─── */
+.quick-row { display:flex; gap:7px; margin-bottom:14px; }
+.quick-chip {
+  flex:1; border-radius:12px; padding:10px 5px; text-align:center;
+}
+.quick-chip.light { background:#F7F7F5; border:1px solid #E8E8E8; }
+.quick-chip.dark  { background:#1C1C1C; border:1px solid #2A2A2A; }
+.quick-icon { font-size:19px; margin-bottom:3px; }
+.quick-name { font-size:9px; font-weight:600; }
+.quick-name.light { color:#0A0A0A; }
+.quick-name.dark  { color:#888; }
+
+/* ─── USP ─── */
+.usp-strip {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  padding:9px 12px; border-radius:11px;
+  border:1px solid;
+}
+.usp-strip.light { background:#E4F9EE; border-color:rgba(0,201,107,0.25); }
+.usp-strip.dark  { background:rgba(0,201,107,0.09); border-color:rgba(0,201,107,0.2); }
+.usp-text { font-size:10px; font-weight:700; color:var(--green); }
+
+/* ─── OTP ─── */
+.otp-wrap {
+  border-radius:18px; padding:22px; text-align:center; margin-bottom:14px;
+  position:relative; overflow:hidden;
+}
+.otp-wrap.light { background:#0A0A0A; }
+.otp-wrap.dark  { background:#1C1C1C; border:1px solid #2A2A2A; }
+.otp-glow {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:200px; height:90px; border-radius:50%;
+  background:var(--gold); filter:blur(48px); opacity:0.14; pointer-events:none;
+}
+.otp-label  { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#444; margin-bottom:10px; }
+.otp-digits { font-size:60px; font-weight:900; letter-spacing:12px; color:var(--gold); line-height:1; padding-right:12px; }
+.otp-hint   { font-size:11px; color:#555; margin-top:8px; }
+
+/* ─── DRIVER CARD ─── */
+.driver-row {
+  display:flex; align-items:center; gap:11px;
+  border-radius:14px; padding:11px 13px; margin-bottom:11px;
+}
+.driver-row.light { background:#F7F7F5; border:1px solid #E8E8E8; }
+.driver-row.dark  { background:#1C1C1C; border:1px solid #2A2A2A; }
+.d-av {
+  width:42px; height:42px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:19px; flex-shrink:0;
+}
+.d-av.light { background:#FEF5DC; border:2px solid #FDEAB0; }
+.d-av.dark  { background:#261900; border:2px solid rgba(249,176,27,0.25); }
+.d-name   { font-size:13px; font-weight:700; }
+.d-name.light { color:#0A0A0A; }
+.d-name.dark  { color:#FFFFFF; }
+.d-plate  { font-size:11px; font-weight:700; color:var(--gold); margin-top:1px; }
+.d-rating { font-size:11px; margin-top:1px; }
+.d-rating.light { color:#999; }
+.d-rating.dark  { color:#555; }
+.call-btn {
+  width:34px; height:34px; border-radius:50%; margin-left:auto;
+  display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;
+}
+.call-btn.light { background:#E4F9EE; border:1px solid rgba(0,201,107,0.2); }
+.call-btn.dark  { background:rgba(0,201,107,0.1); border:1px solid rgba(0,201,107,0.2); }
+
+/* ─── BANNER ─── */
+.banner {
+  display:flex; align-items:center; gap:9px;
+  border-radius:12px; padding:11px 13px; margin-bottom:13px; border:1px solid;
+}
+.banner.arrived.light { background:#E4F9EE; border-color:rgba(0,201,107,0.25); }
+.banner.arrived.dark  { background:rgba(0,201,107,0.08); border-color:rgba(0,201,107,0.2); }
+.banner-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.banner-title { font-size:12px; font-weight:700; color:var(--green); }
+.banner-sub   { font-size:10px; margin-top:1px; color:#666; }
+
+/* ─── PAYMENT TOGGLE ─── */
+.pay-row { display:flex; gap:7px; margin-bottom:13px; }
+.pay-opt {
+  flex:1; border-radius:11px; padding:10px;
+  text-align:center; display:flex; align-items:center; justify-content:center; gap:5px;
+}
+.pay-opt.active { background:var(--gold); }
+.pay-opt.active span { color:#1A1A1A !important; }
+.pay-opt.inactive.light { background:#F7F7F5; border:1.5px solid #E8E8E8; }
+.pay-opt.inactive.dark  { background:#1C1C1C; border:1.5px solid #2A2A2A; }
+
+/* ─── RIDE REQUEST OVERLAY ─── */
+.req-overlay {
+  position:absolute; inset:0;
+  display:flex; align-items:flex-end; z-index:100;
+  backdrop-filter:blur(3px);
+}
+.req-overlay.light { background:rgba(0,0,0,0.45); }
+.req-overlay.dark  { background:rgba(0,0,0,0.65); }
+.req-card {
+  width:100%; overflow:hidden;
+  border-top:1px solid; padding-bottom:24px;
+  border-radius:28px 28px 0 0;
+}
+.req-card.light { background:#fff; border-color:#F0F0F0; box-shadow:0 -4px 30px rgba(0,0,0,0.12); }
+.req-card.dark  { background:#141414; border-color:#1E1E1E; }
+.req-prog-track { height:3px; }
+.req-prog-track.light { background:#F0F0F0; }
+.req-prog-track.dark  { background:#2A2A2A; }
+.req-prog-bar   { height:3px; background:var(--gold); width:56%; }
+.req-body { padding:16px 18px 0; }
+.req-hdr { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:13px; }
+.req-tag  { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:3px; }
+.req-tag.light  { color:#bbb; }
+.req-tag.dark   { color:#444; }
+.req-name { font-size:19px; font-weight:800; }
+.req-name.light { color:#0A0A0A; }
+.req-name.dark  { color:#FFFFFF; }
+.req-timer-num { font-size:40px; font-weight:900; line-height:1; }
+.req-timer-num.light { color:#0A0A0A; }
+.req-timer-num.dark  { color:#FFFFFF; }
+.req-timer-sec { font-size:9px; text-align:center; margin-top:2px; }
+.req-timer-sec.light { color:#bbb; }
+.req-timer-sec.dark  { color:#444; }
+/* Fare on request card */
+.req-fare {
+  border-radius:14px; padding:14px 16px;
+  display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:12px;
+}
+.req-fare.light { background:#FEF5DC; border:1.5px solid #FDEAB0; }
+.req-fare.dark  { background:rgba(249,176,27,0.1); border:1.5px solid rgba(249,176,27,0.2); }
+.req-fare-num  { font-size:48px; font-weight:900; color:var(--gold); line-height:1; letter-spacing:-2px; }
+.req-chips { display:flex; flex-direction:column; gap:5px; align-items:flex-end; }
+.req-chip  {
+  display:flex; align-items:center; gap:4px;
+  border-radius:7px; padding:4px 8px; font-size:10px; font-weight:600;
+}
+.req-chip.light { background:rgba(249,176,27,0.14); color:var(--gold-dkr); }
+.req-chip.dark  { background:#242424; color:#666; }
+.req-actions { display:flex; gap:8px; margin-top:10px; }
+.req-decline {
+  flex:1; padding:13px; background:transparent;
+  border-radius:13px; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; cursor:pointer;
+}
+.req-decline.light { border:1.5px solid #E8E8E8; color:#999; }
+.req-decline.dark  { border:1.5px solid #2A2A2A; color:#555; }
+.req-accept {
+  flex:2; padding:13px; border:none;
+  border-radius:13px; font-family:'Inter',sans-serif; font-size:14px; font-weight:800;
+  background:var(--gold); color:#1A1A1A; cursor:pointer;
+  box-shadow:0 5px 18px rgba(249,176,27,0.35);
+  display:flex; align-items:center; justify-content:center; gap:7px;
+}
+
+/* ─── SUBSCRIPTION ─── */
+.sub-card {
+  border-radius:18px; padding:18px; margin-bottom:18px;
+  position:relative; overflow:hidden;
+}
+.sub-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, var(--gold), var(--gold-dk));
+}
+.sub-card.light { background:#0A0A0A; }
+.sub-card.dark  { background:#1C1C1C; border:1px solid #2A2A2A; }
+.sub-glow {
+  position:absolute; top:-20px; right:-20px;
+  width:120px; height:120px; border-radius:50%;
+  background:var(--gold); filter:blur(55px); opacity:0.1; pointer-events:none;
+}
+.sub-active-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(0,201,107,0.15); border:1px solid rgba(0,201,107,0.3);
+  border-radius:7px; padding:3px 9px;
+  font-size:9px; font-weight:700; color:#00C96B;
+  letter-spacing:0.5px; text-transform:uppercase; margin-bottom:11px;
+}
+.sub-plan-name { font-size:20px; font-weight:800; color:#fff; margin-bottom:3px; }
+.sub-tagline   { font-size:11px; color:#444; margin-bottom:14px; }
+.sub-meta      { display:grid; grid-template-columns:1fr 1px 1fr; }
+.sub-meta-div.light { background:#1a1a1a; }
+.sub-meta-div.dark  { background:#2A2A2A; }
+.sub-meta-item { padding:0 10px; }
+.sub-meta-item:first-child { padding-left:0; }
+.sub-meta-lbl { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#444; }
+.sub-meta-val { font-size:18px; font-weight:900; color:#fff; margin-top:3px; }
+.sub-meta-val.gold { color:var(--gold); }
+
+.plan-card {
+  border-radius:14px; padding:14px;
+  display:flex; align-items:center; gap:12px; margin-bottom:9px;
+}
+.plan-card.light { background:#fff; border:1.5px solid #E8E8E8; }
+.plan-card.dark  { background:#1C1C1C; border:1.5px solid #2A2A2A; }
+.plan-card.sel.light { border-color:var(--gold); background:#FEF5DC; }
+.plan-card.sel.dark  { border-color:rgba(249,176,27,0.5); background:rgba(249,176,27,0.08); }
+.radio { width:18px; height:18px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.radio.light { border:2px solid #E8E8E8; }
+.radio.dark  { border:2px solid #2A2A2A; }
+.radio.on.light { border-color:var(--gold); }
+.radio.on.dark  { border-color:var(--gold); }
+.radio.on::after { content:''; width:8px; height:8px; border-radius:50%; background:var(--gold); }
+.plan-name { font-size:13px; font-weight:700; }
+.plan-name.light { color:#0A0A0A; }
+.plan-name.dark  { color:#FFFFFF; }
+.plan-days { font-size:10px; margin-top:1px; }
+.plan-days.light { color:#999; }
+.plan-days.dark  { color:#555; }
+.plan-price { margin-left:auto; text-align:right; }
+.plan-price-num { font-size:18px; font-weight:900; }
+.plan-price-num.light { color:#0A0A0A; }
+.plan-price-num.dark  { color:#FFFFFF; }
+.plan-price-day { font-size:9px; font-weight:700; color:var(--gold); margin-top:1px; }
+
+/* ─── SWATCH GUIDE ─── */
+.swatches { display:flex; flex-wrap:wrap; gap:14px; justify-content:center; margin-bottom:56px; }
+.swatch { display:flex; flex-direction:column; align-items:center; gap:7px; }
+.swatch-box { width:58px; height:58px; border-radius:14px; }
+.swatch-name { font-size:10px; color:#444; font-weight:600; }
+.swatch-hex  { font-size:9px; color:#333; }
+
+/* ─── SECTION TITLE BAR ─── */
+.title-bar {
+  display:flex; align-items:center; gap:16px; justify-content:center;
+  margin-bottom:20px;
+}
+.title-bar-line { flex:1; max-width:80px; height:1px; background:#111; }
+
+/* ─── COMPARE TABLE ─── */
+.compare { max-width:800px; margin:0 auto 60px; border-radius:14px; overflow:hidden; }
+.cmp-row  { display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:1px; background:#111; }
+.cmp-cell { background:#0d0d0d; padding:13px 15px; font-size:12px; }
+.cmp-head { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#333; }
+.cmp-dim  { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--gold); }
+.cmp-light { color:#666; }
+.cmp-dark  { color:#888; font-weight:600; }
+
+/* MISC */
+.row-between { display:flex; align-items:center; justify-content:space-between; }
+.col { display:flex; flex-direction:column; }
+.flex1 { flex:1; }
+.mb8  { margin-bottom:8px; }
+.mb10 { margin-bottom:10px; }
+.mb14 { margin-bottom:14px; }
+</style>
+</head>
+<body>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="eyebrow">Aye Auto · Redesign v4</div>
+  <div class="headline">#f9b01b · Light & Dark<br>Side by Side</div>
+  <div class="tagline">Every screen in both modes. Same bold hierarchy — orange fare, dark OTP, ink CTA. See which mode feels right before touching a single line of code.</div>
+</div>
+
+<!-- COLOUR SYSTEM -->
+<div class="section-label">Colour System — #f9b01b</div>
+<div class="swatches">
+  <div class="swatch">
+    <div class="swatch-box" style="background:#f9b01b; box-shadow:0 4px 24px rgba(249,176,27,0.6);"></div>
+    <div class="swatch-name">Primary</div><div class="swatch-hex">#f9b01b</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#c98a00;"></div>
+    <div class="swatch-name">Dark</div><div class="swatch-hex">#c98a00</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#FEF5DC; border:1px solid #FDEAB0;"></div>
+    <div class="swatch-name">Tint Light</div><div class="swatch-hex">#FEF5DC</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#261900; border:1px solid #3a2500;"></div>
+    <div class="swatch-name">Tint Dark</div><div class="swatch-hex">#261900</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#FFFFFF; border:1px solid #E8E8E8;"></div>
+    <div class="swatch-name">BG Light</div><div class="swatch-hex">#FFFFFF</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#0D0D0D; border:1px solid #1a1a1a;"></div>
+    <div class="swatch-name">BG Dark</div><div class="swatch-hex">#0D0D0D</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#00C96B; box-shadow:0 4px 16px rgba(0,201,107,0.4);"></div>
+    <div class="swatch-name">Online</div><div class="swatch-hex">#00C96B</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#F03A3A; box-shadow:0 4px 16px rgba(240,58,58,0.4);"></div>
+    <div class="swatch-name">SOS/Error</div><div class="swatch-hex">#F03A3A</div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ═══════════════════════════════
+     RIDER APP
+═══════════════════════════════ -->
+<div class="section-label" style="margin-bottom:16px;">Rider App</div>
+<div class="mode-strip">
+  <div class="mode-badge"><div class="mode-dot" style="background:#fff; border:1px solid #333;"></div><span style="color:#555;">Light Mode</span></div>
+  <div style="width:1px; height:20px; background:#222;"></div>
+  <div class="mode-badge"><div class="mode-dot" style="background:#0D0D0D; border:1px solid #555;"></div><span style="color:#333;">Dark Mode</span></div>
+</div>
+
+<div class="dual-row">
+
+  <!-- ── RIDER HOME ── -->
+  <!-- Light -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-light">Home · Light</div>
+    <div class="phone light">
+      <div class="map light" style="height:300px;">
+        <div class="road-h" style="top:52%; height:10px;"></div>
+        <div class="road-h" style="top:70%; height:6px;"></div>
+        <div class="road-v" style="left:35%; width:8px;"></div>
+        <div class="road-v" style="left:62%; width:6px;"></div>
+        <div class="auto-pin" style="bottom:32px; left:49%; transform:translateX(-50%);">
+          <div class="auto-bubble">🛺</div>
+          <div class="auto-tail"></div>
+        </div>
+        <div style="position:absolute; bottom:12px; right:12px; width:32px; height:32px; background:rgba(255,255,255,0.9); border:1px solid #e0e0e0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">🎯</div>
+      </div>
+      <div class="top-bar">
+        <div class="col">
+          <span style="font-size:15px; font-weight:800; color:#0A0A0A; text-shadow:0 1px 6px rgba(255,255,255,0.9);">Good morning 👋</span>
+          <span style="font-size:10px; color:#666; text-shadow:0 1px 4px rgba(255,255,255,0.8); margin-top:1px;">Taliparamba</span>
+        </div>
+        <div class="top-actions">
+          <div class="icon-btn light" style="font-size:10px; font-weight:800; width:40px; border-radius:9px;">EN</div>
+          <div class="icon-btn light">👤</div>
+        </div>
+      </div>
+      <div class="sheet light">
+        <div class="handle"></div>
+        <div class="search-bar light">
+          <div class="s-icon light">🔍</div>
+          <span class="s-text light">Where to?</span>
+          <div class="s-arrow light">→</div>
+        </div>
+        <div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#ccc; margin-bottom:9px;">Favourites</div>
+        <div class="fav-row">
+          <div class="fav-chip light">
+            <div class="fav-icon-w" style="background:#FEF5DC; border:1px solid #FDEAB0;">🏠</div>
+            <div class="fav-name light">Home</div>
+            <div class="fav-addr light">Railway Colony</div>
+          </div>
+          <div class="fav-chip light">
+            <div class="fav-icon-w" style="background:#EEF2FF; border:1px solid #C7D2FE;">💼</div>
+            <div class="fav-name light">Work</div>
+            <div class="fav-addr light">Market Road</div>
+          </div>
+          <div class="fav-chip light empty">
+            <div class="fav-icon-w" style="background:#F7F7F5;">⭐</div>
+            <div class="fav-name empty">Other</div>
+            <div class="fav-addr light" style="color:#f9b01b; font-weight:700;">+ Add</div>
+          </div>
+        </div>
+        <div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#ccc; margin-bottom:9px;">Quick Routes</div>
+        <div class="quick-row">
+          <div class="quick-chip light"><div class="quick-icon">🚌</div><div class="quick-name light">Bus Stand</div></div>
+          <div class="quick-chip light"><div class="quick-icon">🚂</div><div class="quick-name light">Railway</div></div>
+          <div class="quick-chip light"><div class="quick-icon">🏥</div><div class="quick-name light">Hospital</div></div>
+          <div class="quick-chip light"><div class="quick-icon">⛪</div><div class="quick-name light">Temple</div></div>
+        </div>
+        <div class="usp-strip light" style="margin-top:4px;">
+          <span style="font-size:12px;">✅</span>
+          <span class="usp-text">Govt. rates · Zero surge · Zero commission</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dark -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-dark">Home · Dark</div>
+    <div class="phone dark">
+      <div class="map dark" style="height:300px;">
+        <div class="road-h" style="top:52%; height:10px;"></div>
+        <div class="road-h" style="top:70%; height:6px;"></div>
+        <div class="road-v" style="left:35%; width:8px;"></div>
+        <div class="road-v" style="left:62%; width:6px;"></div>
+        <div style="position:absolute; bottom:20px; left:43%; width:160px; height:80px; border-radius:50%; background:#f9b01b; filter:blur(35px); opacity:0.07;"></div>
+        <div class="auto-pin" style="bottom:32px; left:49%; transform:translateX(-50%);">
+          <div class="auto-bubble">🛺</div>
+          <div class="auto-tail"></div>
+        </div>
+        <div style="position:absolute; bottom:12px; right:12px; width:32px; height:32px; background:rgba(20,20,20,0.85); border:1px solid #2a2a2a; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px;">🎯</div>
+      </div>
+      <div class="top-bar">
+        <div class="col">
+          <span style="font-size:15px; font-weight:800; color:#fff;">Good morning 👋</span>
+          <span style="font-size:10px; color:#555; margin-top:1px;">Taliparamba</span>
+        </div>
+        <div class="top-actions">
+          <div class="icon-btn dark" style="font-size:10px; font-weight:800; width:40px; border-radius:9px;">EN</div>
+          <div class="icon-btn dark">👤</div>
+        </div>
+      </div>
+      <div class="sheet dark">
+        <div class="handle"></div>
+        <div class="search-bar dark">
+          <div class="s-icon dark">🔍</div>
+          <span class="s-text dark">Where to?</span>
+          <div class="s-arrow dark">→</div>
+        </div>
+        <div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#2a2a2a; margin-bottom:9px;">Favourites</div>
+        <div class="fav-row">
+          <div class="fav-chip dark">
+            <div class="fav-icon-w" style="background:#261900; border:1px solid rgba(249,176,27,0.2);">🏠</div>
+            <div class="fav-name dark">Home</div>
+            <div class="fav-addr dark">Railway Colony</div>
+          </div>
+          <div class="fav-chip dark">
+            <div class="fav-icon-w" style="background:#0d1420; border:1px solid rgba(99,102,241,0.2);">💼</div>
+            <div class="fav-name dark">Work</div>
+            <div class="fav-addr dark">Market Road</div>
+          </div>
+          <div class="fav-chip dark empty">
+            <div class="fav-icon-w" style="background:#1C1C1C;">⭐</div>
+            <div class="fav-name empty">Other</div>
+            <div class="fav-addr dark" style="color:#f9b01b; font-weight:700;">+ Add</div>
+          </div>
+        </div>
+        <div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#2a2a2a; margin-bottom:9px;">Quick Routes</div>
+        <div class="quick-row">
+          <div class="quick-chip dark"><div class="quick-icon">🚌</div><div class="quick-name dark">Bus Stand</div></div>
+          <div class="quick-chip dark"><div class="quick-icon">🚂</div><div class="quick-name dark">Railway</div></div>
+          <div class="quick-chip dark"><div class="quick-icon">🏥</div><div class="quick-name dark">Hospital</div></div>
+          <div class="quick-chip dark"><div class="quick-icon">⛪</div><div class="quick-name dark">Temple</div></div>
+        </div>
+        <div class="usp-strip dark" style="margin-top:4px;">
+          <span style="font-size:12px;">✅</span>
+          <span class="usp-text">Govt. rates · Zero surge · Zero commission</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BOOKING CONFIRM ── Light -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-light">Booking · Light</div>
+    <div class="phone light">
+      <div class="map light" style="height:190px;">
+        <div class="road-h" style="top:50%; height:9px;"></div>
+        <div class="road-v" style="left:42%; width:8px;"></div>
+        <div style="position:absolute; top:26px; left:31%; z-index:10;"><div style="background:#00C96B; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; border:2px solid #fff; box-shadow:0 3px 10px rgba(0,201,107,0.4);">📍</div></div>
+        <div style="position:absolute; top:26px; left:62%; z-index:10;"><div style="background:#F03A3A; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; border:2px solid #fff; box-shadow:0 3px 10px rgba(240,58,58,0.4);">🏁</div></div>
+        <div style="position:absolute; top:40px; left:33%; width:30%; height:2px; background:linear-gradient(90deg,#00C96B,#f9b01b,#F03A3A); border-radius:1px; z-index:5;"></div>
+      </div>
+      <div style="position:absolute; top:48px; left:13px; z-index:50;" class="icon-btn light">←</div>
+      <div class="sheet light" style="padding-top:11px;">
+        <div class="handle"></div>
+        <div class="route-wrap">
+          <div class="route-spine"><div class="r-dot" style="background:#00C96B;"></div><div class="r-line light"></div><div class="r-dot" style="background:#F03A3A;"></div></div>
+          <div class="route-stops">
+            <div class="route-stop light"><div class="stop-lbl" style="color:#00C96B;">From</div><div class="stop-addr light">Railway Colony, Taliparamba</div></div>
+            <div class="route-stop light"><div class="stop-lbl" style="color:#F03A3A;">To</div><div class="stop-addr light">Taliparamba Bus Stand</div></div>
+          </div>
+        </div>
+        <div class="fare-slab light">
+          <div>
+            <div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#bbb; margin-bottom:7px;">Estimated Fare</div>
+            <div class="fare-num">₹42</div>
+          </div>
+          <div class="fare-meta">
+            <div class="fare-chip light">📏 3.2 km</div>
+            <div class="fare-chip light">⏱ 12 min</div>
+            <div class="fare-chip light">🛡 Govt.</div>
+          </div>
+        </div>
+        <div class="pay-row">
+          <div class="pay-opt active"><span style="font-size:15px;">💵</span><span style="font-size:12px; font-weight:700;">Cash</span></div>
+          <div class="pay-opt inactive light"><span style="font-size:15px;">📱</span><span style="font-size:12px; font-weight:600; color:#999;">UPI</span></div>
+        </div>
+        <button class="btn-gold">🛺 Book Auto · ₹42</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKING CONFIRM · Dark -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-dark">Booking · Dark</div>
+    <div class="phone dark">
+      <div class="map dark" style="height:190px;">
+        <div class="road-h" style="top:50%; height:9px;"></div>
+        <div class="road-v" style="left:42%; width:8px;"></div>
+        <div style="position:absolute; top:26px; left:31%; z-index:10;"><div style="background:#00C96B; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; border:2px solid #1a1a1a; box-shadow:0 3px 10px rgba(0,201,107,0.5);">📍</div></div>
+        <div style="position:absolute; top:26px; left:62%; z-index:10;"><div style="background:#F03A3A; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; border:2px solid #1a1a1a; box-shadow:0 3px 10px rgba(240,58,58,0.5);">🏁</div></div>
+        <div style="position:absolute; top:40px; left:33%; width:30%; height:2px; background:linear-gradient(90deg,#00C96B,#f9b01b,#F03A3A); border-radius:1px; z-index:5;"></div>
+      </div>
+      <div style="position:absolute; top:48px; left:13px; z-index:50;" class="icon-btn dark">←</div>
+      <div class="sheet dark" style="padding-top:11px;">
+        <div class="handle"></div>
+        <div class="route-wrap">
+          <div class="route-spine"><div class="r-dot" style="background:#00C96B;"></div><div class="r-line dark"></div><div class="r-dot" style="background:#F03A3A;"></div></div>
+          <div class="route-stops">
+            <div class="route-stop dark"><div class="stop-lbl" style="color:#00C96B;">From</div><div class="stop-addr dark">Railway Colony, Taliparamba</div></div>
+            <div class="route-stop dark"><div class="stop-lbl" style="color:#F03A3A;">To</div><div class="stop-addr dark">Taliparamba Bus Stand</div></div>
+          </div>
+        </div>
+        <div class="fare-slab dark">
+          <div>
+            <div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#333; margin-bottom:7px;">Estimated Fare</div>
+            <div class="fare-num">₹42</div>
+          </div>
+          <div class="fare-meta">
+            <div class="fare-chip dark">📏 3.2 km</div>
+            <div class="fare-chip dark">⏱ 12 min</div>
+            <div class="fare-chip dark">🛡 Govt.</div>
+          </div>
+        </div>
+        <div class="pay-row">
+          <div class="pay-opt active"><span style="font-size:15px;">💵</span><span style="font-size:12px; font-weight:700;">Cash</span></div>
+          <div class="pay-opt inactive dark"><span style="font-size:15px;">📱</span><span style="font-size:12px; font-weight:600; color:#444;">UPI</span></div>
+        </div>
+        <button class="btn-gold">🛺 Book Auto · ₹42</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ACTIVE RIDE OTP · Light ── -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-light">OTP · Light</div>
+    <div class="phone light">
+      <div class="map light" style="height:210px;">
+        <div class="road-h" style="top:50%; height:9px;"></div>
+        <div class="road-v" style="left:50%; width:8px;"></div>
+        <div class="auto-pin" style="bottom:22px; left:47%; transform:translateX(-50%);">
+          <div class="auto-bubble">🛺</div>
+          <div class="auto-tail"></div>
+        </div>
+      </div>
+      <div style="position:absolute; top:48px; right:13px; z-index:50; background:#FEECEC; border:1.5px solid rgba(240,58,58,0.3); border-radius:9px; padding:7px 12px; display:flex; align-items:center; gap:4px;">
+        <span style="font-size:11px; font-weight:800; color:#F03A3A;">🚨 SOS</span>
+      </div>
+      <div class="sheet light">
+        <div class="handle"></div>
+        <div class="banner arrived light">
+          <div class="banner-dot" style="background:#00C96B;"></div>
+          <div><div class="banner-title">Driver has arrived</div><div class="banner-sub">Share OTP to start your ride</div></div>
+        </div>
+        <div class="otp-wrap light">
+          <div class="otp-glow"></div>
+          <div class="otp-label">Your Ride OTP</div>
+          <div class="otp-digits">4721</div>
+          <div class="otp-hint">Show this to your driver</div>
+        </div>
+        <div class="driver-row light">
+          <div class="d-av light">👨</div>
+          <div><div class="d-name light">Muhammed Shafeeq</div><div class="d-plate">KL-58 AB 1234</div><div class="d-rating light">⭐ 4.8 · White Hero</div></div>
+          <div class="call-btn light">📞</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE RIDE OTP · Dark -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-dark">OTP · Dark</div>
+    <div class="phone dark">
+      <div class="map dark" style="height:210px;">
+        <div class="road-h" style="top:50%; height:9px;"></div>
+        <div class="road-v" style="left:50%; width:8px;"></div>
+        <div style="position:absolute; bottom:15px; left:38%; width:130px; height:70px; border-radius:50%; background:#f9b01b; filter:blur(32px); opacity:0.1;"></div>
+        <div class="auto-pin" style="bottom:22px; left:47%; transform:translateX(-50%);">
+          <div class="auto-bubble">🛺</div>
+          <div class="auto-tail"></div>
+        </div>
+      </div>
+      <div style="position:absolute; top:48px; right:13px; z-index:50; background:rgba(240,58,58,0.12); border:1.5px solid rgba(240,58,58,0.3); border-radius:9px; padding:7px 12px; display:flex; align-items:center; gap:4px; backdrop-filter:blur(8px);">
+        <span style="font-size:11px; font-weight:800; color:#F03A3A;">🚨 SOS</span>
+      </div>
+      <div class="sheet dark">
+        <div class="handle"></div>
+        <div class="banner arrived dark">
+          <div class="banner-dot" style="background:#00C96B;"></div>
+          <div><div class="banner-title">Driver has arrived</div><div class="banner-sub" style="color:#555;">Share OTP to start your ride</div></div>
+        </div>
+        <div class="otp-wrap dark">
+          <div class="otp-glow"></div>
+          <div class="otp-label">Your Ride OTP</div>
+          <div class="otp-digits">4721</div>
+          <div class="otp-hint">Show this to your driver</div>
+        </div>
+        <div class="driver-row dark">
+          <div class="d-av dark">👨</div>
+          <div><div class="d-name dark">Muhammed Shafeeq</div><div class="d-plate">KL-58 AB 1234</div><div class="d-rating dark">⭐ 4.8 · White Hero</div></div>
+          <div class="call-btn dark">📞</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="sep"></div>
+
+<!-- ═══════════════════════════════
+     DRIVER APP
+═══════════════════════════════ -->
+<div class="section-label" style="margin-bottom:16px;">Driver App</div>
+<div class="mode-strip" style="margin-bottom:36px;">
+  <div class="mode-badge"><div class="mode-dot" style="background:#fff; border:1px solid #333;"></div><span style="color:#555;">Light Mode</span></div>
+  <div style="width:1px; height:20px; background:#222;"></div>
+  <div class="mode-badge"><div class="mode-dot" style="background:#0D0D0D; border:1px solid #555;"></div><span style="color:#333;">Dark Mode</span></div>
+</div>
+
+<div class="dual-row">
+
+  <!-- DRIVER HOME OFFLINE · Light -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-light">Offline · Light</div>
+    <div class="phone light">
+      <div class="map light" style="height:350px; filter:grayscale(30%);">
+        <div class="road-h" style="top:55%; height:10px;"></div>
+        <div class="road-v" style="left:46%; width:8px;"></div>
+        <div style="position:absolute; bottom:40px; left:44%; transform:translateX(-50%); z-index:10;">
+          <div style="background:#ddd; width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; border:2px solid #fff; box-shadow:0 3px 10px rgba(0,0,0,0.1); opacity:0.65;">🛺</div>
+        </div>
+        <div style="position:absolute;inset:0;background:rgba(255,255,255,0.18);"></div>
+      </div>
+      <div class="top-bar">
+        <div class="status-pill light offline"><div class="dot"></div><span>Offline</span></div>
+        <div class="top-actions">
+          <div class="icon-btn light" style="font-size:10px; font-weight:800; width:40px; border-radius:9px;">EN</div>
+          <div class="icon-btn light">👤</div>
+        </div>
+      </div>
+      <div class="sheet light">
+        <div class="handle"></div>
+        <div style="margin-bottom:18px;">
+          <div style="font-size:18px; font-weight:800; color:#0A0A0A; margin-bottom:3px;">Good morning, Shafeeq</div>
+          <div style="font-size:12px; color:#999;">Go online to start accepting rides</div>
+        </div>
+        <button class="btn-gold">⚡ Go Online</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRIVER HOME OFFLINE · Dark -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-dark">Offline · Dark</div>
+    <div class="phone dark">
+      <div class="map dark" style="height:350px;">
+        <div class="road-h" style="top:55%; height:10px;"></div>
+        <div class="road-v" style="left:46%; width:8px;"></div>
+        <div style="position:absolute; bottom:40px; left:44%; transform:translateX(-50%); z-index:10;">
+          <div style="background:#1a1a1a; width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; border:2px solid #2a2a2a; opacity:0.5;">🛺</div>
+        </div>
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.2);"></div>
+      </div>
+      <div class="top-bar">
+        <div class="status-pill dark offline"><div class="dot"></div><span>Offline</span></div>
+        <div class="top-actions">
+          <div class="icon-btn dark" style="font-size:10px; font-weight:800; width:40px; border-radius:9px;">EN</div>
+          <div class="icon-btn dark">👤</div>
+        </div>
+      </div>
+      <div class="sheet dark">
+        <div class="handle"></div>
+        <div style="margin-bottom:18px;">
+          <div style="font-size:18px; font-weight:800; color:#fff; margin-bottom:3px;">Good morning, Shafeeq</div>
+          <div style="font-size:12px; color:#555;">Go online to start accepting rides</div>
+        </div>
+        <button class="btn-gold">⚡ Go Online</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRIVER HOME ONLINE · Light -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-light">Online · Light</div>
+    <div class="phone light">
+      <div class="map light" style="height:292px;">
+        <div class="road-h" style="top:55%; height:10px;"></div>
+        <div class="road-v" style="left:46%; width:8px;"></div>
+        <div class="auto-pin" style="bottom:28px; left:43%; transform:translateX(-50%);">
+          <div class="auto-bubble">🛺</div>
+          <div class="auto-tail"></div>
+        </div>
+      </div>
+      <div class="top-bar">
+        <div class="status-pill light online"><div class="dot"></div><span>Online</span></div>
+        <div class="top-actions">
+          <div class="icon-btn light" style="font-size:10px; font-weight:800; width:40px; border-radius:9px;">EN</div>
+          <div class="icon-btn light">👤</div>
+        </div>
+      </div>
+      <div class="sheet light">
+        <div class="handle"></div>
+        <div class="stat-slab light">
+          <div class="stat-cell light"><div class="stat-big">₹420</div><div class="stat-label light">Today</div></div>
+          <div class="stat-cell light"><div class="stat-norm light">5</div><div class="stat-label light">Rides</div></div>
+          <div class="stat-cell light"><div class="stat-norm light">₹30</div><div class="stat-label light">Tips</div></div>
+        </div>
+        <div class="usp-strip light mb10" style="justify-content:flex-start; gap:8px;">
+          <div style="width:6px; height:6px; border-radius:50%; background:#00C96B; flex-shrink:0;"></div>
+          <span class="usp-text">Waiting for ride requests...</span>
+        </div>
+        <button class="btn-ghost-light">⏹ Go Offline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRIVER HOME ONLINE · Dark -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-dark">Online · Dark</div>
+    <div class="phone dark">
+      <div class="map dark" style="height:292px;">
+        <div class="road-h" style="top:55%; height:10px;"></div>
+        <div class="road-v" style="left:46%; width:8px;"></div>
+        <div style="position:absolute; bottom:20px; left:30%; width:180px; height:100px; border-radius:50%; background:#f9b01b; filter:blur(40px); opacity:0.09;"></div>
+        <div class="auto-pin" style="bottom:28px; left:43%; transform:translateX(-50%);">
+          <div class="auto-bubble">🛺</div>
+          <div class="auto-tail"></div>
+        </div>
+      </div>
+      <div class="top-bar">
+        <div class="status-pill dark online"><div class="dot"></div><span>Online</span></div>
+        <div class="top-actions">
+          <div class="icon-btn dark" style="font-size:10px; font-weight:800; width:40px; border-radius:9px;">EN</div>
+          <div class="icon-btn dark">👤</div>
+        </div>
+      </div>
+      <div class="sheet dark">
+        <div class="handle"></div>
+        <div class="stat-slab dark">
+          <div class="stat-cell dark"><div class="stat-big">₹420</div><div class="stat-label dark">Today</div></div>
+          <div class="stat-cell dark"><div class="stat-norm dark">5</div><div class="stat-label dark">Rides</div></div>
+          <div class="stat-cell dark"><div class="stat-norm dark">₹30</div><div class="stat-label dark">Tips</div></div>
+        </div>
+        <div class="usp-strip dark mb10" style="justify-content:flex-start; gap:8px;">
+          <div style="width:6px; height:6px; border-radius:50%; background:#00C96B; flex-shrink:0;"></div>
+          <span class="usp-text">Waiting for ride requests...</span>
+        </div>
+        <button class="btn-ghost-dark">⏹ Go Offline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIDE REQUEST · Light -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-light">Ride Request · Light</div>
+    <div class="phone light" style="min-height:620px; position:relative;">
+      <div class="map light" style="height:100%; min-height:620px; position:absolute; inset:0;">
+        <div class="road-h" style="top:50%; height:10px;"></div>
+        <div class="road-v" style="left:46%; width:8px;"></div>
+      </div>
+      <div class="req-overlay light">
+        <div class="req-card light">
+          <div class="req-prog-track light"><div class="req-prog-bar"></div></div>
+          <div class="req-body">
+            <div class="req-hdr">
+              <div><div class="req-tag light">New Ride Request</div><div class="req-name light">Arjun Menon</div></div>
+              <div style="text-align:center;"><div class="req-timer-num light">33</div><div class="req-timer-sec light">seconds</div></div>
+            </div>
+            <div class="req-fare light">
+              <div><div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#bbb; margin-bottom:5px;">Fare</div><div class="req-fare-num">₹68</div></div>
+              <div class="req-chips"><div class="req-chip light">📏 4.8 km</div><div class="req-chip light">⏱ 18 min</div><div class="req-chip light">⭐ 4.7</div></div>
+            </div>
+            <div class="route-wrap" style="margin-bottom:0;">
+              <div class="route-spine"><div class="r-dot" style="background:#00C96B;"></div><div class="r-line light" style="min-height:12px;"></div><div class="r-dot" style="background:#F03A3A;"></div></div>
+              <div class="route-stops">
+                <div class="route-stop light" style="padding:6px 10px;"><div class="stop-lbl" style="color:#00C96B;">Pickup</div><div class="stop-addr light" style="font-size:11px;">Town Hall, Taliparamba</div></div>
+                <div class="route-stop light" style="padding:6px 10px;"><div class="stop-lbl" style="color:#F03A3A;">Drop</div><div class="stop-addr light" style="font-size:11px;">Govt. Hospital</div></div>
+              </div>
+            </div>
+            <div class="req-actions"><button class="req-decline light">✕ Decline</button><button class="req-accept">✓ Accept Ride</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIDE REQUEST · Dark -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-dark">Ride Request · Dark</div>
+    <div class="phone dark" style="min-height:620px; position:relative;">
+      <div class="map dark" style="height:100%; min-height:620px; position:absolute; inset:0;">
+        <div class="road-h" style="top:50%; height:10px;"></div>
+        <div class="road-v" style="left:46%; width:8px;"></div>
+        <div style="position:absolute; top:30%; left:25%; width:200px; height:150px; border-radius:50%; background:#f9b01b; filter:blur(50px); opacity:0.07;"></div>
+      </div>
+      <div class="req-overlay dark">
+        <div class="req-card dark">
+          <div class="req-prog-track dark"><div class="req-prog-bar"></div></div>
+          <div class="req-body">
+            <div class="req-hdr">
+              <div><div class="req-tag dark">New Ride Request</div><div class="req-name dark">Arjun Menon</div></div>
+              <div style="text-align:center;"><div class="req-timer-num dark">33</div><div class="req-timer-sec dark">seconds</div></div>
+            </div>
+            <div class="req-fare dark">
+              <div><div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#333; margin-bottom:5px;">Fare</div><div class="req-fare-num">₹68</div></div>
+              <div class="req-chips"><div class="req-chip dark">📏 4.8 km</div><div class="req-chip dark">⏱ 18 min</div><div class="req-chip dark">⭐ 4.7</div></div>
+            </div>
+            <div class="route-wrap" style="margin-bottom:0;">
+              <div class="route-spine"><div class="r-dot" style="background:#00C96B;"></div><div class="r-line dark" style="min-height:12px;"></div><div class="r-dot" style="background:#F03A3A;"></div></div>
+              <div class="route-stops">
+                <div class="route-stop dark" style="padding:6px 10px;"><div class="stop-lbl" style="color:#00C96B;">Pickup</div><div class="stop-addr dark" style="font-size:11px;">Town Hall, Taliparamba</div></div>
+                <div class="route-stop dark" style="padding:6px 10px;"><div class="stop-lbl" style="color:#F03A3A;">Drop</div><div class="stop-addr dark" style="font-size:11px;">Govt. Hospital</div></div>
+              </div>
+            </div>
+            <div class="req-actions"><button class="req-decline dark">✕ Decline</button><button class="req-accept">✓ Accept Ride</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBSCRIPTION · Light -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-light">Subscription · Light</div>
+    <div class="phone light">
+      <div style="padding:50px 16px 0; background:#fff; min-height:620px;">
+        <div class="row-between mb14">
+          <div class="icon-btn light">←</div>
+          <div style="font-size:14px; font-weight:700; color:#0A0A0A;">Subscription</div>
+          <div style="width:34px;"></div>
+        </div>
+        <div class="sub-card light">
+          <div class="sub-glow"></div>
+          <div class="sub-active-badge"><span style="width:5px; height:5px; border-radius:50%; background:#00C96B;"></span>Active</div>
+          <div class="sub-plan-name">Monthly Plan</div>
+          <div class="sub-tagline">Zero commission · 100% yours</div>
+          <div class="sub-meta">
+            <div class="sub-meta-item"><div class="sub-meta-lbl">Expires</div><div class="sub-meta-val" style="font-size:15px;">28 Jun 2026</div></div>
+            <div class="sub-meta-div light"></div>
+            <div class="sub-meta-item"><div class="sub-meta-lbl">Days Left</div><div class="sub-meta-val gold">29</div></div>
+          </div>
+        </div>
+        <div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#ccc; margin-bottom:10px;">Renew or Upgrade</div>
+        <div class="plan-card light"><div class="radio light"></div><div class="col flex1"><div class="plan-name light">Daily Pass</div><div class="plan-days light">1 day</div></div><div class="plan-price"><div class="plan-price-num light">₹25</div><div class="plan-price-day">₹25/day</div></div></div>
+        <div class="plan-card sel light"><div class="radio on light"></div><div class="col flex1"><div class="plan-name light">Monthly Plan</div><div class="plan-days light">30 days</div></div><div class="plan-price"><div class="plan-price-num light">₹500</div><div class="plan-price-day">₹17/day · Best</div></div></div>
+        <button class="btn-gold" style="font-size:14px; margin-top:2px;">Pay ₹500 via UPI</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBSCRIPTION · Dark -->
+  <div class="phone-wrap">
+    <div class="phone-label lbl-dark">Subscription · Dark</div>
+    <div class="phone dark">
+      <div style="padding:50px 16px 0; background:#0D0D0D; min-height:620px;">
+        <div class="row-between mb14">
+          <div class="icon-btn dark">←</div>
+          <div style="font-size:14px; font-weight:700; color:#fff;">Subscription</div>
+          <div style="width:34px;"></div>
+        </div>
+        <div class="sub-card dark">
+          <div class="sub-glow"></div>
+          <div class="sub-active-badge"><span style="width:5px; height:5px; border-radius:50%; background:#00C96B;"></span>Active</div>
+          <div class="sub-plan-name">Monthly Plan</div>
+          <div class="sub-tagline">Zero commission · 100% yours</div>
+          <div class="sub-meta">
+            <div class="sub-meta-item"><div class="sub-meta-lbl">Expires</div><div class="sub-meta-val" style="font-size:15px;">28 Jun 2026</div></div>
+            <div class="sub-meta-div dark"></div>
+            <div class="sub-meta-item"><div class="sub-meta-lbl">Days Left</div><div class="sub-meta-val gold">29</div></div>
+          </div>
+        </div>
+        <div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#2a2a2a; margin-bottom:10px;">Renew or Upgrade</div>
+        <div class="plan-card dark"><div class="radio dark"></div><div class="col flex1"><div class="plan-name dark">Daily Pass</div><div class="plan-days dark">1 day</div></div><div class="plan-price"><div class="plan-price-num dark">₹25</div><div class="plan-price-day">₹25/day</div></div></div>
+        <div class="plan-card sel dark"><div class="radio on dark"></div><div class="col flex1"><div class="plan-name dark">Monthly Plan</div><div class="plan-days dark">30 days</div></div><div class="plan-price"><div class="plan-price-num dark">₹500</div><div class="plan-price-day">₹17/day · Best</div></div></div>
+        <button class="btn-gold" style="font-size:14px; margin-top:2px;">Pay ₹500 via UPI</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="sep"></div>
+
+<!-- COMPARE -->
+<div class="section-label">Light vs Dark — What's Different</div>
+<div class="compare">
+  <div class="cmp-row">
+    <div class="cmp-cell cmp-head">Element</div>
+    <div class="cmp-cell cmp-head" style="color:#555;">Light Mode</div>
+    <div class="cmp-cell cmp-head" style="color:var(--gold);">Dark Mode</div>
+  </div>
+  <div class="cmp-row"><div class="cmp-cell cmp-dim">Fare card</div><div class="cmp-cell cmp-light">Warm #FEF5DC tint · orange border · gold number</div><div class="cmp-cell cmp-dark">Transparent gold tint · subtle glow · same gold number</div></div>
+  <div class="cmp-row"><div class="cmp-cell cmp-dim">Search bar</div><div class="cmp-cell cmp-light">2px gold border + glow on white — loudest element</div><div class="cmp-cell cmp-dark">Gold border on dark card — same focal pull, moodier</div></div>
+  <div class="cmp-row"><div class="cmp-cell cmp-dim">OTP card</div><div class="cmp-cell cmp-light">Dark ink (#0A0A0A) on white — max contrast. Gold digits.</div><div class="cmp-cell cmp-dark">Dark card (#1C1C1C) on dark bg — subtle ambient glow</div></div>
+  <div class="cmp-row"><div class="cmp-cell cmp-dim">Subscription</div><div class="cmp-cell cmp-light">Ink card on white — black AMEX effect</div><div class="cmp-cell cmp-dark">Dark card on dark — distinguished by gold top border only</div></div>
+  <div class="cmp-row"><div class="cmp-cell cmp-dim">Auto marker</div><div class="cmp-cell cmp-light">Gold bubble on green map — high contrast</div><div class="cmp-cell cmp-dark">Gold bubble + ambient glow on dark map — glows at night</div></div>
+  <div class="cmp-row"><div class="cmp-cell cmp-dim">Earnings ₹420</div><div class="cmp-cell cmp-light">Gold on light grey — warm, readable</div><div class="cmp-cell cmp-dark">Gold on near-black — pops like neon</div></div>
+  <div class="cmp-row"><div class="cmp-cell cmp-dim">Go Online btn</div><div class="cmp-cell cmp-light">Full gold, dark text, shadow — clear CTA on white</div><div class="cmp-cell cmp-dark">Full gold, dark text, shadow — same strength on dark</div></div>
+  <div class="cmp-row"><div class="cmp-cell cmp-dim">Best for</div><div class="cmp-cell cmp-light">Daytime use. Riders. Feels clean and trustworthy.</div><div class="cmp-cell cmp-dark">Night-time use. Drivers. #f9b01b literally glows on dark.</div></div>
+</div>
+
+<div style="text-align:center; color:#1a1a1a; font-size:10px; letter-spacing:3px; padding-bottom:40px; text-transform:uppercase;">
+  Aye Auto · #f9b01b · Inter · Light & Dark · v4
+</div>
+
+</body>
+</html>

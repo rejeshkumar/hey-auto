@@ -10,7 +10,7 @@ import { rideApi } from '../../services/ride';
 import { riderApi } from '../../services/rider';
 import { socketService } from '../../services/socket';
 
-const TALIPARAMBA = { lat: 11.9462, lng: 75.4928 };
+const TALIPARAMBA = { lat: 12.9716, lng: 77.5946 };
 
 export function ActiveRideScreen({ navigation }: any) {
   const { t } = useTranslation();

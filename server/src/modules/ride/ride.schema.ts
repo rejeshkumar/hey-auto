@@ -5,7 +5,7 @@ export const fareEstimateSchema = z.object({
   pickupLng: z.number().min(-180).max(180),
   dropoffLat: z.number().min(-90).max(90),
   dropoffLng: z.number().min(-180).max(180),
-  city: z.string().default('taliparamba'),
+  city: z.string().default('bangalore'),
   rideType: z.enum(['PASSENGER', 'PARCEL']).default('PASSENGER'),
 });
 
@@ -17,7 +17,7 @@ export const requestRideSchema = z.object({
   dropoffLng: z.number().min(-180).max(180),
   dropoffAddress: z.string().min(1),
   paymentMethod: z.enum(['CASH', 'UPI', 'WALLET', 'CARD']).default('CASH'),
-  city: z.string().default('taliparamba'),
+  city: z.string().default('bangalore'),
   rideType: z.enum(['PASSENGER', 'PARCEL']).default('PASSENGER'),
   parcelDescription: z.string().max(255).optional(),
   recipientName: z.string().max(100).optional(),

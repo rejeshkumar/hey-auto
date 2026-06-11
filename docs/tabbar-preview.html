@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tab Bar Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #1a1a1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; gap: 40px; flex-wrap: wrap; padding: 40px 24px; }
+
+    .phone { display: flex; flex-direction: column; align-items: center; }
+    .phone-label { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 14px; }
+    .shell { width: 280px; background: #f8f8f8; border-radius: 44px; border: 2.5px solid #333; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+    .di { width: 88px; height: 26px; background: #111; border-radius: 0 0 18px 18px; margin: 0 auto; }
+
+    /* Mock screen */
+    .screen-content { height: 420px; background: #f8f8f8; position: relative; overflow: hidden; }
+    .map-mock { width: 100%; height: 220px; background: #e8f0e9; }
+    .bottom-sheet { position: absolute; bottom: 0; left: 0; right: 0; background: #fff; border-radius: 24px 24px 0 0; padding: 16px; box-shadow: 0 -4px 20px rgba(0,0,0,0.08); }
+    .greet { font-size: 15px; font-weight: 800; color: #0A0A0A; margin-bottom: 3px; }
+    .greet-sub { font-size: 11px; color: #888; margin-bottom: 12px; }
+    .earn-card { background: #F7F7F5; border-radius: 12px; padding: 12px; margin-bottom: 10px; border: 1px solid #EBEBEB; }
+    .earn-label { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #aaa; margin-bottom: 3px; }
+    .earn-val { font-size: 28px; font-weight: 900; color: #DAA520; letter-spacing: -1px; }
+    .earn-sub { font-size: 10px; color: #aaa; margin-top: 1px; }
+    .start-btn { background: #DAA520; border-radius: 12px; padding: 13px; text-align: center; font-size: 13px; font-weight: 800; color: #0A0A0A; }
+
+    /* ── BEFORE: current tab bar ── */
+    .tabbar-before {
+      display: flex; background: #fff;
+      border-top: 1px solid #F0F0F0;
+      padding: 8px 0 12px;
+    }
+    .tab-before { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .tab-icon-before { font-size: 20px; }
+    .tab-label-before { font-size: 9px; font-weight: 600; color: #bbb; }
+    .tab-label-before.active { color: #DAA520; }
+
+    /* ── AFTER: WhatsApp-style dark tab bar ── */
+    .tabbar-after {
+      display: flex;
+      background: #111111;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 8px 0 12px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+    }
+    .tab-after { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .tab-icon-after { font-size: 22px; }
+    .tab-label-after { font-size: 10px; font-weight: 700; letter-spacing: 0.3px; color: rgba(255,255,255,0.35); }
+    .tab-label-after.active { color: #DAA520; }
+
+    /* Active indicator dot under active icon */
+    .tab-dot { width: 4px; height: 4px; border-radius: 2px; background: #DAA520; margin-top: 1px; }
+    .tab-dot-hidden { width: 4px; height: 4px; }
+
+    h2 { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.3); text-align: center; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+  <!-- BEFORE -->
+  <div class="phone">
+    <div class="phone-label">Before — Current</div>
+    <div class="shell">
+      <div class="di"></div>
+      <div class="screen-content">
+        <div class="map-mock"></div>
+        <div class="bottom-sheet">
+          <div class="greet">Good Afternoon, Rajan 👋</div>
+          <div class="greet-sub">Ready to start your shift?</div>
+          <div class="earn-card">
+            <div class="earn-label">This Week</div>
+            <div class="earn-val">₹0</div>
+            <div class="earn-sub">0 rides completed</div>
+          </div>
+          <div class="start-btn">⚡ Start Earning</div>
+        </div>
+      </div>
+      <!-- BEFORE tab bar -->
+      <div class="tabbar-before">
+        <div class="tab-before">
+          <div class="tab-icon-before">🚗</div>
+          <div class="tab-label-before active">Drive</div>
+        </div>
+        <div class="tab-before">
+          <div class="tab-icon-before">💰</div>
+          <div class="tab-label-before">Earnings</div>
+        </div>
+        <div class="tab-before">
+          <div class="tab-icon-before">⏱</div>
+          <div class="tab-label-before">History</div>
+        </div>
+        <div class="tab-before">
+          <div class="tab-icon-before">👤</div>
+          <div class="tab-label-before">Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AFTER -->
+  <div class="phone">
+    <div class="phone-label">After — Dark Tab Bar</div>
+    <div class="shell">
+      <div class="di"></div>
+      <div class="screen-content">
+        <div class="map-mock"></div>
+        <div class="bottom-sheet">
+          <div class="greet">Good Afternoon, Rajan 👋</div>
+          <div class="greet-sub">Ready to start your shift?</div>
+          <div class="earn-card">
+            <div class="earn-label">This Week</div>
+            <div class="earn-val">₹0</div>
+            <div class="earn-sub">0 rides completed</div>
+          </div>
+          <div class="start-btn">⚡ Start Earning</div>
+        </div>
+      </div>
+      <!-- AFTER tab bar -->
+      <div class="tabbar-after">
+        <div class="tab-after">
+          <div class="tab-icon-after">🚗</div>
+          <div class="tab-label-after active">Drive</div>
+          <div class="tab-dot"></div>
+        </div>
+        <div class="tab-after">
+          <div class="tab-icon-after">💰</div>
+          <div class="tab-label-after">Earnings</div>
+          <div class="tab-dot-hidden"></div>
+        </div>
+        <div class="tab-after">
+          <div class="tab-icon-after">⏱</div>
+          <div class="tab-label-after">History</div>
+          <div class="tab-dot-hidden"></div>
+        </div>
+        <div class="tab-after">
+          <div class="tab-icon-after">👤</div>
+          <div class="tab-label-after">Profile</div>
+          <div class="tab-dot-hidden"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

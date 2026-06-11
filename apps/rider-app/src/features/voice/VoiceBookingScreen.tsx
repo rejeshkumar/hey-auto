@@ -13,7 +13,7 @@ import { useRideStore } from '../../hooks/useRideStore';
 import { useLocationStore } from '../../hooks/useLocationStore';
 import { api } from '../../services/api';
 
-const TALIPARAMBA = { lat: 11.9462, lng: 75.4928 };
+const TALIPARAMBA = { lat: 12.9716, lng: 77.5946 };
 const SILENCE_TIMEOUT_MS = 3000; // auto-stop recording after 3s of user not releasing
 
 interface ResolvedPlace { name: string; address: string; lat: number; lng: number; }

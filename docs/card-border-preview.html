@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Card Border Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #1a1a1a; display: flex; justify-content: center; flex-wrap: wrap; gap: 24px; padding: 40px 24px; }
+
+    h2 { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.35); text-align: center; margin-bottom: 12px; }
+
+    .phone { display: flex; flex-direction: column; align-items: center; }
+    .shell { width: 260px; background: #f8f8f8; border-radius: 40px; border: 2.5px solid #333; overflow: hidden; box-shadow: 0 24px 50px rgba(0,0,0,0.5); }
+    .di { width: 80px; height: 24px; background: #111; border-radius: 0 0 16px 16px; margin: 0 auto; }
+    .map-mock { height: 170px; background: linear-gradient(180deg, #e8f0e9, #d4ecd4); }
+    .sheet { background: #fff; border-radius: 22px 22px 0 0; padding: 16px 14px 8px; margin-top: -12px; }
+    .greet { font-size: 16px; font-weight: 800; color: #0A0A0A; margin-bottom: 2px; }
+    .greet-sub { font-size: 11px; color: #888; margin-bottom: 14px; }
+
+    /* CARD VARIANTS */
+    .card { border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+
+    /* Option A — gold left border accent */
+    .card-a {
+      background: #F7F7F5;
+      border-left: 4px solid #DAA520;
+      border-radius: 0 14px 14px 0;
+    }
+
+    /* Option B — full gold border */
+    .card-b {
+      background: #F7F7F5;
+      border: 2px solid #DAA520;
+    }
+
+    /* Option C — gold top border (ink card style) */
+    .card-c {
+      background: #0A0A0A;
+      border-top: 3px solid #DAA520;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .week-label { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 3px; }
+    .week-label-light { color: #aaa; }
+    .week-label-dark { color: rgba(218,165,32,0.6); }
+
+    .week-amount-light { font-size: 32px; font-weight: 900; color: #DAA520; letter-spacing: -1px; }
+    .week-amount-dark { font-size: 32px; font-weight: 900; color: #DAA520; letter-spacing: -1px; }
+
+    .week-rides-light { font-size: 10px; color: #aaa; margin-top: 2px; margin-bottom: 10px; }
+    .week-rides-dark { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; margin-bottom: 10px; }
+
+    .divider-light { height: 1px; background: #EBEBEB; margin-bottom: 10px; }
+    .divider-dark { height: 1px; background: rgba(255,255,255,0.08); margin-bottom: 10px; }
+
+    .stats { display: flex; }
+    .stat { flex: 1; text-align: center; }
+    .stat-val-light { font-size: 14px; font-weight: 800; color: #0A0A0A; }
+    .stat-val-dark { font-size: 14px; font-weight: 800; color: #DAA520; }
+    .stat-label-light { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #bbb; margin-top: 2px; }
+    .stat-label-dark { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(218,165,32,0.5); margin-top: 2px; }
+    .stat-div-light { width: 1px; background: #EBEBEB; }
+    .stat-div-dark { width: 1px; background: rgba(255,255,255,0.08); }
+
+    .btn { background: #DAA520; border-radius: 12px; padding: 13px; text-align: center; font-size: 13px; font-weight: 800; color: #0A0A0A; }
+
+    .tabbar { display: flex; background: #111; border-top: 1px solid rgba(255,255,255,0.08); padding: 8px 0 10px; }
+    .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .tab-icon { font-size: 18px; }
+    .tab-label { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3); }
+    .tab-label.active { color: #DAA520; }
+    .tab-dot { width: 4px; height: 4px; border-radius: 2px; background: #DAA520; }
+    .tab-dot-h { width: 4px; height: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- Option A: Gold left border -->
+  <div class="phone">
+    <h2>Option A — Gold left border</h2>
+    <div class="shell">
+      <div class="di"></div>
+      <div class="map-mock"></div>
+      <div class="sheet">
+        <div class="greet">Good Afternoon, Driver 👋</div>
+        <div class="greet-sub">Ready to start your shift?</div>
+        <div class="card card-a">
+          <div class="week-label week-label-light">This Week</div>
+          <div class="week-amount-light">₹0</div>
+          <div class="week-rides-light">0 rides completed</div>
+          <div class="divider-light"></div>
+          <div class="stats">
+            <div class="stat"><div class="stat-val-light">₹0</div><div class="stat-label-light">Avg Fare</div></div>
+            <div class="stat-div-light"></div>
+            <div class="stat"><div class="stat-val-light">₹0</div><div class="stat-label-light">Today</div></div>
+            <div class="stat-div-light"></div>
+            <div class="stat"><div class="stat-val-light">₹0</div><div class="stat-label-light">Tips</div></div>
+          </div>
+        </div>
+        <div class="btn">⚡ Let's Go Online</div>
+      </div>
+      <div class="tabbar">
+        <div class="tab"><div class="tab-icon">🚗</div><div class="tab-label active">Drive</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-icon">💰</div><div class="tab-label">Earnings</div><div class="tab-dot-h"></div></div>
+        <div class="tab"><div class="tab-icon">⏱</div><div class="tab-label">History</div><div class="tab-dot-h"></div></div>
+        <div class="tab"><div class="tab-icon">👤</div><div class="tab-label">Profile</div><div class="tab-dot-h"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B: Full gold border -->
+  <div class="phone">
+    <h2>Option B — Full gold border</h2>
+    <div class="shell">
+      <div class="di"></div>
+      <div class="map-mock"></div>
+      <div class="sheet">
+        <div class="greet">Good Afternoon, Driver 👋</div>
+        <div class="greet-sub">Ready to start your shift?</div>
+        <div class="card card-b">
+          <div class="week-label week-label-light">This Week</div>
+          <div class="week-amount-light">₹0</div>
+          <div class="week-rides-light">0 rides completed</div>
+          <div class="divider-light"></div>
+          <div class="stats">
+            <div class="stat"><div class="stat-val-light">₹0</div><div class="stat-label-light">Avg Fare</div></div>
+            <div class="stat-div-light"></div>
+            <div class="stat"><div class="stat-val-light">₹0</div><div class="stat-label-light">Today</div></div>
+            <div class="stat-div-light"></div>
+            <div class="stat"><div class="stat-val-light">₹0</div><div class="stat-label-light">Tips</div></div>
+          </div>
+        </div>
+        <div class="btn">⚡ Let's Go Online</div>
+      </div>
+      <div class="tabbar">
+        <div class="tab"><div class="tab-icon">🚗</div><div class="tab-label active">Drive</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-icon">💰</div><div class="tab-label">Earnings</div><div class="tab-dot-h"></div></div>
+        <div class="tab"><div class="tab-icon">⏱</div><div class="tab-label">History</div><div class="tab-dot-h"></div></div>
+        <div class="tab"><div class="tab-icon">👤</div><div class="tab-label">Profile</div><div class="tab-dot-h"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option C: Ink card (dark bg, gold top border) -->
+  <div class="phone">
+    <h2>Option C — Ink card (dark + gold top)</h2>
+    <div class="shell">
+      <div class="di"></div>
+      <div class="map-mock"></div>
+      <div class="sheet">
+        <div class="greet">Good Afternoon, Driver 👋</div>
+        <div class="greet-sub">Ready to start your shift?</div>
+        <div class="card card-c">
+          <div class="week-label week-label-dark">This Week</div>
+          <div class="week-amount-dark">₹0</div>
+          <div class="week-rides-dark">0 rides completed</div>
+          <div class="divider-dark"></div>
+          <div class="stats">
+            <div class="stat"><div class="stat-val-dark">₹0</div><div class="stat-label-dark">Avg Fare</div></div>
+            <div class="stat-div-dark"></div>
+            <div class="stat"><div class="stat-val-dark">₹0</div><div class="stat-label-dark">Today</div></div>
+            <div class="stat-div-dark"></div>
+            <div class="stat"><div class="stat-val-dark">₹0</div><div class="stat-label-dark">Tips</div></div>
+          </div>
+        </div>
+        <div class="btn">⚡ Let's Go Online</div>
+      </div>
+      <div class="tabbar">
+        <div class="tab"><div class="tab-icon">🚗</div><div class="tab-label active">Drive</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-icon">💰</div><div class="tab-label">Earnings</div><div class="tab-dot-h"></div></div>
+        <div class="tab"><div class="tab-icon">⏱</div><div class="tab-label">History</div><div class="tab-dot-h"></div></div>
+        <div class="tab"><div class="tab-icon">👤</div><div class="tab-label">Profile</div><div class="tab-dot-h"></div></div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -160,11 +160,11 @@ export class AuthService {
               data: {
                 userId: user.id,
                 licenseNumber: 'KL-' + Math.floor(1000 + Math.random() * 9000),
-                city: 'taliparamba',
+                city: 'bangalore',
                 verificationStatus: 'PENDING',
                 isOnline: false,
-                currentLat: 12.0368,
-                currentLng: 75.3614,
+                currentLat: 12.9716,
+                currentLng: 77.5946,
               },
             });
             await prisma.vehicle.create({

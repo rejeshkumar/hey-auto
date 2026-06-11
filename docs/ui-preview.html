@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aye Auto — UI Redesign Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #0F172A;
+    color: #fff;
+    padding: 32px 16px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 800;
+    color: #e47200;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 14px;
+    color: #64748B;
+    margin-bottom: 48px;
+  }
+
+  /* section labels */
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #e47200;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .section-divider {
+    width: 60px;
+    height: 2px;
+    background: #e47200;
+    margin: 0 auto 40px;
+    border-radius: 2px;
+  }
+
+  /* phone frame layout */
+  .phones-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    justify-content: center;
+    margin-bottom: 64px;
+  }
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .phone-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748B;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .phone {
+    width: 320px;
+    min-height: 620px;
+    background: #FFFFFF;
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+    border: 6px solid #1E293B;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px #334155;
+    font-family: 'Poppins', sans-serif;
+  }
+  /* notch */
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 100px; height: 26px;
+    background: #1E293B;
+    border-radius: 0 0 18px 18px;
+    z-index: 100;
+  }
+
+  /* ===== COLOUR TOKENS ===== */
+  :root {
+    --bg:        #FFFFFF;
+    --surface:   #F8FAFC;
+    --card:      #F1F5F9;
+    --yellow:    #e47200;
+    --yellow-lt: #FFF0D9;
+    --yellow-dk: #b85c00;
+    --navy:      #1A1A2E;
+    --navy2:     #0F172A;
+    --green:     #16A34A;
+    --green-lt:  #DCFCE7;
+    --red:       #DC2626;
+    --red-lt:    #FEE2E2;
+    --text:      #0F172A;
+    --sub:       #475569;
+    --muted:     #94A3B8;
+    --border:    #E2E8F0;
+  }
+
+  /* ===== MAP PLACEHOLDER ===== */
+  .map {
+    width: 100%;
+    background: linear-gradient(160deg, #e8f0d8 0%, #d4e8c2 50%, #c8ddb8 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .map::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 30px, rgba(255,255,255,0.15) 30px, rgba(255,255,255,0.15) 31px),
+                repeating-linear-gradient(90deg, transparent, transparent 30px, rgba(255,255,255,0.15) 30px, rgba(255,255,255,0.15) 31px);
+  }
+  .map-road-h {
+    position: absolute;
+    left: 0; right: 0;
+    background: #fff;
+    opacity: 0.7;
+  }
+  .map-road-v {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: #fff;
+    opacity: 0.7;
+  }
+  .map-pin {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+  }
+  .map-pin-icon {
+    width: 36px; height: 36px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+  .map-pin-icon span { transform: rotate(45deg); font-size: 16px; }
+
+  /* ===== BOTTOM SHEET ===== */
+  .bottom-sheet {
+    background: var(--bg);
+    border-radius: 28px 28px 0 0;
+    padding: 20px 20px 28px;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.12);
+  }
+  .sheet-handle {
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+
+  /* ===== TOP BAR ===== */
+  .top-bar {
+    position: absolute;
+    top: 32px; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 50;
+  }
+  .icon-btn {
+    width: 38px; height: 38px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    font-size: 16px;
+  }
+  .top-actions { display: flex; gap: 8px; }
+
+  /* ===== STATUS PILL ===== */
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+  }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .pill-online { background: var(--green-lt); color: var(--green); border: 1.5px solid var(--green); }
+  .pill-offline { background: #FEE2E2; color: var(--red); border: 1.5px solid var(--red); }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .card-white {
+    background: #fff;
+    border-radius: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    border: none;
+  }
+  .btn-yellow { background: var(--yellow); color: var(--navy); }
+  .btn-navy  { background: var(--navy);  color: #fff; }
+  .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--sub); }
+  .btn-red   { background: var(--red);   color: #fff; }
+  .btn-green { background: var(--green); color: #fff; }
+
+  /* ===== TYPOGRAPHY ===== */
+  .h1 { font-size: 26px; font-weight: 800; color: var(--text); }
+  .h2 { font-size: 20px; font-weight: 700; color: var(--text); }
+  .h3 { font-size: 17px; font-weight: 600; color: var(--text); }
+  .h4 { font-size: 15px; font-weight: 600; color: var(--text); }
+  .body { font-size: 14px; font-weight: 400; color: var(--text); }
+  .small { font-size: 12px; color: var(--sub); }
+  .caption { font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
+  .label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .yellow-text { color: var(--yellow); }
+  .navy-text { color: var(--navy); }
+  .green-text { color: var(--green); }
+  .red-text { color: var(--red); }
+
+  /* ===== MISC ===== */
+  .row { display: flex; align-items: center; gap: 8px; }
+  .row-between { display: flex; align-items: center; justify-content: space-between; }
+  .col { display: flex; flex-direction: column; gap: 3px; }
+  .flex1 { flex: 1; }
+  .mb4 { margin-bottom: 4px; }
+  .mb8 { margin-bottom: 8px; }
+  .mb12 { margin-bottom: 12px; }
+  .mb16 { margin-bottom: 16px; }
+  .mb20 { margin-bottom: 20px; }
+  .mt8 { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .mt16 { margin-top: 16px; }
+  .center { text-align: center; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 700;
+  }
+  .badge-yellow { background: var(--yellow-lt); color: var(--yellow-dk); }
+  .badge-green  { background: var(--green-lt);  color: var(--green); }
+  .badge-navy   { background: var(--navy);       color: #fff; }
+
+  /* SEARCH BAR */
+  .search-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 11px 14px;
+    margin-bottom: 16px;
+  }
+  .search-icon {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--yellow-lt);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+
+  /* FAV CHIPS */
+  .fav-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .fav-item {
+    flex: 1;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 10px;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .fav-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; margin-bottom: 4px;
+  }
+
+  /* ROUTE DISPLAY */
+  .route-row { display: flex; gap: 12px; margin-bottom: 12px; }
+  .route-icons { display: flex; flex-direction: column; align-items: center; padding-top: 14px; }
+  .rdot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .rline { width: 2px; flex: 1; background: var(--border); min-height: 18px; margin: 3px 0; }
+  .route-stops { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .route-stop {
+    background: var(--surface);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+  }
+
+  /* FARE HERO */
+  .fare-hero {
+    background: var(--yellow);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .fare-amount { font-size: 42px; font-weight: 900; color: var(--navy); line-height: 1; }
+  .fare-meta { display: flex; flex-direction: column; gap: 5px; }
+  .fare-meta-row { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--navy); opacity: 0.8; }
+
+  /* EARNINGS STAT BAR */
+  .stats-bar {
+    display: flex; align-items: center;
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 14px;
+    gap: 0;
+  }
+  .stat-item { flex: 1; text-align: center; }
+  .stat-divider { width: 1px; height: 36px; background: var(--border); }
+  .stat-val { font-size: 22px; font-weight: 800; color: var(--yellow-dk); }
+  .stat-val-sm { font-size: 16px; font-weight: 700; color: var(--text); }
+
+  /* PLAN CARDS */
+  .plan-card {
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px;
+    background: #fff;
+    position: relative;
+  }
+  .plan-card.selected { border-color: var(--yellow); background: var(--yellow-lt); }
+  .radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .radio.on::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--yellow-dk); }
+  .plan-price { text-align: right; }
+  .plan-price-amt { font-size: 18px; font-weight: 800; color: var(--text); }
+
+  /* RIDE REQUEST OVERLAY */
+  .ride-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: flex-end;
+    z-index: 200;
+  }
+  .ride-card {
+    background: #fff;
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    overflow: hidden;
+  }
+  .progress-track { height: 4px; background: var(--border); }
+  .progress-bar { height: 4px; background: var(--yellow); width: 60%; }
+  .ride-card-body { padding: 16px 20px 24px; }
+  .accept-btn {
+    flex: 2; background: var(--yellow); border-radius: 12px;
+    padding: 13px; display: flex; align-items: center; justify-content: center;
+    gap: 8px; border: none; cursor: pointer;
+    font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 700; color: var(--navy);
+  }
+  .decline-btn {
+    flex: 1; background: transparent; border-radius: 12px;
+    padding: 13px; display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--border); cursor: pointer;
+    font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: var(--sub);
+  }
+  .action-row { display: flex; gap: 10px; margin-top: 14px; }
+
+  /* ACTIVE RIDE */
+  .otp-card {
+    background: var(--navy);
+    border-radius: 16px;
+    padding: 18px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .otp-num { font-size: 52px; font-weight: 900; color: var(--yellow); letter-spacing: 12px; }
+
+  /* SUBSCRIPTION ACTIVE CARD */
+  .active-sub-card {
+    background: linear-gradient(135deg, #1A1A2E 0%, #2D1B69 100%);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 14px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .active-sub-card::after {
+    content: '🛺';
+    position: absolute;
+    right: -10px; top: -10px;
+    font-size: 80px;
+    opacity: 0.08;
+  }
+  .sub-meta-row { display: flex; gap: 0; margin-top: 14px; }
+  .sub-meta-item { flex: 1; text-align: center; }
+  .sub-meta-div { width: 1px; background: rgba(255,255,255,0.15); }
+
+  /* ===== COLOUR SWATCH GUIDE ===== */
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 48px; }
+  .swatch { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .swatch-box { width: 56px; height: 56px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  .swatch-name { font-size: 10px; color: #64748B; font-weight: 600; }
+  .swatch-hex { font-size: 9px; color: #475569; }
+
+  /* SEPARATOR */
+  .page-sep { width: 100%; height: 1px; background: #1E293B; margin: 48px 0; }
+
+  /* CHANGE LOG */
+  .changes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; max-width: 900px; margin: 0 auto 48px; }
+  .change-item { background: #1E293B; border-radius: 12px; padding: 16px; border-left: 3px solid var(--yellow); }
+  .change-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--yellow); margin-bottom: 6px; }
+  .change-before { font-size: 13px; color: #64748B; margin-bottom: 4px; }
+  .change-after { font-size: 13px; color: #E2E8F0; font-weight: 600; }
+
+  /* OTP SCREEN */
+  .driver-card-inner {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .avatar {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: var(--yellow-lt);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    border: 2px solid var(--yellow);
+  }
+  .call-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--green-lt);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>Aye Auto — UI Redesign Preview</h1>
+<p class="subtitle">Light Premium Direction · Poppins Font · White + #e47200 Orange-Amber + Navy</p>
+
+<!-- ===================================================
+     COLOUR PALETTE
+=================================================== -->
+<div class="section-title">New Colour System</div>
+<div class="swatches">
+  <div class="swatch">
+    <div class="swatch-box" style="background:#e47200;"></div>
+    <div class="swatch-name">Primary</div>
+    <div class="swatch-hex">#e47200</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#b85c00;"></div>
+    <div class="swatch-name">Primary Dark</div>
+    <div class="swatch-hex">#b85c00</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#FFF0D9; border:1px solid #E2E8F0;"></div>
+    <div class="swatch-name">Primary Light</div>
+    <div class="swatch-hex">#FFF0D9</div>
+
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#1A1A2E;"></div>
+    <div class="swatch-name">Navy / CTA</div>
+    <div class="swatch-hex">#1A1A2E</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#0F172A;"></div>
+    <div class="swatch-name">Text</div>
+    <div class="swatch-hex">#0F172A</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#475569;"></div>
+    <div class="swatch-name">Subtext</div>
+    <div class="swatch-hex">#475569</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#F8FAFC; border:1px solid #E2E8F0;"></div>
+    <div class="swatch-name">Surface</div>
+    <div class="swatch-hex">#F8FAFC</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#16A34A;"></div>
+    <div class="swatch-name">Online/Success</div>
+    <div class="swatch-hex">#16A34A</div>
+  </div>
+</div>
+
+<div class="page-sep"></div>
+
+<!-- ===================================================
+     RIDER APP SCREENS
+=================================================== -->
+<div class="section-title" style="margin-bottom:8px;">Rider App</div>
+<div class="section-divider"></div>
+
+<div class="phones-row">
+
+  <!-- RIDER HOME -->
+  <div class="phone-wrap">
+    <div class="phone-label">Home</div>
+    <div class="phone">
+      <!-- Map -->
+      <div class="map" style="height:320px;">
+        <div class="map-road-h" style="top:48%; height:10px;"></div>
+        <div class="map-road-h" style="top:68%; height:7px;"></div>
+        <div class="map-road-v" style="left:35%; width:8px;"></div>
+        <div class="map-road-v" style="left:60%; width:6px;"></div>
+        <!-- Location pin -->
+        <div class="map-pin" style="bottom:30px; left:50%; transform:translateX(-50%);">
+          <div class="map-pin-icon" style="background:#e47200;">
+            <span>📍</span>
+          </div>
+        </div>
+        <!-- My location btn -->
+        <div style="position:absolute; bottom:12px; right:12px; width:36px; height:36px; background:#fff; border-radius:50%; display:flex;align-items:center;justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.2); font-size:16px; z-index:10;">🎯</div>
+      </div>
+      <!-- Top bar -->
+      <div class="top-bar">
+        <div class="col">
+          <span style="font-size:16px; font-weight:700; color:#0F172A; text-shadow:0 1px 4px rgba(255,255,255,0.8);">Good morning, Rahul 👋</span>
+          <span style="font-size:12px; color:#475569; text-shadow:0 1px 4px rgba(255,255,255,0.8);">Where to?</span>
+        </div>
+        <div class="top-actions">
+          <div class="icon-btn">EN</div>
+          <div class="icon-btn">👤</div>
+        </div>
+      </div>
+      <!-- Bottom sheet -->
+      <div class="bottom-sheet" style="padding-top:14px;">
+        <div class="sheet-handle"></div>
+        <!-- Search bar — now with stronger yellow accent -->
+        <div class="search-bar" style="border-color:#e47200; border-width:2px; background:#fff;">
+          <div class="search-icon" style="background:#FFF0D9;">🔍</div>
+          <span style="font-size:14px; color:#94A3B8; flex:1;">Where to?</span>
+          <div style="background:#1A1A2E; border-radius:8px; padding:6px 10px;">
+            <span style="font-size:12px; color:#fff; font-weight:600;">→</span>
+          </div>
+        </div>
+        <!-- Favourites -->
+        <div class="label mb8">Favourites</div>
+        <div class="fav-row mb16">
+          <div class="fav-item">
+            <div class="fav-icon" style="background:#FFF0D9;">🏠</div>
+            <span style="font-size:12px; font-weight:700; color:#0F172A;">Home</span>
+            <span style="font-size:10px; color:#94A3B8;">Railway Colony</span>
+          </div>
+          <div class="fav-item">
+            <div class="fav-icon" style="background:#DBEAFE;">💼</div>
+            <span style="font-size:12px; font-weight:700; color:#0F172A;">Work</span>
+            <span style="font-size:10px; color:#94A3B8;">Market Road</span>
+          </div>
+          <div class="fav-item" style="border-style:dashed;">
+            <div class="fav-icon" style="background:#F8FAFC; border:1px solid #E2E8F0;">⭐</div>
+            <span style="font-size:12px; font-weight:700; color:#94A3B8;">Other</span>
+            <span style="font-size:10px; color:#CBD5E1;">+ Add</span>
+          </div>
+        </div>
+        <!-- Quick routes -->
+        <div class="label mb8">Quick Routes</div>
+        <div style="display:flex; gap:8px;">
+          <div style="flex:1; background:#F8FAFC; border-radius:12px; padding:10px; text-align:center; border:1px solid #E2E8F0;">
+            <div style="font-size:22px; margin-bottom:4px;">🚌</div>
+            <span style="font-size:11px; font-weight:600; color:#0F172A;">Bus Stand</span>
+          </div>
+          <div style="flex:1; background:#F8FAFC; border-radius:12px; padding:10px; text-align:center; border:1px solid #E2E8F0;">
+            <div style="font-size:22px; margin-bottom:4px;">🚂</div>
+            <span style="font-size:11px; font-weight:600; color:#0F172A;">Railway</span>
+          </div>
+          <div style="flex:1; background:#F8FAFC; border-radius:12px; padding:10px; text-align:center; border:1px solid #E2E8F0;">
+            <div style="font-size:22px; margin-bottom:4px;">🏥</div>
+            <span style="font-size:11px; font-weight:600; color:#0F172A;">Hospital</span>
+          </div>
+          <div style="flex:1; background:#F8FAFC; border-radius:12px; padding:10px; text-align:center; border:1px solid #E2E8F0;">
+            <div style="font-size:22px; margin-bottom:4px;">⛪</div>
+            <span style="font-size:11px; font-weight:600; color:#0F172A;">Temple</span>
+          </div>
+        </div>
+        <!-- USP note — bigger now -->
+        <div style="display:flex; align-items:center; gap:6px; justify-content:center; margin-top:14px; background:#F0FDF4; border-radius:10px; padding:8px; border:1px solid #BBF7D0;">
+          <span style="font-size:14px;">✅</span>
+          <span style="font-size:11px; font-weight:600; color:#166534;">Govt. rates · Zero surge · Zero commission</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKING CONFIRM -->
+  <div class="phone-wrap">
+    <div class="phone-label">Booking Confirm</div>
+    <div class="phone">
+      <!-- Map stub -->
+      <div class="map" style="height:220px;">
+        <div class="map-road-h" style="top:50%; height:8px;"></div>
+        <div class="map-road-v" style="left:40%; width:7px;"></div>
+        <div class="map-pin" style="top:30px; left:36%; transform:translateX(-50%);">
+          <div class="map-pin-icon" style="background:#16A34A; width:30px; height:30px;">
+            <span style="font-size:12px;">📍</span>
+          </div>
+        </div>
+        <div class="map-pin" style="top:30px; left:65%; transform:translateX(-50%);">
+          <div class="map-pin-icon" style="background:#DC2626; width:30px; height:30px;">
+            <span style="font-size:12px;">🏁</span>
+          </div>
+        </div>
+      </div>
+      <!-- Back btn -->
+      <div style="position:absolute; top:36px; left:14px; z-index:50;" class="icon-btn">←</div>
+
+      <div class="bottom-sheet" style="padding-top:12px;">
+        <div class="sheet-handle"></div>
+
+        <!-- Route -->
+        <div class="route-row mb12">
+          <div class="route-icons">
+            <div class="rdot" style="background:#16A34A;"></div>
+            <div class="rline"></div>
+            <div class="rdot" style="background:#DC2626;"></div>
+          </div>
+          <div class="route-stops">
+            <div class="route-stop">
+              <div class="label" style="color:#16A34A; margin-bottom:2px;">FROM</div>
+              <div style="font-size:13px; font-weight:600; color:#0F172A;">Railway Colony, Taliparamba</div>
+            </div>
+            <div class="route-stop">
+              <div class="label" style="color:#DC2626; margin-bottom:2px;">TO</div>
+              <div style="font-size:13px; font-weight:600; color:#0F172A;">Taliparamba Bus Stand</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fare Hero — now yellow card -->
+        <div class="fare-hero mb12">
+          <div>
+            <div class="label" style="color:rgba(26,26,46,0.6); margin-bottom:4px;">ESTIMATED FARE</div>
+            <div class="fare-amount">₹42</div>
+          </div>
+          <div class="fare-meta">
+            <div class="fare-meta-row">📏 <span>3.2 km</span></div>
+            <div class="fare-meta-row">⏱ <span>12 min</span></div>
+            <div class="fare-meta-row">🛡 <span style="font-size:10px;">Govt. rate</span></div>
+          </div>
+        </div>
+
+        <!-- Payment -->
+        <div style="display:flex; gap:8px; margin-bottom:14px;">
+          <div style="flex:1; background:#1A1A2E; border-radius:10px; padding:10px; text-align:center;">
+            <div style="font-size:18px; margin-bottom:2px;">💵</div>
+            <span style="font-size:12px; font-weight:700; color:#fff;">Cash</span>
+          </div>
+          <div style="flex:1; background:#F8FAFC; border-radius:10px; padding:10px; text-align:center; border:1.5px solid #E2E8F0;">
+            <div style="font-size:18px; margin-bottom:2px;">📱</div>
+            <span style="font-size:12px; font-weight:600; color:#475569;">UPI</span>
+          </div>
+        </div>
+
+        <button class="btn btn-navy">🛺 Book Auto · ₹42</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE RIDE — OTP screen -->
+  <div class="phone-wrap">
+    <div class="phone-label">Active Ride — Driver Arrived</div>
+    <div class="phone">
+      <div class="map" style="height:240px;">
+        <div class="map-road-h" style="top:50%; height:8px;"></div>
+        <div class="map-road-v" style="left:50%; width:7px;"></div>
+        <div class="map-pin" style="bottom:20px; left:48%; transform:translateX(-50%);">
+          <div style="background:#e47200; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; border:3px solid #fff; box-shadow:0 4px 12px rgba(0,0,0,0.3);">🛺</div>
+        </div>
+      </div>
+      <!-- SOS -->
+      <div style="position:absolute; top:36px; right:14px; z-index:50; background:#DC2626; border-radius:999px; padding:7px 14px; display:flex; align-items:center; gap:5px;">
+        <span style="font-size:12px; font-weight:800; color:#fff;">🚨 SOS</span>
+      </div>
+
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <!-- Arrived banner -->
+        <div style="background:#F0FDF4; border-radius:12px; padding:10px 14px; display:flex; align-items:center; gap:8px; margin-bottom:12px; border:1px solid #BBF7D0;">
+          <span style="font-size:18px;">✅</span>
+          <div>
+            <div style="font-size:13px; font-weight:700; color:#166534;">Driver has arrived!</div>
+            <div style="font-size:11px; color:#4ADE80;">Share OTP to start your ride</div>
+          </div>
+        </div>
+        <!-- OTP card — dark and bold -->
+        <div class="otp-card mb12">
+          <div style="font-size:10px; font-weight:700; letter-spacing:2px; color:#94A3B8; margin-bottom:8px;">YOUR RIDE OTP</div>
+          <div class="otp-num">4 7 2 1</div>
+          <div style="font-size:11px; color:#64748B; margin-top:6px;">Share this with your driver</div>
+        </div>
+        <!-- Driver card -->
+        <div class="driver-card-inner">
+          <div class="avatar">👨</div>
+          <div class="col flex1">
+            <span style="font-size:14px; font-weight:700; color:#0F172A;">Muhammed Shafeeq</span>
+            <span style="font-size:12px; color:#e47200; font-weight:600;">KL-58 AB 1234</span>
+            <div class="row" style="gap:3px;">
+              <span style="font-size:12px;">⭐</span>
+              <span style="font-size:12px; color:#0F172A; font-weight:600;">4.8</span>
+              <span style="font-size:11px; color:#94A3B8;">· White Hero</span>
+            </div>
+          </div>
+          <div class="call-btn">📞</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="page-sep"></div>
+
+<!-- ===================================================
+     DRIVER APP SCREENS
+=================================================== -->
+<div class="section-title" style="margin-bottom:8px;">Driver App</div>
+<div class="section-divider"></div>
+
+<div class="phones-row">
+
+  <!-- DRIVER HOME — OFFLINE -->
+  <div class="phone-wrap">
+    <div class="phone-label">Home — Offline</div>
+    <div class="phone">
+      <div class="map" style="height:360px;">
+        <div class="map-road-h" style="top:55%; height:10px;"></div>
+        <div class="map-road-v" style="left:45%; width:8px;"></div>
+        <div class="map-pin" style="bottom:40px; left:44%; transform:translateX(-50%);">
+          <div style="background:#e47200; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; border:3px solid #fff; box-shadow:0 4px 16px rgba(0,0,0,0.3);">🛺</div>
+        </div>
+        <!-- Greyed overlay for offline -->
+        <div style="position:absolute;inset:0;background:rgba(255,255,255,0.25);"></div>
+      </div>
+      <!-- Top bar -->
+      <div class="top-bar">
+        <div class="status-pill pill-offline">
+          <div class="status-dot" style="background:#DC2626;"></div>
+          OFFLINE
+        </div>
+        <div class="top-actions">
+          <div class="icon-btn">EN</div>
+          <div class="icon-btn">👤</div>
+        </div>
+      </div>
+      <!-- Bottom card -->
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="mb16">
+          <div class="h3 mb4">Good morning, Shafeeq</div>
+          <div class="small">Go online to start accepting rides</div>
+        </div>
+        <button class="btn btn-yellow" style="font-size:16px;">⚡ Go Online</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRIVER HOME — ONLINE + EARNINGS -->
+  <div class="phone-wrap">
+    <div class="phone-label">Home — Online / Waiting</div>
+    <div class="phone">
+      <div class="map" style="height:300px;">
+        <div class="map-road-h" style="top:55%; height:10px;"></div>
+        <div class="map-road-v" style="left:45%; width:8px;"></div>
+        <div class="map-pin" style="bottom:30px; left:44%; transform:translateX(-50%);">
+          <div style="background:#e47200; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; border:3px solid #fff; box-shadow:0 4px 16px rgba(0,0,0,0.3);">🛺</div>
+        </div>
+      </div>
+      <!-- Top bar -->
+      <div class="top-bar">
+        <div class="status-pill pill-online">
+          <div class="status-dot" style="background:#16A34A;"></div>
+          ONLINE
+        </div>
+        <div class="top-actions">
+          <div class="icon-btn">EN</div>
+          <div class="icon-btn">👤</div>
+        </div>
+      </div>
+      <!-- Bottom card -->
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <!-- Stats -->
+        <div class="stats-bar mb14">
+          <div class="stat-item">
+            <div class="stat-val">₹420</div>
+            <div style="font-size:10px; color:#94A3B8; margin-top:2px;">Today</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-val-sm">5</div>
+            <div style="font-size:10px; color:#94A3B8; margin-top:2px;">Rides</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-val-sm">₹30</div>
+            <div style="font-size:10px; color:#94A3B8; margin-top:2px;">Tips</div>
+          </div>
+        </div>
+        <!-- Waiting pulse -->
+        <div class="row mb14" style="gap:8px; background:#F0FDF4; border-radius:10px; padding:10px; border:1px solid #BBF7D0;">
+          <div style="width:8px; height:8px; border-radius:50%; background:#16A34A; flex-shrink:0;"></div>
+          <span style="font-size:12px; color:#166534; font-weight:600;">Waiting for ride requests...</span>
+        </div>
+        <button class="btn btn-navy">⏹ Go Offline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIDE REQUEST CARD -->
+  <div class="phone-wrap">
+    <div class="phone-label">Ride Request</div>
+    <div class="phone" style="position:relative;">
+      <!-- Map behind -->
+      <div class="map" style="height:100%; position:absolute; inset:0; z-index:1;">
+        <div class="map-road-h" style="top:50%; height:10px;"></div>
+        <div class="map-road-v" style="left:45%; width:8px;"></div>
+      </div>
+      <!-- Overlay -->
+      <div class="ride-overlay" style="position:absolute; inset:0; z-index:200;">
+        <div class="ride-card">
+          <div class="progress-track"><div class="progress-bar" style="width:55%;"></div></div>
+          <div class="ride-card-body">
+            <!-- Header row -->
+            <div class="row-between mb12">
+              <div class="col">
+                <div class="label mb4">NEW RIDE REQUEST</div>
+                <div class="h3">Arjun Menon</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-size:36px; font-weight:900; color:#0F172A; line-height:1;">33</div>
+                <div class="caption">sec</div>
+              </div>
+            </div>
+            <!-- Fare hero — YELLOW now -->
+            <div class="fare-hero" style="margin-bottom:12px; border-radius:14px;">
+              <div>
+                <div class="label" style="color:rgba(26,26,46,0.6); margin-bottom:4px;">FARE</div>
+                <div style="font-size:40px; font-weight:900; color:#1A1A2E; line-height:1;">₹68</div>
+              </div>
+              <div class="fare-meta">
+                <div class="fare-meta-row">📏 <span>4.8 km</span></div>
+                <div class="fare-meta-row">⏱ <span>18 min</span></div>
+                <div class="fare-meta-row">⭐ <span>4.7</span></div>
+              </div>
+            </div>
+            <!-- Route -->
+            <div class="route-row" style="margin-bottom:0;">
+              <div class="route-icons">
+                <div class="rdot" style="background:#16A34A;"></div>
+                <div class="rline" style="min-height:14px;"></div>
+                <div class="rdot" style="background:#DC2626;"></div>
+              </div>
+              <div class="route-stops">
+                <div class="route-stop" style="padding:6px 10px;">
+                  <div class="label" style="color:#16A34A; margin-bottom:1px;">PICKUP</div>
+                  <div style="font-size:12px; font-weight:600; color:#0F172A;">Town Hall, Taliparamba</div>
+                </div>
+                <div class="route-stop" style="padding:6px 10px;">
+                  <div class="label" style="color:#DC2626; margin-bottom:1px;">DROP</div>
+                  <div style="font-size:12px; font-weight:600; color:#0F172A;">Govt. Hospital</div>
+                </div>
+              </div>
+            </div>
+            <!-- Buttons -->
+            <div class="action-row">
+              <button class="decline-btn">✕ Decline</button>
+              <button class="accept-btn">✓ Accept Ride</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBSCRIPTION SCREEN -->
+  <div class="phone-wrap">
+    <div class="phone-label">Subscription</div>
+    <div class="phone">
+      <div style="padding:36px 18px 0; background:#fff;">
+        <!-- Header -->
+        <div class="row-between mb16" style="margin-top:4px;">
+          <div class="icon-btn" style="background:#F8FAFC;">←</div>
+          <div class="h4">Subscription</div>
+          <div style="width:38px;"></div>
+        </div>
+
+        <!-- Active subscription — navy card, stands out -->
+        <div class="active-sub-card mb0">
+          <div class="row mb4" style="gap:6px;">
+            <div class="badge badge-green" style="background:rgba(22,163,74,0.2); color:#4ADE80;">✓ Active</div>
+          </div>
+          <div style="font-size:20px; font-weight:800; color:#fff; margin-bottom:4px;">Monthly Plan</div>
+          <div style="font-size:12px; color:#94A3B8;">Zero commission · 100% your earnings</div>
+          <div class="sub-meta-row">
+            <div class="sub-meta-item" style="padding-top:12px;">
+              <div style="font-size:10px; color:#64748B; font-weight:600; letter-spacing:1px; text-transform:uppercase;">Expires</div>
+              <div style="font-size:14px; font-weight:700; color:#fff; margin-top:2px;">28 Jun 2026</div>
+            </div>
+            <div class="sub-meta-div"></div>
+            <div class="sub-meta-item" style="padding-top:12px;">
+              <div style="font-size:10px; color:#64748B; font-weight:600; letter-spacing:1px; text-transform:uppercase;">Days left</div>
+              <div style="font-size:22px; font-weight:900; color:#e47200; margin-top:2px;">29</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plan picker -->
+        <div class="label" style="margin:16px 0 10px;">RENEW OR UPGRADE</div>
+
+        <div class="plan-card">
+          <div class="radio"></div>
+          <div class="col flex1">
+            <span style="font-size:13px; font-weight:700; color:#0F172A;">Daily Pass</span>
+            <span style="font-size:11px; color:#94A3B8;">1 day access</span>
+          </div>
+          <div class="plan-price">
+            <div class="plan-price-amt">₹25</div>
+            <div style="font-size:10px; color:#94A3B8;">₹25/day</div>
+          </div>
+        </div>
+
+        <div class="plan-card selected">
+          <div class="radio on"></div>
+          <div class="col flex1">
+            <span style="font-size:13px; font-weight:700; color:#0F172A;">Monthly Plan</span>
+            <span style="font-size:11px; color:#94A3B8;">30 days access</span>
+          </div>
+          <div class="plan-price">
+            <div class="plan-price-amt">₹500</div>
+            <div style="font-size:10px; color:#b85c00; font-weight:600;">₹17/day · Best value</div>
+          </div>
+        </div>
+
+        <button class="btn btn-yellow mt8">Pay ₹500 via UPI</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="page-sep"></div>
+
+<!-- ===================================================
+     CHANGE LOG
+=================================================== -->
+<div class="section-title" style="margin-bottom:8px;">What Changes in Code</div>
+<div class="section-divider"></div>
+
+<div class="changes-grid">
+  <div class="change-item">
+    <div class="change-label">Font</div>
+    <div class="change-before">Before: System / Roboto</div>
+    <div class="change-after">After: Poppins (free, Google Fonts via expo-font)</div>
+  </div>
+  <div class="change-item">
+    <div class="change-label">Primary Yellow</div>
+    <div class="change-before">Before: #FECE26 (pale, low contrast on white)</div>
+    <div class="change-after">After: #e47200 (burnt orange-amber — strong, warm, high contrast on white)</div>
+  </div>
+  <div class="change-item">
+    <div class="change-label">Primary CTA button</div>
+    <div class="change-before">Before: Yellow button with yellow-on-white label</div>
+    <div class="change-after">After: Navy button for primary action — yellow for secondary</div>
+  </div>
+  <div class="change-item">
+    <div class="change-label">Fare Hero (Booking + Ride Request)</div>
+    <div class="change-before">Before: Grey #F7F8FA background, black number</div>
+    <div class="change-after">After: Full yellow card, fare in bold navy — unmissable</div>
+  </div>
+  <div class="change-item">
+    <div class="change-label">Subscription "Active" card</div>
+    <div class="change-before">Before: Pale green pastel (#E8F5EE) — blends in</div>
+    <div class="change-after">After: Dark navy gradient card — premium feel, stands out</div>
+  </div>
+  <div class="change-item">
+    <div class="change-label">USP Safety Note</div>
+    <div class="change-before">Before: Tiny grey caption text at bottom</div>
+    <div class="change-after">After: Green highlighted pill — your strongest selling point</div>
+  </div>
+  <div class="change-item">
+    <div class="change-label">OTP Display (Active Ride)</div>
+    <div class="change-before">Before: White card, plain text OTP</div>
+    <div class="change-after">After: Dark navy card, giant yellow OTP digits — impossible to miss</div>
+  </div>
+  <div class="change-item">
+    <div class="change-label">Text hierarchy</div>
+    <div class="change-before">Before: #1A1A2E text on white (slight navy tint, odd)</div>
+    <div class="change-after">After: #0F172A text (true near-black, crisper contrast)</div>
+  </div>
+</div>
+
+<div style="text-align:center; color:#475569; font-size:12px; padding-bottom:40px;">
+  Aye Auto UI Preview · White + #e47200 + Navy · Poppins
+</div>
+
+</body>
+</html>

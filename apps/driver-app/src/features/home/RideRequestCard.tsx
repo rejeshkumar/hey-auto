@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform, Linking } from 'react-native';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useDriverStore, IncomingRideRequest } from '../../hooks/useDriverStore';
@@ -30,10 +30,21 @@ export function RideRequestCard({ request, navigation }: Props) {
     return () => clearInterval(timer);
   }, []);
 
+  const openGoogleMapsToPickup = () => {
+    const { pickupLat, pickupLng } = request;
+    if (!pickupLat || !pickupLng) return;
+    const nativeUrl = Platform.OS === 'ios'
+      ? `comgooglemaps://?daddr=${pickupLat},${pickupLng}&directionsmode=driving`
+      : `google.navigation:q=${pickupLat},${pickupLng}`;
+    const webFallback = `https://www.google.com/maps/dir/?api=1&destination=${pickupLat},${pickupLng}&travelmode=driving`;
+    Linking.openURL(nativeUrl).catch(() => Linking.openURL(webFallback));
+  };
+
   const handleAccept = async () => {
     setAccepting(true);
     try {
       await acceptRide(request.rideId);
+      openGoogleMapsToPickup();
       const rootNav = navigation.getParent() ?? navigation;
       rootNav.navigate('ActiveRide');
     } catch { setAccepting(false); }

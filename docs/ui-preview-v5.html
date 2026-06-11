@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aye Auto — v5 · Black & Gold</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #060606;
+  color: #fff;
+  padding: 48px 16px 80px;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --gold:    #f9b01b;
+  --gold-dk: #c98a00;
+  --ink:     #0A0A0A;
+  --ink2:    #111111;
+  --ink3:    #181818;
+
+  /* white screen */
+  --bg:      #FFFFFF;
+  --surface: #F7F7F5;
+  --border:  #E8E8E8;
+  --sub:     #666;
+  --muted:   #999;
+  --green:   #00C96B;
+  --red:     #F03A3A;
+}
+
+/* ── PAGE ── */
+.eyebrow { font-size:11px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--gold); text-align:center; margin-bottom:14px; }
+.headline { font-size:38px; font-weight:900; letter-spacing:-1.5px; text-align:center; margin-bottom:10px; line-height:1.1; }
+.tagline  { font-size:14px; color:#444; text-align:center; max-width:500px; margin:0 auto 56px; line-height:1.7; }
+.sep { height:1px; background:#111; margin:64px 0; }
+.section-lbl { font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--gold); text-align:center; margin-bottom:40px; }
+
+/* ── PHONE ── */
+.phones-row { display:flex; flex-wrap:wrap; gap:32px; justify-content:center; margin-bottom:72px; }
+.phone-wrap { display:flex; flex-direction:column; align-items:center; gap:12px; }
+.phone-label { font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#333; }
+.phone {
+  width:300px; background:#FFFFFF;
+  border-radius:42px; overflow:hidden; position:relative;
+  border:1.5px solid #e0e0e0;
+  box-shadow:0 0 0 5px #111, 0 0 0 6px #1a1a1a, 0 32px 80px rgba(0,0,0,0.75);
+  font-family:'Inter',sans-serif;
+}
+.phone::before {
+  content:''; position:absolute;
+  top:11px; left:50%; transform:translateX(-50%);
+  width:80px; height:26px; background:#0a0a0a;
+  border-radius:18px; z-index:300;
+}
+
+/* ── MAP ── */
+.map {
+  width:100%; position:relative; overflow:hidden;
+  background:#EEF2E8;
+}
+.map::after {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(0,0,0,0.03) 28px,rgba(0,0,0,0.03) 29px),
+    repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(0,0,0,0.03) 28px,rgba(0,0,0,0.03) 29px);
+}
+.road-h { position:absolute; left:0; right:0; background:#fff; opacity:0.85; }
+.road-v { position:absolute; top:0; bottom:0; background:#fff; opacity:0.85; }
+.auto-pin { position:absolute; z-index:10; display:flex; flex-direction:column; align-items:center; }
+.auto-bubble {
+  width:42px; height:42px; border-radius:50%; background:var(--gold);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; border:3px solid #fff;
+  box-shadow:0 4px 16px rgba(249,176,27,0.5), 0 0 0 8px rgba(249,176,27,0.12);
+}
+.auto-tail { width:2px; height:9px; background:var(--gold); opacity:0.4; }
+
+/* ── SHEET ── */
+.sheet {
+  background:#fff; border-radius:28px 28px 0 0;
+  padding:12px 18px 28px;
+  box-shadow:0 -2px 16px rgba(0,0,0,0.06);
+  border-top:1px solid #F0F0F0;
+}
+.handle { width:34px; height:3px; background:#E0E0E0; border-radius:2px; margin:0 auto 18px; }
+
+/* ── TOP BAR ── */
+.top-bar {
+  position:absolute; top:46px; left:0; right:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 16px; z-index:50;
+}
+.status-pill {
+  height:34px; border-radius:17px;
+  display:flex; align-items:center; padding:0 12px; gap:6px;
+  font-size:11px; font-weight:700;
+  background:rgba(255,255,255,0.92); border:1px solid #e0e0e0;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08); backdrop-filter:blur(12px);
+}
+.sdot { width:7px; height:7px; border-radius:50%; }
+.top-actions { display:flex; gap:7px; }
+.icon-btn {
+  width:34px; height:34px; border-radius:50%;
+  background:rgba(255,255,255,0.92); border:1px solid #e0e0e0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; color:#0A0A0A;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08); backdrop-filter:blur(12px);
+}
+
+/* ══════════════════════════════════════
+   THE CORE RULE:
+   Every "highlighted" element =
+     background: #0A0A0A (ink)
+     key text / numbers: #f9b01b (gold)
+     supporting text: #666 or #444
+   The gold top-border strip on every black card
+   ties them all together visually.
+══════════════════════════════════════ */
+
+.ink-card {
+  background: var(--ink);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+/* gold top accent line — the signature */
+.ink-card::before {
+  content:''; position:absolute;
+  top:0; left:0; right:0; height:2px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-dk));
+}
+/* subtle ambient glow bottom-left */
+.ink-card::after {
+  content:''; position:absolute;
+  bottom:-20px; left:-20px;
+  width:110px; height:70px; border-radius:50%;
+  background:var(--gold); filter:blur(40px); opacity:0.1;
+  pointer-events:none;
+}
+
+/* ── FARE CARD ── */
+.fare-card {
+  padding:18px;
+  display:flex; align-items:flex-end; justify-content:space-between;
+}
+.fare-lbl  { font-size:10px; font-weight:600; color:var(--gold); margin-bottom:7px; }
+.fare-num  { font-size:60px; font-weight:900; color:var(--gold); line-height:1; letter-spacing:-3px; }
+.fare-meta { display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+.fare-chip {
+  display:flex; align-items:center; gap:4px;
+  background:rgba(249,176,27,0.1); border-radius:7px;
+  padding:4px 8px; font-size:10px; font-weight:600; color:var(--gold);
+}
+.fare-chip.hi { color:var(--gold); background:rgba(249,176,27,0.2); }
+
+/* ── STATS ── */
+.stats-card {
+  padding:16px;
+  display:grid; grid-template-columns:1fr 1px 1fr 1px 1fr;
+  gap:0; align-items:center;
+}
+.stat-div { background:rgba(249,176,27,0.15); height:36px; }
+.stat-col { text-align:center; }
+.stat-big  { font-size:26px; font-weight:900; color:var(--gold); letter-spacing:-1px; line-height:1; }
+.stat-sm   { font-size:19px; font-weight:800; color:var(--gold); letter-spacing:-0.5px; line-height:1; }
+.stat-lbl  { font-size:10px; font-weight:600; color:var(--gold); margin-top:4px; }
+
+/* ── OTP ── */
+.otp-card { padding:22px; text-align:center; }
+.otp-lbl   { font-size:10px; font-weight:600; color:var(--gold); margin-bottom:10px; }
+.otp-num   { font-size:62px; font-weight:900; letter-spacing:12px; color:var(--gold); line-height:1; padding-right:12px; }
+.otp-hint  { font-size:10px; font-weight:600; color:var(--gold); margin-top:8px; }
+
+/* ── SUBSCRIPTION ACTIVE ── */
+.sub-card { padding:18px; }
+.sub-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(249,176,27,0.12); border:1px solid rgba(249,176,27,0.3);
+  border-radius:7px; padding:3px 9px;
+  font-size:9px; font-weight:700; color:var(--gold);
+  letter-spacing:0.5px; text-transform:uppercase; margin-bottom:10px;
+}
+.sub-name    { font-size:20px; font-weight:800; color:var(--gold); margin-bottom:3px; }
+.sub-tagline { font-size:10px; font-weight:600; color:var(--gold); margin-bottom:14px; }
+.sub-meta    { display:grid; grid-template-columns:1fr 1px 1fr; }
+.sub-div     { background:rgba(249,176,27,0.2); }
+.sub-mi      { padding:0 10px; }
+.sub-mi:first-child { padding-left:0; }
+.sub-ml { font-size:10px; font-weight:600; color:var(--gold); }
+.sub-mv { font-size:18px; font-weight:900; color:var(--gold); margin-top:4px; }
+.sub-mv.gold { color:var(--gold); }
+
+/* ── SEARCH BAR ── */
+.search-bar {
+  display:flex; align-items:center; gap:9px;
+  background:var(--ink); border-radius:13px; padding:12px 13px; margin-bottom:18px;
+  border:1px solid #1a1a1a;
+  position:relative; overflow:hidden;
+}
+.search-bar::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, var(--gold), var(--gold-dk));
+}
+.s-icon {
+  width:28px; height:28px; border-radius:8px;
+  background:rgba(249,176,27,0.12);
+  display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0;
+}
+.s-text  { font-size:13px; flex:1; font-weight:600; color:var(--gold); }
+.s-arrow {
+  width:26px; height:26px; border-radius:7px;
+  background:var(--gold);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:800; color:var(--ink); flex-shrink:0;
+}
+
+/* ── FAV ROW ── */
+.fav-row { display:flex; gap:7px; margin-bottom:18px; }
+.fav-chip {
+  flex:1; background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:9px;
+  display:flex; flex-direction:column; gap:3px;
+}
+.fav-chip.empty { border-style:dashed; }
+.fav-iw {
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; margin-bottom:2px;
+}
+.fav-name { font-size:10px; font-weight:700; color:#0A0A0A; }
+.fav-addr { font-size:9px; color:#999; }
+
+/* ── QUICK ROUTES ── */
+.quick-row { display:flex; gap:7px; margin-bottom:14px; }
+.quick-chip {
+  flex:1; background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:10px 5px; text-align:center;
+}
+.quick-icon { font-size:18px; margin-bottom:3px; }
+.quick-name { font-size:9px; font-weight:600; color:#0A0A0A; }
+
+/* ── USP STRIP — also ink ── */
+.usp-strip {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  padding:10px 12px; background:var(--ink); border-radius:11px;
+  border-top:2px solid var(--gold);
+  margin-top:4px;
+}
+.usp-text { font-size:10px; font-weight:700; color:var(--gold); letter-spacing:0.3px; }
+
+/* ── ROUTE ── */
+.route-wrap  { display:flex; gap:10px; margin-bottom:14px; }
+.route-spine { display:flex; flex-direction:column; align-items:center; padding-top:11px; }
+.r-dot       { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.r-line      { width:1.5px; flex:1; background:var(--border); min-height:14px; margin:3px 0; }
+.route-stops { flex:1; display:flex; flex-direction:column; gap:7px; }
+.route-stop  { background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:7px 10px; }
+.s-lbl       { font-size:8px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:2px; }
+.s-addr      { font-size:12px; font-weight:600; color:#0A0A0A; }
+
+/* ── PAYMENT TOGGLE ── */
+.pay-row { display:flex; gap:7px; margin-bottom:12px; }
+/* selected = ink card with gold */
+.pay-sel {
+  flex:1; background:var(--ink); border-radius:11px; padding:10px;
+  display:flex; align-items:center; justify-content:center; gap:5px;
+  border-top:2px solid var(--gold);
+}
+.pay-unsel {
+  flex:1; background:var(--surface); border:1.5px solid var(--border);
+  border-radius:11px; padding:10px;
+  display:flex; align-items:center; justify-content:center; gap:5px;
+}
+
+/* ── DRIVER CARD ── */
+.driver-row {
+  display:flex; align-items:center; gap:11px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:11px 13px; margin-bottom:11px;
+}
+.d-av {
+  width:42px; height:42px; border-radius:50%;
+  background:var(--ink); border:2px solid var(--gold);
+  display:flex; align-items:center; justify-content:center;
+  font-size:19px; flex-shrink:0;
+}
+.d-name   { font-size:13px; font-weight:700; color:#0A0A0A; }
+.d-plate  { font-size:11px; font-weight:700; color:var(--gold); margin-top:1px; }
+.d-rating { font-size:11px; color:#999; margin-top:1px; }
+.call-btn {
+  width:34px; height:34px; border-radius:50%; margin-left:auto;
+  background:var(--green-lt, #E4F9EE);
+  background:rgba(0,201,107,0.12); border:1px solid rgba(0,201,107,0.25);
+  display:flex; align-items:center; justify-content:center; font-size:14px;
+}
+
+/* ── ARRIVED BANNER ── */
+.banner-arrived {
+  display:flex; align-items:center; gap:9px;
+  background:var(--ink); border-radius:12px; padding:11px 13px; margin-bottom:13px;
+  border-top:2px solid var(--green);
+}
+.b-dot { width:7px; height:7px; border-radius:50%; background:var(--green); flex-shrink:0; }
+.b-title { font-size:12px; font-weight:700; color:var(--gold); }
+.b-sub   { font-size:10px; font-weight:600; color:var(--gold); margin-top:1px; }
+
+/* ── WAITING BANNER ── */
+.banner-waiting {
+  display:flex; align-items:center; gap:8px;
+  background:var(--ink); border-radius:11px; padding:10px 13px;
+  margin-bottom:13px; border-top:2px solid var(--green);
+}
+
+/* ── BUTTONS ── */
+.btn-gold {
+  width:100%; padding:15px; border:none; border-radius:14px;
+  font-family:'Inter',sans-serif; font-size:15px; font-weight:800;
+  background:var(--gold); color:var(--ink);
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px;
+  box-shadow:0 5px 20px rgba(249,176,27,0.3); letter-spacing:0.1px;
+}
+.btn-ghost {
+  width:100%; padding:14px; background:transparent; border-radius:14px;
+  font-family:'Inter',sans-serif; font-size:14px; font-weight:600;
+  color:#888; cursor:pointer; border:1.5px solid var(--border);
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+
+/* ── PLAN CARDS ── */
+.plan-card { border-radius:13px; padding:13px; display:flex; align-items:center; gap:11px; margin-bottom:9px; }
+.plan-card.unsel { background:#fff; border:1.5px solid var(--border); }
+/* selected plan = ink card */
+.plan-card.sel   { background:var(--ink); border-top:2px solid var(--gold); border-left:none; border-right:none; border-bottom:none; }
+.radio { width:18px; height:18px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.radio.off { border:2px solid var(--border); }
+.radio.on  { border:2px solid var(--gold); }
+.radio.on::after { content:''; width:8px; height:8px; border-radius:50%; background:var(--gold); }
+.p-name-light { font-size:13px; font-weight:700; color:#0A0A0A; }
+.p-name-dark  { font-size:13px; font-weight:700; color:var(--gold); }
+.p-days-light { font-size:10px; color:#999; margin-top:1px; }
+.p-days-dark  { font-size:10px; font-weight:600; color:var(--gold); margin-top:1px; }
+.p-price { margin-left:auto; text-align:right; }
+.p-price-num-light { font-size:18px; font-weight:900; color:#0A0A0A; }
+.p-price-num-dark  { font-size:18px; font-weight:900; color:var(--gold); }
+.p-price-day { font-size:9px; font-weight:700; color:var(--gold); margin-top:1px; }
+
+/* ── RIDE REQUEST OVERLAY ── */
+.req-overlay {
+  position:absolute; inset:0; z-index:100;
+  background:rgba(0,0,0,0.5);
+  display:flex; align-items:flex-end;
+  backdrop-filter:blur(3px);
+}
+.req-card {
+  background:#fff; width:100%; overflow:hidden;
+  border-radius:28px 28px 0 0; border-top:1px solid #F0F0F0;
+  padding-bottom:24px; box-shadow:0 -4px 30px rgba(0,0,0,0.12);
+}
+.req-prog-track { height:3px; background:#F0F0F0; }
+.req-prog-bar   { height:3px; background:var(--gold); width:56%; }
+.req-body { padding:16px 17px 0; }
+.req-hdr { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; }
+.req-tag  { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#bbb; margin-bottom:3px; }
+.req-name { font-size:19px; font-weight:800; color:#0A0A0A; }
+.req-timer-num { font-size:40px; font-weight:900; color:#0A0A0A; line-height:1; }
+.req-timer-sec { font-size:9px; color:#bbb; text-align:center; margin-top:2px; }
+/* the fare on request card = same ink card treatment */
+.req-fare-card { margin-bottom:12px; }
+.req-actions { display:flex; gap:8px; margin-top:10px; }
+.req-decline {
+  flex:1; padding:13px; background:transparent;
+  border:1.5px solid var(--border); border-radius:13px;
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:600; color:#999; cursor:pointer;
+}
+.req-accept {
+  flex:2; padding:13px; background:var(--gold); border:none;
+  border-radius:13px; font-family:'Inter',sans-serif;
+  font-size:14px; font-weight:800; color:var(--ink); cursor:pointer;
+  box-shadow:0 5px 18px rgba(249,176,27,0.35);
+  display:flex; align-items:center; justify-content:center; gap:7px;
+}
+
+/* MISC */
+.row-between { display:flex; align-items:center; justify-content:space-between; }
+.col { display:flex; flex-direction:column; }
+.flex1 { flex:1; }
+.mb12 { margin-bottom:12px; }
+.mb16 { margin-bottom:16px; }
+
+/* SWATCH ROW */
+.swatches { display:flex; flex-wrap:wrap; gap:14px; justify-content:center; margin-bottom:56px; }
+.swatch { display:flex; flex-direction:column; align-items:center; gap:7px; }
+.swatch-box { width:58px; height:58px; border-radius:14px; }
+.swatch-name { font-size:10px; color:#444; font-weight:600; }
+.swatch-hex  { font-size:9px; color:#333; }
+
+/* RULE STRIP */
+.rule-strip {
+  max-width:700px; margin:0 auto 56px;
+  background:#0d0d0d; border-radius:14px; overflow:hidden;
+}
+.rule-row { display:grid; grid-template-columns:1fr 2fr; gap:1px; background:#111; }
+.rule-cell { background:#0d0d0d; padding:13px 16px; font-size:12px; }
+.rule-name { font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); }
+.rule-desc { color:#555; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="eyebrow">Aye Auto · v5</div>
+<div class="headline">Black Card · Gold Text</div>
+<div class="tagline">Every highlighted element — fare, OTP, earnings, subscription, search, payment selection, waiting status — is now ink black with #f9b01b. One language, everywhere.</div>
+
+<!-- COLOUR TOKENS -->
+<div class="section-lbl">The Two-Colour System</div>
+<div class="swatches">
+  <div class="swatch">
+    <div class="swatch-box" style="background:#f9b01b; box-shadow:0 4px 24px rgba(249,176,27,0.6);"></div>
+    <div class="swatch-name">Gold — #f9b01b</div><div class="swatch-hex">All accent text & icons</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#0A0A0A; border:1px solid #1a1a1a;"></div>
+    <div class="swatch-name">Ink — #0A0A0A</div><div class="swatch-hex">All highlight card backgrounds</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#FFFFFF; border:1px solid #E8E8E8;"></div>
+    <div class="swatch-name">White — #FFFFFF</div><div class="swatch-hex">Screen & sheet background</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#F7F7F5; border:1px solid #E8E8E8;"></div>
+    <div class="swatch-name">Surface — #F7F7F5</div><div class="swatch-hex">Inactive cards & rows</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#00C96B; box-shadow:0 4px 16px rgba(0,201,107,0.4);"></div>
+    <div class="swatch-name">Green — #00C96B</div><div class="swatch-hex">Online / Arrived only</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#F03A3A; box-shadow:0 4px 16px rgba(240,58,58,0.4);"></div>
+    <div class="swatch-name">Red — #F03A3A</div><div class="swatch-hex">SOS / Offline only</div>
+  </div>
+</div>
+
+<!-- DESIGN RULES -->
+<div class="section-lbl">The Rules</div>
+<div class="rule-strip">
+  <div class="rule-row"><div class="rule-cell rule-name">Gold top bar</div><div class="rule-cell rule-desc">Every ink card has a 2px gold gradient line at the top. The signature mark — immediately recognisable across screens.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">Key number</div><div class="rule-cell rule-desc">The most important number on screen (fare, OTP, earnings) is always #f9b01b and the largest element in the card.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">Supporting text</div><div class="rule-cell rule-desc">#444 or #666 inside the card — dim enough to not compete, readable enough to scan.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">Inactive elements</div><div class="rule-cell rule-desc">Everything non-highlighted stays on #F7F7F5 with a 1px #E8E8E8 border. No other colours used.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">CTA button</div><div class="rule-cell rule-desc">Always #f9b01b background with #0A0A0A text. Gold is only used for the CTA and the ink card accent — nothing else.</div></div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ═══════════════
+     RIDER APP
+═══════════════ -->
+<div class="section-lbl">Rider App</div>
+<div class="phones-row">
+
+  <!-- HOME -->
+  <div class="phone-wrap">
+    <div class="phone-label">Home</div>
+    <div class="phone">
+      <div class="map" style="height:296px;">
+        <div class="road-h" style="top:52%; height:10px;"></div>
+        <div class="road-h" style="top:70%; height:6px;"></div>
+        <div class="road-v" style="left:35%; width:8px;"></div>
+        <div class="road-v" style="left:62%; width:6px;"></div>
+        <div class="auto-pin" style="bottom:30px; left:49%; transform:translateX(-50%);">
+          <div class="auto-bubble">🛺</div>
+          <div class="auto-tail"></div>
+        </div>
+        <div style="position:absolute; bottom:12px; right:12px; width:32px; height:32px; background:rgba(255,255,255,0.9); border:1px solid #e0e0e0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">🎯</div>
+      </div>
+      <div class="top-bar">
+        <div class="col">
+          <span style="font-size:15px; font-weight:800; color:#0A0A0A; text-shadow:0 1px 6px rgba(255,255,255,0.9);">Good morning 👋</span>
+          <span style="font-size:10px; color:#666; text-shadow:0 1px 4px rgba(255,255,255,0.8); margin-top:1px;">Taliparamba</span>
+        </div>
+        <div class="top-actions">
+          <div class="icon-btn" style="font-size:10px; font-weight:800; width:40px; border-radius:9px;">EN</div>
+          <div class="icon-btn">👤</div>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="handle"></div>
+
+        <!-- SEARCH BAR = ink card -->
+        <div class="search-bar">
+          <div class="s-icon">🔍</div>
+          <span class="s-text">Where to?</span>
+          <div class="s-arrow">→</div>
+        </div>
+
+        <div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#ccc; margin-bottom:9px;">Favourites</div>
+        <div class="fav-row">
+          <div class="fav-chip">
+            <div class="fav-iw" style="background:#f9b01b1a; border:1px solid rgba(249,176,27,0.2);">🏠</div>
+            <div class="fav-name">Home</div>
+            <div class="fav-addr">Railway Colony</div>
+          </div>
+          <div class="fav-chip">
+            <div class="fav-iw" style="background:#EEF2FF; border:1px solid #C7D2FE;">💼</div>
+            <div class="fav-name">Work</div>
+            <div class="fav-addr">Market Road</div>
+          </div>
+          <div class="fav-chip empty">
+            <div class="fav-iw" style="background:#F7F7F5;">⭐</div>
+            <div class="fav-name" style="color:#ccc;">Other</div>
+            <div class="fav-addr" style="color:var(--gold); font-weight:700;">+ Add</div>
+          </div>
+        </div>
+
+        <div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#ccc; margin-bottom:9px;">Quick Routes</div>
+        <div class="quick-row">
+          <div class="quick-chip"><div class="quick-icon">🚌</div><div class="quick-name">Bus Stand</div></div>
+          <div class="quick-chip"><div class="quick-icon">🚂</div><div class="quick-name">Railway</div></div>
+          <div class="quick-chip"><div class="quick-icon">🏥</div><div class="quick-name">Hospital</div></div>
+          <div class="quick-chip"><div class="quick-icon">⛪</div><div class="quick-name">Temple</div></div>
+        </div>
+
+        <!-- USP = ink card -->
+        <div class="usp-strip">
+          <span style="font-size:12px;">✅</span>
+          <span class="usp-text">Govt. rates · Zero surge · Zero commission</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKING CONFIRM -->
+  <div class="phone-wrap">
+    <div class="phone-label">Booking Confirm</div>
+    <div class="phone">
+      <div class="map" style="height:188px;">
+        <div class="road-h" style="top:50%; height:9px;"></div>
+        <div class="road-v" style="left:42%; width:8px;"></div>
+        <div style="position:absolute; top:26px; left:31%; z-index:10;"><div style="background:#00C96B; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; border:2px solid #fff; box-shadow:0 3px 10px rgba(0,201,107,0.4);">📍</div></div>
+        <div style="position:absolute; top:26px; left:62%; z-index:10;"><div style="background:#F03A3A; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; border:2px solid #fff; box-shadow:0 3px 10px rgba(240,58,58,0.4);">🏁</div></div>
+        <div style="position:absolute; top:40px; left:33%; width:30%; height:2px; background:linear-gradient(90deg,#00C96B,#f9b01b,#F03A3A); border-radius:1px; z-index:5;"></div>
+      </div>
+      <div style="position:absolute; top:47px; left:13px; z-index:50;" class="icon-btn">←</div>
+      <div class="sheet" style="padding-top:11px;">
+        <div class="handle"></div>
+        <div class="route-wrap">
+          <div class="route-spine"><div class="r-dot" style="background:#00C96B;"></div><div class="r-line"></div><div class="r-dot" style="background:#F03A3A;"></div></div>
+          <div class="route-stops">
+            <div class="route-stop"><div class="s-lbl" style="color:#00C96B;">From</div><div class="s-addr">Railway Colony, Taliparamba</div></div>
+            <div class="route-stop"><div class="s-lbl" style="color:#F03A3A;">To</div><div class="s-addr">Taliparamba Bus Stand</div></div>
+          </div>
+        </div>
+
+        <!-- FARE = ink card + gold number -->
+        <div class="ink-card">
+          <div class="fare-card">
+            <div>
+              <div class="fare-lbl">Estimated Fare</div>
+              <div class="fare-num">₹42</div>
+            </div>
+            <div class="fare-meta">
+              <div class="fare-chip">📏 3.2 km</div>
+              <div class="fare-chip">⏱ 12 min</div>
+              <div class="fare-chip hi">🛡 Govt. rate</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAYMENT — selected = ink card -->
+        <div class="pay-row">
+          <div class="pay-sel"><span style="font-size:15px;">💵</span><span style="font-size:12px; font-weight:700; color:var(--gold);">Cash</span></div>
+          <div class="pay-unsel"><span style="font-size:15px;">📱</span><span style="font-size:12px; font-weight:600; color:#bbb;">UPI</span></div>
+        </div>
+
+        <button class="btn-gold">🛺 Book Ride · ₹42</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE RIDE — DRIVER ARRIVED + OTP -->
+  <div class="phone-wrap">
+    <div class="phone-label">Active Ride — OTP</div>
+    <div class="phone">
+      <div class="map" style="height:208px;">
+        <div class="road-h" style="top:50%; height:9px;"></div>
+        <div class="road-v" style="left:50%; width:8px;"></div>
+        <div class="auto-pin" style="bottom:22px; left:47%; transform:translateX(-50%);">
+          <div class="auto-bubble">🛺</div>
+          <div class="auto-tail"></div>
+        </div>
+      </div>
+      <!-- SOS = red ink treatment -->
+      <div style="position:absolute; top:47px; right:13px; z-index:50; background:#0A0A0A; border-top:2px solid var(--gold); border-radius:9px; padding:7px 12px; display:flex; align-items:center; gap:4px;">
+        <span style="font-size:11px; font-weight:800; color:var(--gold);">🚨 SOS</span>
+      </div>
+      <div class="sheet">
+        <div class="handle"></div>
+
+        <!-- ARRIVED BANNER = ink card with green top -->
+        <div class="banner-arrived">
+          <div class="b-dot"></div>
+          <div>
+            <div class="b-title">Driver has arrived</div>
+            <div class="b-sub">Share OTP to start your ride</div>
+          </div>
+        </div>
+
+        <!-- OTP = ink card + gold digits -->
+        <div class="ink-card mb12">
+          <div class="otp-card">
+            <div class="otp-lbl">Your Ride OTP</div>
+            <div class="otp-num">4721</div>
+            <div class="otp-hint">Show this to your driver</div>
+          </div>
+        </div>
+
+        <div class="driver-row">
+          <div class="d-av">👨</div>
+          <div>
+            <div class="d-name">Muhammed Shafeeq</div>
+            <div class="d-plate">KL-58 AB 1234</div>
+            <div class="d-rating">⭐ 4.8 · White Hero</div>
+          </div>
+          <div class="call-btn">📞</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="sep"></div>
+
+<!-- ═══════════════
+     DRIVER APP
+═══════════════ -->
+<div class="section-lbl">Driver App</div>
+<div class="phones-row">
+
+  <!-- DRIVER HOME ONLINE -->
+  <div class="phone-wrap">
+    <div class="phone-label">Home — Online</div>
+    <div class="phone">
+      <div class="map" style="height:292px;">
+        <div class="road-h" style="top:55%; height:10px;"></div>
+        <div class="road-v" style="left:46%; width:8px;"></div>
+        <div class="auto-pin" style="bottom:28px; left:43%; transform:translateX(-50%);">
+          <div class="auto-bubble">🛺</div>
+          <div class="auto-tail"></div>
+        </div>
+      </div>
+      <div class="top-bar">
+        <div class="status-pill"><div class="sdot" style="background:var(--green);"></div><span style="color:var(--green);">Online</span></div>
+        <div class="top-actions">
+          <div class="icon-btn" style="font-size:10px; font-weight:800; width:40px; border-radius:9px;">EN</div>
+          <div class="icon-btn">👤</div>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="handle"></div>
+
+        <!-- EARNINGS STATS = ink card + gold for today's earnings -->
+        <div class="ink-card mb12">
+          <div class="stats-card">
+            <div class="stat-col">
+              <div class="stat-big">₹420</div>
+              <div class="stat-lbl">Today</div>
+            </div>
+            <div class="stat-div"></div>
+            <div class="stat-col">
+              <div class="stat-sm">5</div>
+              <div class="stat-lbl">Rides</div>
+            </div>
+            <div class="stat-div"></div>
+            <div class="stat-col">
+              <div class="stat-sm">₹30</div>
+              <div class="stat-lbl">Tips</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WAITING = ink card with green top -->
+        <div class="banner-waiting mb12">
+          <div style="width:7px; height:7px; border-radius:50%; background:var(--green); flex-shrink:0;"></div>
+          <span style="font-size:11px; font-weight:700; color:var(--gold);">Waiting for ride requests...</span>
+        </div>
+
+        <button class="btn-ghost">⏹ Go Offline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRIVER HOME OFFLINE -->
+  <div class="phone-wrap">
+    <div class="phone-label">Home — Offline</div>
+    <div class="phone">
+      <div class="map" style="height:350px; filter:grayscale(35%);">
+        <div class="road-h" style="top:55%; height:10px;"></div>
+        <div class="road-v" style="left:46%; width:8px;"></div>
+        <div style="position:absolute; bottom:40px; left:44%; transform:translateX(-50%); z-index:10;">
+          <div style="background:#ddd; width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; border:2px solid #fff; opacity:0.6;">🛺</div>
+        </div>
+        <div style="position:absolute;inset:0;background:rgba(255,255,255,0.2);"></div>
+      </div>
+      <div class="top-bar">
+        <div class="status-pill"><div class="sdot" style="background:var(--red);"></div><span style="color:var(--red);">Offline</span></div>
+        <div class="top-actions">
+          <div class="icon-btn" style="font-size:10px; font-weight:800; width:40px; border-radius:9px;">EN</div>
+          <div class="icon-btn">👤</div>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="handle"></div>
+        <div style="margin-bottom:18px;">
+          <div style="font-size:18px; font-weight:800; color:#0A0A0A; margin-bottom:3px;">Good morning, Shafeeq</div>
+          <div style="font-size:12px; color:#999;">Go online to start accepting rides</div>
+        </div>
+        <button class="btn-gold">⚡ Go Online</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIDE REQUEST -->
+  <div class="phone-wrap">
+    <div class="phone-label">Ride Request</div>
+    <div class="phone" style="min-height:620px; position:relative;">
+      <div class="map" style="height:100%; min-height:620px; position:absolute; inset:0;">
+        <div class="road-h" style="top:50%; height:10px;"></div>
+        <div class="road-v" style="left:46%; width:8px;"></div>
+      </div>
+      <div class="req-overlay">
+        <div class="req-card">
+          <div class="req-prog-track"><div class="req-prog-bar"></div></div>
+          <div class="req-body">
+            <div class="req-hdr">
+              <div>
+                <div class="req-tag">New Ride Request</div>
+                <div class="req-name">Arjun Menon</div>
+              </div>
+              <div style="text-align:center;">
+                <div class="req-timer-num">33</div>
+                <div class="req-timer-sec">seconds</div>
+              </div>
+            </div>
+
+            <!-- FARE = ink card -->
+            <div class="ink-card req-fare-card">
+              <div class="fare-card" style="padding:14px 16px;">
+                <div>
+                  <div class="fare-lbl">Fare</div>
+                  <div class="fare-num" style="font-size:52px;">₹68</div>
+                </div>
+                <div class="fare-meta">
+                  <div class="fare-chip">📏 4.8 km</div>
+                  <div class="fare-chip">⏱ 18 min</div>
+                  <div class="fare-chip hi">⭐ 4.7</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="route-wrap" style="margin-bottom:0;">
+              <div class="route-spine"><div class="r-dot" style="background:#00C96B;"></div><div class="r-line" style="min-height:12px;"></div><div class="r-dot" style="background:#F03A3A;"></div></div>
+              <div class="route-stops">
+                <div class="route-stop" style="padding:6px 10px;"><div class="s-lbl" style="color:#00C96B;">Pickup</div><div class="s-addr" style="font-size:11px;">Town Hall, Taliparamba</div></div>
+                <div class="route-stop" style="padding:6px 10px;"><div class="s-lbl" style="color:#F03A3A;">Drop</div><div class="s-addr" style="font-size:11px;">Govt. Hospital</div></div>
+              </div>
+            </div>
+            <div class="req-actions">
+              <button class="req-decline">✕ Decline</button>
+              <button class="req-accept">✓ Accept Ride</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBSCRIPTION -->
+  <div class="phone-wrap">
+    <div class="phone-label">Subscription</div>
+    <div class="phone">
+      <div style="padding:48px 16px 0; background:#fff; min-height:620px;">
+        <div class="row-between mb16">
+          <div class="icon-btn">←</div>
+          <div style="font-size:14px; font-weight:700; color:#0A0A0A;">Subscription</div>
+          <div style="width:34px;"></div>
+        </div>
+
+        <!-- ACTIVE SUBSCRIPTION = ink card -->
+        <div class="ink-card mb16">
+          <div class="sub-card">
+            <div class="sub-badge"><span style="width:5px; height:5px; border-radius:50%; background:#00C96B;"></span>Active</div>
+            <div class="sub-name">Monthly Plan</div>
+            <div class="sub-tagline">Zero commission · 100% yours</div>
+            <div class="sub-meta">
+              <div class="sub-mi"><div class="sub-ml">Expires</div><div class="sub-mv" style="font-size:15px;">28 Jun 2026</div></div>
+              <div class="sub-div"></div>
+              <div class="sub-mi"><div class="sub-ml">Days Left</div><div class="sub-mv gold">29</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#ccc; margin-bottom:10px;">Renew or Upgrade</div>
+
+        <!-- unselected plan — plain white -->
+        <div class="plan-card unsel">
+          <div class="radio off"></div>
+          <div class="col flex1">
+            <div class="p-name-light">Daily Pass</div>
+            <div class="p-days-light">1 day access</div>
+          </div>
+          <div class="p-price">
+            <div class="p-price-num-light">₹25</div>
+            <div class="p-price-day">₹25/day</div>
+          </div>
+        </div>
+
+        <!-- SELECTED PLAN = ink card -->
+        <div class="plan-card sel">
+          <div class="radio on"></div>
+          <div class="col flex1">
+            <div class="p-name-dark">Monthly Plan</div>
+            <div class="p-days-dark">30 days access</div>
+          </div>
+          <div class="p-price">
+            <div class="p-price-num-dark">₹500</div>
+            <div class="p-price-day">₹17/day · Best</div>
+          </div>
+        </div>
+
+        <button class="btn-gold" style="margin-top:4px; font-size:14px;">Pay ₹500 via UPI</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="sep"></div>
+
+<!-- RULE SUMMARY -->
+<div class="section-lbl">Every Black Card in the App</div>
+<div class="rule-strip">
+  <div class="rule-row"><div class="rule-cell rule-name">Search bar</div><div class="rule-cell rule-desc">Ink background, gold top strip, gold arrow button. The first thing the rider sees and taps.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">Fare card</div><div class="rule-cell rule-desc">Ink card, gold fare number (₹42 / ₹68). The most important number in the booking flow.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">OTP card</div><div class="rule-cell rule-desc">Ink card, gold 4-digit OTP. Must be readable at arm's length, shown to driver. Zero ambiguity.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">Earnings stats</div><div class="rule-cell rule-desc">Ink card, ₹420 in gold. First number a driver sees when they open the app. Should feel like a reward.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">Waiting status</div><div class="rule-cell rule-desc">Ink card, green top strip (not gold — green = active/alive). Differentiates live state from price info.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">Arrived banner</div><div class="rule-cell rule-desc">Ink card, green top strip + green text. Green signals progress, not price.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">Active subscription</div><div class="rule-cell rule-desc">Ink card, gold top strip, days remaining in gold. Feels like a premium membership card.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">Selected plan</div><div class="rule-cell rule-desc">Ink card, gold top strip, price in gold. Unselected plans stay on white — contrast shows the choice clearly.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">Selected payment</div><div class="rule-cell rule-desc">Ink card, gold top strip. Unselected payment stays on surface grey. Same pattern everywhere.</div></div>
+  <div class="rule-row"><div class="rule-cell rule-name">USP strip</div><div class="rule-cell rule-desc">Ink background, gold text. The brand promise in the most premium treatment.</div></div>
+</div>
+
+<div style="text-align:center; color:#1a1a1a; font-size:10px; letter-spacing:3px; padding-bottom:40px; text-transform:uppercase;">
+  Aye Auto · Black Card · Gold Text · #f9b01b · Inter · v5
+</div>
+
+</body>
+</html>

@@ -15,7 +15,7 @@ import { StaticMapView } from '../../components';
 import { LiveMapView } from '../../components/LiveMapView';
 import { driverApi } from '../../services/driver';
 
-const TALIPARAMBA_CENTER = { latitude: 12.0368, longitude: 75.3614 };
+const TALIPARAMBA_CENTER = { latitude: 12.9716, longitude: 77.5946 };
 
 export function HomeScreen({ navigation }: any) {
   const { t, i18n } = useTranslation();

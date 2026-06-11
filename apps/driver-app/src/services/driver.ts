@@ -90,7 +90,7 @@ export const driverApi = {
   getProfile: () =>
     api.get<ApiResponse<DriverProfile>>('/driver/profile'),
 
-  updateProfile: (data: Partial<{ fullName: string; email: string; language: string }>) =>
+  updateProfile: (data: Partial<{ fullName: string; email: string; language: string; city: string }>) =>
     api.put<ApiResponse<DriverProfile>>('/driver/profile', data),
 
   goOnline: (lat: number, lng: number) =>

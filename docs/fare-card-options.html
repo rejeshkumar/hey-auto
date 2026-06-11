@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fare Card — 5 Options</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #060606;
+  color: #fff;
+  padding: 48px 16px 80px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page-title {
+  text-align: center;
+  font-size: 11px; font-weight: 700; letter-spacing: 4px;
+  text-transform: uppercase; color: #f9b01b;
+  margin-bottom: 12px;
+}
+.page-sub {
+  text-align: center;
+  font-size: 28px; font-weight: 900; letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+.page-desc {
+  text-align: center; font-size: 14px; color: #444;
+  max-width: 480px; margin: 0 auto 56px; line-height: 1.6;
+}
+
+.options-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  justify-content: center;
+  margin-bottom: 64px;
+}
+
+/* ── PHONE SHELL ── */
+.phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.option-num {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.option-name {
+  font-size: 13px; font-weight: 700; color: #fff;
+  text-align: center;
+}
+.option-verdict {
+  font-size: 11px; color: #444; text-align: center; max-width: 200px; line-height: 1.5;
+}
+
+.phone {
+  width: 260px;
+  background: #FFFFFF;
+  border-radius: 36px; overflow: hidden;
+  border: 1.5px solid #e0e0e0;
+  box-shadow: 0 0 0 5px #111, 0 0 0 6px #1a1a1a, 0 24px 60px rgba(0,0,0,0.7);
+  font-family: 'Inter', sans-serif;
+  padding-bottom: 24px;
+}
+.phone::before {
+  content: '';
+  display: block; height: 40px;
+  background: #111;
+  border-radius: 0 0 20px 20px;
+  width: 70px; margin: 0 auto;
+}
+/* use a top notch via wrapper */
+.phone-top {
+  height: 36px; background: #FFFFFF;
+  position: relative; display: flex; align-items: center; justify-content: center;
+}
+.notch {
+  width: 70px; height: 28px; background: #0a0a0a;
+  border-radius: 0 0 18px 18px;
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+}
+
+/* screen content area */
+.screen {
+  background: #FFFFFF;
+  padding: 12px 16px 0;
+}
+
+/* mini route display */
+.mini-route {
+  display: flex; gap: 10px; margin-bottom: 12px;
+}
+.mini-spine { display: flex; flex-direction: column; align-items: center; padding-top: 10px; }
+.r-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.r-line { width: 1.5px; flex: 1; background: #E8E8E8; min-height: 14px; margin: 3px 0; }
+.mini-stops { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.mini-stop {
+  background: #F7F7F5; border: 1px solid #E8E8E8;
+  border-radius: 8px; padding: 6px 10px;
+}
+.stop-lbl  { font-size: 8px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 1px; }
+.stop-addr { font-size: 11px; font-weight: 600; color: #0A0A0A; }
+
+/* ── THE FARE CARD — 5 variants ── */
+
+/* OPTION 1: Current — childish pale yellow (shown for comparison) */
+.fare-current {
+  background: #FEF5DC;
+  border: 1.5px solid #FDEAB0;
+  border-radius: 16px; padding: 16px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+/* OPTION 2: Ink black — bold, premium */
+.fare-ink {
+  background: #0A0A0A;
+  border-radius: 16px; padding: 16px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 12px;
+  position: relative; overflow: hidden;
+}
+.fare-ink::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, #f9b01b, #c98a00);
+}
+.ink-glow {
+  position: absolute; bottom: -20px; left: -20px;
+  width: 120px; height: 80px; border-radius: 50%;
+  background: #f9b01b; filter: blur(40px); opacity: 0.12;
+  pointer-events: none;
+}
+
+/* OPTION 3: Deep navy */
+.fare-navy {
+  background: #080B1A;
+  border: 1px solid #12184A;
+  border-radius: 16px; padding: 16px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 12px;
+  position: relative; overflow: hidden;
+}
+.navy-glow {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 140px; height: 80px; border-radius: 50%;
+  background: #f9b01b; filter: blur(50px); opacity: 0.08;
+  pointer-events: none;
+}
+
+/* OPTION 4: Stone/Graphite — neutral, no colour */
+.fare-stone {
+  background: #F0EDE8;
+  border: 1.5px solid #E0DCD6;
+  border-radius: 16px; padding: 16px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+/* OPTION 5: Border-only — pure white, bold gold border */
+.fare-border {
+  background: #FFFFFF;
+  border: 2.5px solid #f9b01b;
+  border-radius: 16px; padding: 16px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 12px;
+  box-shadow: 0 0 0 4px rgba(249,176,27,0.08), 0 4px 16px rgba(249,176,27,0.12);
+}
+
+/* shared fare number */
+.fare-num-light { font-size: 56px; font-weight: 900; color: #f9b01b; line-height: 1; letter-spacing: -3px; }
+.fare-num-dark  { font-size: 56px; font-weight: 900; color: #f9b01b; line-height: 1; letter-spacing: -3px; }
+
+.fare-meta { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
+
+/* chips for each option */
+.chip-light { display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.06); border-radius: 7px; padding: 4px 8px; font-size: 10px; font-weight: 600; color: #555; }
+.chip-dark  { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.08); border-radius: 7px; padding: 4px 8px; font-size: 10px; font-weight: 600; color: #888; }
+.chip-gold  { display: flex; align-items: center; gap: 4px; background: rgba(249,176,27,0.15); border-radius: 7px; padding: 4px 8px; font-size: 10px; font-weight: 600; color: #c98a00; }
+.chip-navy  { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.06); border-radius: 7px; padding: 4px 8px; font-size: 10px; font-weight: 600; color: #4A5580; }
+.chip-stone { display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.06); border-radius: 7px; padding: 4px 8px; font-size: 10px; font-weight: 600; color: #777; }
+
+/* also show a mini old chip for option 1 */
+.chip-yellow { display: flex; align-items: center; gap: 4px; background: rgba(249,176,27,0.18); border-radius: 7px; padding: 4px 8px; font-size: 10px; font-weight: 600; color: #a06c00; }
+
+/* label at top of fare num */
+.fare-label-light { font-size: 8px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #bbb; margin-bottom: 6px; }
+.fare-label-dark  { font-size: 8px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #555; margin-bottom: 6px; }
+.fare-label-navy  { font-size: 8px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #3A4070; margin-bottom: 6px; }
+
+/* payment row */
+.pay-row { display: flex; gap: 7px; margin-bottom: 12px; }
+.pay-active   { flex:1; background:#0A0A0A; border-radius:10px; padding:9px; text-align:center; display:flex; align-items:center; justify-content:center; gap:5px; }
+.pay-inactive { flex:1; background:#F7F7F5; border:1.5px solid #E8E8E8; border-radius:10px; padding:9px; text-align:center; display:flex; align-items:center; justify-content:center; gap:5px; }
+
+.btn-gold {
+  width:100%; padding:14px; border:none; border-radius:13px;
+  font-family:'Inter',sans-serif; font-size:14px; font-weight:800;
+  background:#f9b01b; color:#1A1A1A; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  box-shadow: 0 5px 20px rgba(249,176,27,0.3);
+}
+
+/* VERDICT BADGES */
+.verdict {
+  display: inline-block;
+  font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; padding: 4px 10px; border-radius: 999px;
+}
+.verdict-bad    { background: rgba(240,58,58,0.15);  color: #F03A3A; }
+.verdict-ok     { background: rgba(255,255,255,0.07); color: #555; }
+.verdict-great  { background: rgba(249,176,27,0.15); color: #f9b01b; }
+.verdict-best   { background: rgba(0,201,107,0.15);  color: #00C96B; }
+
+/* COMPARISON TABLE */
+.table { max-width: 760px; margin: 0 auto 60px; border-radius: 14px; overflow: hidden; }
+.t-row { display: grid; grid-template-columns: 1fr 80px 1fr; gap: 1px; background: #111; }
+.t-cell { background: #0d0d0d; padding: 13px 15px; font-size: 12px; }
+.t-head { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #333; }
+.t-name { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #f9b01b; }
+.t-desc { color: #666; line-height: 1.5; }
+.t-rec  { color: #888; font-weight: 600; }
+
+.sep { height: 1px; background: #111; margin: 56px 0; }
+.section-label { font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #f9b01b; text-align: center; margin-bottom: 40px; }
+</style>
+</head>
+<body>
+
+<div class="page-title">Fare Card · Option Study</div>
+<div class="page-sub">5 Options for the Fare Display</div>
+<div class="page-desc">The current pale yellow (#FEF5DC) looks childish. Here are 5 alternatives — same gold number, different card treatment. Pick one.</div>
+
+<div class="options-grid">
+
+  <!-- ══ OPTION 1 — CURRENT (for comparison) ══ -->
+  <div class="phone-wrap">
+    <div class="option-num" style="color:#F03A3A;">Current — Reject</div>
+    <div class="phone">
+      <div class="phone-top"><div class="notch"></div></div>
+      <div class="screen">
+        <div class="mini-route">
+          <div class="mini-spine"><div class="r-dot" style="background:#00C96B;"></div><div class="r-line"></div><div class="r-dot" style="background:#F03A3A;"></div></div>
+          <div class="mini-stops">
+            <div class="mini-stop"><div class="stop-lbl" style="color:#00C96B;">From</div><div class="stop-addr">Railway Colony</div></div>
+            <div class="mini-stop"><div class="stop-lbl" style="color:#F03A3A;">To</div><div class="stop-addr">Bus Stand</div></div>
+          </div>
+        </div>
+        <!-- CURRENT FARE CARD -->
+        <div class="fare-current">
+          <div>
+            <div class="fare-label-light">Estimated Fare</div>
+            <div class="fare-num-light">₹42</div>
+          </div>
+          <div class="fare-meta">
+            <div class="chip-yellow">📏 3.2 km</div>
+            <div class="chip-yellow">⏱ 12 min</div>
+            <div class="chip-yellow">🛡 Govt.</div>
+          </div>
+        </div>
+        <div class="pay-row">
+          <div class="pay-active"><span style="font-size:14px;">💵</span><span style="font-size:11px; font-weight:700; color:#fff;">Cash</span></div>
+          <div class="pay-inactive"><span style="font-size:14px;">📱</span><span style="font-size:11px; font-weight:600; color:#bbb;">UPI</span></div>
+        </div>
+        <button class="btn-gold">🛺 Book Auto · ₹42</button>
+      </div>
+    </div>
+    <span class="verdict verdict-bad">❌ Childish</span>
+    <div class="option-name">Pale Yellow Tint</div>
+    <div class="option-verdict">#FEF5DC background. Looks like a children's reward card.</div>
+  </div>
+
+  <!-- ══ OPTION 2 — INK BLACK ══ -->
+  <div class="phone-wrap">
+    <div class="option-num" style="color:#f9b01b;">Option A</div>
+    <div class="phone">
+      <div class="phone-top"><div class="notch"></div></div>
+      <div class="screen">
+        <div class="mini-route">
+          <div class="mini-spine"><div class="r-dot" style="background:#00C96B;"></div><div class="r-line"></div><div class="r-dot" style="background:#F03A3A;"></div></div>
+          <div class="mini-stops">
+            <div class="mini-stop"><div class="stop-lbl" style="color:#00C96B;">From</div><div class="stop-addr">Railway Colony</div></div>
+            <div class="mini-stop"><div class="stop-lbl" style="color:#F03A3A;">To</div><div class="stop-addr">Bus Stand</div></div>
+          </div>
+        </div>
+        <div class="fare-ink">
+          <div class="ink-glow"></div>
+          <div style="position:relative;">
+            <div class="fare-label-dark">Estimated Fare</div>
+            <div class="fare-num-dark">₹42</div>
+          </div>
+          <div class="fare-meta" style="position:relative;">
+            <div class="chip-dark">📏 3.2 km</div>
+            <div class="chip-dark">⏱ 12 min</div>
+            <div class="chip-dark">🛡 Govt.</div>
+          </div>
+        </div>
+        <div class="pay-row">
+          <div class="pay-active"><span style="font-size:14px;">💵</span><span style="font-size:11px; font-weight:700; color:#fff;">Cash</span></div>
+          <div class="pay-inactive"><span style="font-size:14px;">📱</span><span style="font-size:11px; font-weight:600; color:#bbb;">UPI</span></div>
+        </div>
+        <button class="btn-gold">🛺 Book Auto · ₹42</button>
+      </div>
+    </div>
+    <span class="verdict verdict-great">⚡ Bold</span>
+    <div class="option-name">Ink Black Card</div>
+    <div class="option-verdict">Dark card on white screen. Gold number pops hard. Same treatment as OTP card — consistent.</div>
+  </div>
+
+  <!-- ══ OPTION 3 — DEEP NAVY ══ -->
+  <div class="phone-wrap">
+    <div class="option-num" style="color:#f9b01b;">Option B</div>
+    <div class="phone">
+      <div class="phone-top"><div class="notch"></div></div>
+      <div class="screen">
+        <div class="mini-route">
+          <div class="mini-spine"><div class="r-dot" style="background:#00C96B;"></div><div class="r-line"></div><div class="r-dot" style="background:#F03A3A;"></div></div>
+          <div class="mini-stops">
+            <div class="mini-stop"><div class="stop-lbl" style="color:#00C96B;">From</div><div class="stop-addr">Railway Colony</div></div>
+            <div class="mini-stop"><div class="stop-lbl" style="color:#F03A3A;">To</div><div class="stop-addr">Bus Stand</div></div>
+          </div>
+        </div>
+        <div class="fare-navy">
+          <div class="navy-glow"></div>
+          <div style="position:relative;">
+            <div class="fare-label-navy">Estimated Fare</div>
+            <div class="fare-num-dark">₹42</div>
+          </div>
+          <div class="fare-meta" style="position:relative;">
+            <div class="chip-navy">📏 3.2 km</div>
+            <div class="chip-navy">⏱ 12 min</div>
+            <div class="chip-navy">🛡 Govt.</div>
+          </div>
+        </div>
+        <div class="pay-row">
+          <div class="pay-active"><span style="font-size:14px;">💵</span><span style="font-size:11px; font-weight:700; color:#fff;">Cash</span></div>
+          <div class="pay-inactive"><span style="font-size:14px;">📱</span><span style="font-size:11px; font-weight:600; color:#bbb;">UPI</span></div>
+        </div>
+        <button class="btn-gold">🛺 Book Auto · ₹42</button>
+      </div>
+    </div>
+    <span class="verdict verdict-great">🌙 Rich</span>
+    <div class="option-name">Deep Navy Card</div>
+    <div class="option-verdict">#080B1A dark blue. Gold on navy is a premium classic — trust, authority, night sky.</div>
+  </div>
+
+  <!-- ══ OPTION 4 — STONE / GRAPHITE ══ -->
+  <div class="phone-wrap">
+    <div class="option-num" style="color:#f9b01b;">Option C</div>
+    <div class="phone">
+      <div class="phone-top"><div class="notch"></div></div>
+      <div class="screen">
+        <div class="mini-route">
+          <div class="mini-spine"><div class="r-dot" style="background:#00C96B;"></div><div class="r-line"></div><div class="r-dot" style="background:#F03A3A;"></div></div>
+          <div class="mini-stops">
+            <div class="mini-stop"><div class="stop-lbl" style="color:#00C96B;">From</div><div class="stop-addr">Railway Colony</div></div>
+            <div class="mini-stop"><div class="stop-lbl" style="color:#F03A3A;">To</div><div class="stop-addr">Bus Stand</div></div>
+          </div>
+        </div>
+        <div class="fare-stone">
+          <div>
+            <div class="fare-label-light">Estimated Fare</div>
+            <div class="fare-num-light">₹42</div>
+          </div>
+          <div class="fare-meta">
+            <div class="chip-stone">📏 3.2 km</div>
+            <div class="chip-stone">⏱ 12 min</div>
+            <div class="chip-stone">🛡 Govt.</div>
+          </div>
+        </div>
+        <div class="pay-row">
+          <div class="pay-active"><span style="font-size:14px;">💵</span><span style="font-size:11px; font-weight:700; color:#fff;">Cash</span></div>
+          <div class="pay-inactive"><span style="font-size:14px;">📱</span><span style="font-size:11px; font-weight:600; color:#bbb;">UPI</span></div>
+        </div>
+        <button class="btn-gold">🛺 Book Auto · ₹42</button>
+      </div>
+    </div>
+    <span class="verdict verdict-ok">🪨 Neutral</span>
+    <div class="option-name">Stone / Warm Grey</div>
+    <div class="option-verdict">#F0EDE8 — warm stone, no colour at all. Mature, understated. Gold number stands alone.</div>
+  </div>
+
+  <!-- ══ OPTION 5 — BORDER ONLY ══ -->
+  <div class="phone-wrap">
+    <div class="option-num" style="color:#f9b01b;">Option D</div>
+    <div class="phone">
+      <div class="phone-top"><div class="notch"></div></div>
+      <div class="screen">
+        <div class="mini-route">
+          <div class="mini-spine"><div class="r-dot" style="background:#00C96B;"></div><div class="r-line"></div><div class="r-dot" style="background:#F03A3A;"></div></div>
+          <div class="mini-stops">
+            <div class="mini-stop"><div class="stop-lbl" style="color:#00C96B;">From</div><div class="stop-addr">Railway Colony</div></div>
+            <div class="mini-stop"><div class="stop-lbl" style="color:#F03A3A;">To</div><div class="stop-addr">Bus Stand</div></div>
+          </div>
+        </div>
+        <div class="fare-border">
+          <div>
+            <div class="fare-label-light">Estimated Fare</div>
+            <div class="fare-num-light">₹42</div>
+          </div>
+          <div class="fare-meta">
+            <div class="chip-gold">📏 3.2 km</div>
+            <div class="chip-gold">⏱ 12 min</div>
+            <div class="chip-gold">🛡 Govt.</div>
+          </div>
+        </div>
+        <div class="pay-row">
+          <div class="pay-active"><span style="font-size:14px;">💵</span><span style="font-size:11px; font-weight:700; color:#fff;">Cash</span></div>
+          <div class="pay-inactive"><span style="font-size:14px;">📱</span><span style="font-size:11px; font-weight:600; color:#bbb;">UPI</span></div>
+        </div>
+        <button class="btn-gold">🛺 Book Auto · ₹42</button>
+      </div>
+    </div>
+    <span class="verdict verdict-best">✨ Clean</span>
+    <div class="option-name">Gold Border Only</div>
+    <div class="option-verdict">White bg, 2.5px gold border + soft glow. Zero fill — pure, minimal, confident. Gold only where it needs to be.</div>
+  </div>
+
+</div>
+
+<div class="sep"></div>
+
+<!-- COMPARISON TABLE -->
+<div class="section-label">Quick Comparison</div>
+<div class="table">
+  <div class="t-row">
+    <div class="t-cell t-head">Option</div>
+    <div class="t-cell t-head" style="text-align:center;">Mood</div>
+    <div class="t-cell t-head">Best when</div>
+  </div>
+  <div class="t-row">
+    <div class="t-cell t-name">Current · Pale Yellow</div>
+    <div class="t-cell" style="text-align:center; font-size:18px;">👶</div>
+    <div class="t-cell t-desc">Nowhere. Retire it.</div>
+  </div>
+  <div class="t-row">
+    <div class="t-cell t-name">A · Ink Black</div>
+    <div class="t-cell" style="text-align:center; font-size:18px;">⚡</div>
+    <div class="t-cell t-desc">You want the fare to feel like a statement. Pairs with OTP card for design consistency across screens.</div>
+  </div>
+  <div class="t-row">
+    <div class="t-cell t-name">B · Deep Navy</div>
+    <div class="t-cell" style="text-align:center; font-size:18px;">🌙</div>
+    <div class="t-cell t-desc">You want premium without pure black. Gold on navy = luxury — think Rolls Royce, HDFC Black card.</div>
+  </div>
+  <div class="t-row">
+    <div class="t-cell t-name">C · Stone Grey</div>
+    <div class="t-cell" style="text-align:center; font-size:18px;">🪨</div>
+    <div class="t-cell t-desc">You want no colour politics. Neutral, serious, the fare carries all the weight. Suits both light and dark mode.</div>
+  </div>
+  <div class="t-row">
+    <div class="t-cell t-name">D · Gold Border</div>
+    <div class="t-cell" style="text-align:center; font-size:18px;">✨</div>
+    <div class="t-cell t-desc">Most minimal option. White background, gold frame. Clean like a receipt from a premium restaurant. No childish fill at all.</div>
+  </div>
+</div>
+
+<div style="text-align:center; color:#1a1a1a; font-size:10px; letter-spacing:3px; padding-bottom:40px; text-transform:uppercase;">
+  Aye Auto · Fare Card Options · #f9b01b
+</div>
+
+</body>
+</html>

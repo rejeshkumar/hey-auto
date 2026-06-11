@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aye Auto — Premium Redesign v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #080808;
+  color: #fff;
+  padding: 40px 16px 80px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── PAGE HEADER ── */
+.page-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+.page-header h1 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #e47200;
+  margin-bottom: 20px;
+}
+.page-header .headline {
+  font-size: 42px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.1;
+  margin-bottom: 16px;
+  letter-spacing: -1px;
+}
+.page-header .sub {
+  font-size: 15px;
+  color: #555;
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ── SECTION ── */
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #e47200;
+  text-align: center;
+  margin-bottom: 40px;
+}
+.section-rule {
+  width: 1px;
+  height: 60px;
+  background: #222;
+  margin: 0 auto 40px;
+}
+
+/* ── PHONE FRAME ── */
+.phones-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  justify-content: center;
+  margin-bottom: 80px;
+}
+.phone-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.phone-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #333;
+}
+.phone {
+  width: 320px;
+  min-height: 660px;
+  background: #0D0D0D;
+  border-radius: 44px;
+  overflow: hidden;
+  position: relative;
+  border: 1.5px solid #1e1e1e;
+  box-shadow:
+    0 0 0 6px #111,
+    0 0 0 7px #1a1a1a,
+    0 40px 100px rgba(0,0,0,0.8),
+    0 0 60px rgba(228,114,0,0.04);
+  font-family: 'Inter', sans-serif;
+}
+/* dynamic island */
+.phone::before {
+  content: '';
+  position: absolute;
+  top: 12px; left: 50%; transform: translateX(-50%);
+  width: 90px; height: 28px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 200;
+  border: 1px solid #1a1a1a;
+}
+
+/* ── COLOUR TOKENS ── */
+:root {
+  --black:    #080808;
+  --bg:       #0D0D0D;
+  --surface:  #141414;
+  --card:     #1A1A1A;
+  --card2:    #202020;
+  --border:   #2a2a2a;
+  --border2:  #1e1e1e;
+  --orange:   #e47200;
+  --orange-dk:#b85c00;
+  --orange-lt:#2a1500;
+  --orange-gl:rgba(228,114,0,0.12);
+  --white:    #FFFFFF;
+  --grey1:    #AAAAAA;
+  --grey2:    #666666;
+  --grey3:    #333333;
+  --green:    #00D26A;
+  --green-dk: #00A854;
+  --green-gl: rgba(0,210,106,0.12);
+  --red:      #FF3B3B;
+  --red-gl:   rgba(255,59,59,0.12);
+  --text:     #FFFFFF;
+  --sub:      #888888;
+  --muted:    #444444;
+}
+
+/* ── MAP ── */
+.map {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: #0a1410;
+}
+/* dark map grid */
+.map::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(255,255,255,0.025) 28px, rgba(255,255,255,0.025) 29px),
+    repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(255,255,255,0.025) 28px, rgba(255,255,255,0.025) 29px);
+  pointer-events: none;
+}
+.map-road-h {
+  position: absolute; left: 0; right: 0;
+  background: #1c2a24; opacity: 1;
+}
+.map-road-v {
+  position: absolute; top: 0; bottom: 0;
+  background: #1c2a24; opacity: 1;
+}
+.map-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+/* ── BOTTOM SHEET ── */
+.sheet {
+  background: var(--surface);
+  border-radius: 28px 28px 0 0;
+  padding: 12px 20px 32px;
+  border-top: 1px solid var(--border);
+}
+.handle {
+  width: 36px; height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+/* ── TOP BAR ── */
+.top-bar {
+  position: absolute;
+  top: 52px; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  z-index: 50;
+}
+.icon-pill {
+  height: 36px;
+  background: rgba(13,13,13,0.85);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  display: flex; align-items: center;
+  padding: 0 12px;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--white);
+  backdrop-filter: blur(12px);
+}
+.icon-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+.icon-pill.online  { border-color: var(--green);  color: var(--green); }
+.icon-pill.offline { border-color: var(--red);    color: var(--red); }
+.top-actions { display: flex; gap: 8px; }
+.icon-btn {
+  width: 36px; height: 36px;
+  background: rgba(13,13,13,0.85);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  backdrop-filter: blur(12px);
+  color: var(--grey1);
+}
+
+/* ── BUTTONS ── */
+.btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  border: none;
+  transition: opacity 0.15s;
+}
+.btn-orange { background: var(--orange); color: #fff; }
+.btn-ghost  { background: var(--card);   color: var(--grey1); border: 1px solid var(--border); }
+.btn-danger { background: var(--red-gl); color: var(--red);   border: 1px solid rgba(255,59,59,0.3); }
+
+/* ── FARE SLAB ── */
+.fare-slab {
+  background: var(--orange-gl);
+  border: 1px solid rgba(228,114,0,0.2);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.fare-num {
+  font-size: 60px;
+  font-weight: 900;
+  color: var(--orange);
+  line-height: 1;
+  letter-spacing: -2px;
+}
+.fare-meta-col { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.fare-chip {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--card2); border-radius: 8px;
+  padding: 5px 9px;
+  font-size: 12px; font-weight: 600; color: var(--grey1);
+}
+
+/* ── STAT SLAB ── */
+.stat-slab {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.stat-cell {
+  background: var(--card);
+  padding: 14px 10px;
+  text-align: center;
+}
+.stat-big { font-size: 26px; font-weight: 900; color: var(--orange); letter-spacing: -1px; }
+.stat-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+
+/* ── ROUTE ROW ── */
+.route-wrap { display: flex; gap: 12px; margin-bottom: 16px; }
+.route-spine { display: flex; flex-direction: column; align-items: center; padding-top: 12px; }
+.r-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.r-line { width: 1px; flex: 1; background: var(--border); min-height: 16px; margin: 4px 0; }
+.route-stops { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.route-stop {
+  background: var(--card);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+}
+.stop-label { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 2px; }
+.stop-addr { font-size: 13px; font-weight: 600; color: var(--white); }
+
+/* ── OTP DISPLAY ── */
+.otp-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.otp-glow {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 200px; height: 100px; border-radius: 50%;
+  background: var(--orange); filter: blur(50px); opacity: 0.08;
+  pointer-events: none;
+}
+.otp-digits {
+  font-size: 64px; font-weight: 900; letter-spacing: 16px;
+  color: var(--orange); line-height: 1;
+  padding-right: 16px; /* offset letter-spacing */
+}
+.otp-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.otp-hint  { font-size: 12px; color: var(--grey2); margin-top: 10px; }
+
+/* ── DRIVER CARD ── */
+.driver-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.d-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--orange-lt);
+  border: 1.5px solid var(--orange);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.d-name { font-size: 14px; font-weight: 700; color: var(--white); }
+.d-plate { font-size: 12px; font-weight: 600; color: var(--orange); margin-top: 1px; }
+.d-rating { font-size: 12px; color: var(--grey2); margin-top: 1px; }
+.call-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--green-gl);
+  border: 1px solid rgba(0,210,106,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0; margin-left: auto;
+}
+
+/* ── PLAN CARDS ── */
+.plan-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 10px;
+}
+.plan-card.sel {
+  border-color: var(--orange);
+  background: var(--orange-lt);
+}
+.radio-ring {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.radio-ring.on { border-color: var(--orange); }
+.radio-ring.on::after {
+  content: ''; width: 9px; height: 9px;
+  border-radius: 50%; background: var(--orange);
+}
+.plan-name { font-size: 14px; font-weight: 700; color: var(--white); }
+.plan-days { font-size: 11px; color: var(--grey2); margin-top: 2px; }
+.plan-price-col { margin-left: auto; text-align: right; }
+.plan-price-num { font-size: 20px; font-weight: 800; color: var(--white); }
+.plan-price-day { font-size: 10px; color: var(--orange); font-weight: 600; margin-top: 1px; }
+
+/* ── SEARCH BAR ── */
+.search-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 13px 14px;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+.search-bar:focus-within, .search-bar.active {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px var(--orange-gl);
+}
+.s-icon {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: var(--orange-lt);
+  border: 1px solid rgba(228,114,0,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.s-text { font-size: 14px; color: var(--grey2); flex: 1; font-weight: 500; }
+.s-arrow {
+  font-size: 12px; color: var(--orange); font-weight: 700;
+}
+
+/* ── FAV ROW ── */
+.fav-row { display: flex; gap: 8px; margin-bottom: 20px; }
+.fav-chip {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.fav-chip.empty { border-style: dashed; }
+.fav-icon-wrap {
+  width: 30px; height: 30px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; margin-bottom: 2px;
+}
+.fav-name { font-size: 11px; font-weight: 700; color: var(--white); }
+.fav-addr { font-size: 10px; color: var(--grey2); }
+
+/* ── QUICK ROUTES ── */
+.quick-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.quick-chip {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 6px;
+  text-align: center;
+}
+.quick-icon { font-size: 20px; margin-bottom: 4px; }
+.quick-name { font-size: 10px; font-weight: 600; color: var(--grey1); }
+
+/* ── USP STRIP ── */
+.usp-strip {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 14px;
+  background: var(--green-gl);
+  border: 1px solid rgba(0,210,106,0.2);
+  border-radius: 12px;
+}
+.usp-text { font-size: 11px; font-weight: 600; color: var(--green); }
+
+/* ── ACCEPT BTN (big) ── */
+.accept-big {
+  width: 100%; padding: 18px;
+  background: var(--orange);
+  border: none; border-radius: 18px;
+  font-family: 'Inter', sans-serif;
+  font-size: 17px; font-weight: 800;
+  color: #fff; letter-spacing: 0.2px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: 0 8px 32px rgba(228,114,0,0.35);
+}
+
+/* ── STATUS BANNER ── */
+.banner {
+  display: flex; align-items: center; gap: 10px;
+  border-radius: 14px; padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.banner.arrived  { background: var(--green-gl); border: 1px solid rgba(0,210,106,0.25); }
+.banner.on-ride  { background: var(--orange-gl); border: 1px solid rgba(228,114,0,0.25); }
+.banner-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.banner-title { font-size: 13px; font-weight: 700; }
+.banner-sub   { font-size: 11px; margin-top: 1px; }
+
+/* ── SUBSCRIPTION ACTIVE CARD ── */
+.sub-active {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.sub-active::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--orange), var(--orange-dk));
+}
+.sub-glow {
+  position: absolute; top: -20px; right: -20px;
+  width: 120px; height: 120px; border-radius: 50%;
+  background: var(--orange); filter: blur(60px); opacity: 0.06;
+  pointer-events: none;
+}
+.active-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--green-gl);
+  border: 1px solid rgba(0,210,106,0.25);
+  border-radius: 8px; padding: 4px 10px;
+  font-size: 10px; font-weight: 700;
+  color: var(--green); letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.sub-plan-name { font-size: 22px; font-weight: 800; color: var(--white); margin-bottom: 4px; }
+.sub-tagline   { font-size: 12px; color: var(--grey2); margin-bottom: 16px; }
+.sub-meta-row  { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 0; }
+.sub-meta-divider { background: var(--border); }
+.sub-meta-item { padding: 0 12px; }
+.sub-meta-item:first-child { padding-left: 0; }
+.sub-meta-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.sub-meta-val   { font-size: 20px; font-weight: 900; color: var(--white); margin-top: 4px; }
+.sub-meta-val.orange { color: var(--orange); }
+
+/* ── RIDE REQUEST OVERLAY ── */
+.request-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.72);
+  display: flex; align-items: flex-end;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+.request-card {
+  background: var(--surface);
+  border-radius: 28px 28px 0 0;
+  border-top: 1px solid var(--border);
+  width: 100%; overflow: hidden;
+  padding-bottom: 28px;
+}
+.req-timer-track { height: 3px; background: var(--border); }
+.req-timer-bar   { height: 3px; background: var(--orange); width: 58%; }
+.req-body { padding: 18px 20px 0; }
+.req-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.req-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.req-name  { font-size: 20px; font-weight: 800; color: var(--white); }
+.req-timer-num { font-size: 44px; font-weight: 900; color: var(--white); line-height: 1; }
+.req-timer-sec { font-size: 10px; color: var(--grey2); text-align: center; margin-top: 2px; }
+.req-fare-slab {
+  background: var(--orange-gl);
+  border: 1px solid rgba(228,114,0,0.2);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.req-fare-num { font-size: 52px; font-weight: 900; color: var(--orange); line-height: 1; letter-spacing: -2px; }
+.req-chips { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.req-chip {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--card2); border-radius: 8px;
+  padding: 4px 8px; font-size: 11px; font-weight: 600; color: var(--grey1);
+}
+.req-actions { display: flex; gap: 10px; padding: 0 0; margin-top: 12px; }
+.req-decline {
+  flex: 1; padding: 14px;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 14px; font-family: 'Inter', sans-serif;
+  font-size: 14px; font-weight: 600; color: var(--grey2); cursor: pointer;
+}
+.req-accept {
+  flex: 2; padding: 14px;
+  background: var(--orange); border: none;
+  border-radius: 14px; font-family: 'Inter', sans-serif;
+  font-size: 15px; font-weight: 800; color: #fff; cursor: pointer;
+  box-shadow: 0 6px 24px rgba(228,114,0,0.3);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+
+/* ── SEPARATOR ── */
+.sep { height: 1px; background: #111; margin: 60px 0; }
+
+/* ── SWATCH GUIDE ── */
+.swatches { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 60px; }
+.swatch { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.swatch-box { width: 60px; height: 60px; border-radius: 14px; }
+.swatch-name { font-size: 10px; color: #444; font-weight: 600; }
+.swatch-hex  { font-size: 9px; color: #333; }
+
+/* ── COMPARE TABLE ── */
+.compare { max-width: 860px; margin: 0 auto 60px; }
+.compare-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px; background: #111; border-radius: 0;
+}
+.compare-row:first-child { border-radius: 14px 14px 0 0; }
+.compare-row:last-child  { border-radius: 0 0 14px 14px; }
+.compare-cell {
+  background: #0d0d0d;
+  padding: 14px 18px;
+  font-size: 13px;
+}
+.compare-cell.head {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: #333;
+}
+.compare-cell.before { color: #444; }
+.compare-cell.after  { color: #ccc; font-weight: 600; }
+.compare-cell.dim { color: var(--orange); font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+/* MISC */
+.row-between { display: flex; align-items: center; justify-content: space-between; }
+.col { display: flex; flex-direction: column; }
+.flex1 { flex: 1; }
+.mb8  { margin-bottom: 8px; }
+.mb12 { margin-bottom: 12px; }
+.mb16 { margin-bottom: 16px; }
+.center { text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- ===== PAGE HEADER ===== -->
+<div class="page-header">
+  <h1>Aye Auto · Redesign v2</h1>
+  <div class="headline">Design like it matters.<br>Because it does.</div>
+  <div class="sub">Dark. Dense. Fearless. Every pixel carries weight — no decoration, no noise. The number the user needs is the biggest thing on screen.</div>
+</div>
+
+<!-- ===== COLOUR SYSTEM ===== -->
+<div class="section-label">Colour System</div>
+<div class="swatches">
+  <div class="swatch">
+    <div class="swatch-box" style="background:#e47200; box-shadow:0 4px 20px rgba(228,114,0,0.4);"></div>
+    <div class="swatch-name">Orange</div>
+    <div class="swatch-hex">#e47200</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#2a1500; border:1px solid #3a1e00;"></div>
+    <div class="swatch-name">Orange Tint</div>
+    <div class="swatch-hex">#2a1500</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#0D0D0D; border:1px solid #1a1a1a;"></div>
+    <div class="swatch-name">Background</div>
+    <div class="swatch-hex">#0D0D0D</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#141414; border:1px solid #1e1e1e;"></div>
+    <div class="swatch-name">Surface</div>
+    <div class="swatch-hex">#141414</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#1A1A1A; border:1px solid #2a2a2a;"></div>
+    <div class="swatch-name">Card</div>
+    <div class="swatch-hex">#1A1A1A</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#00D26A; box-shadow:0 4px 20px rgba(0,210,106,0.3);"></div>
+    <div class="swatch-name">Online</div>
+    <div class="swatch-hex">#00D26A</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#FF3B3B; box-shadow:0 4px 20px rgba(255,59,59,0.3);"></div>
+    <div class="swatch-name">Error / SOS</div>
+    <div class="swatch-hex">#FF3B3B</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-box" style="background:#FFFFFF;"></div>
+    <div class="swatch-name">Text</div>
+    <div class="swatch-hex">#FFFFFF</div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ===========================
+     RIDER APP
+=========================== -->
+<div class="section-label">Rider App</div>
+
+<div class="phones-row">
+
+  <!-- RIDER HOME -->
+  <div class="phone-wrap">
+    <div class="phone-label">Home</div>
+    <div class="phone">
+      <!-- Dark map -->
+      <div class="map" style="height:310px;">
+        <div class="map-glow" style="background:#e47200; width:180px; height:180px; top:40%; left:30%; opacity:0.06;"></div>
+        <div class="map-road-h" style="top:52%; height:11px;"></div>
+        <div class="map-road-h" style="top:72%; height:7px;"></div>
+        <div class="map-road-v" style="left:36%; width:9px;"></div>
+        <div class="map-road-v" style="left:62%; width:6px;"></div>
+        <!-- Auto marker -->
+        <div style="position:absolute; bottom:36px; left:50%; transform:translateX(-50%); z-index:10; display:flex; flex-direction:column; align-items:center; gap:0;">
+          <div style="background:var(--orange); width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; border:2.5px solid rgba(228,114,0,0.4); box-shadow:0 0 0 8px rgba(228,114,0,0.1), 0 6px 20px rgba(228,114,0,0.4);">🛺</div>
+          <div style="width:2px; height:10px; background:var(--orange); opacity:0.5;"></div>
+        </div>
+        <!-- Location btn -->
+        <div style="position:absolute; bottom:14px; right:14px; width:34px; height:34px; background:rgba(20,20,20,0.85); border:1px solid #2a2a2a; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; backdrop-filter:blur(8px);">🎯</div>
+      </div>
+      <!-- Top bar -->
+      <div class="top-bar">
+        <div class="col">
+          <span style="font-size:16px; font-weight:700; color:#fff;">Good morning 👋</span>
+          <span style="font-size:11px; color:#666; margin-top:1px;">Taliparamba</span>
+        </div>
+        <div class="top-actions">
+          <div class="icon-btn" style="font-size:11px; font-weight:700; width:44px; border-radius:10px;">EN</div>
+          <div class="icon-btn">👤</div>
+        </div>
+      </div>
+      <!-- Sheet -->
+      <div class="sheet">
+        <div class="handle"></div>
+        <!-- Search -->
+        <div class="search-bar active">
+          <div class="s-icon">🔍</div>
+          <span class="s-text">Where to?</span>
+          <span class="s-arrow">→</span>
+        </div>
+        <!-- Favs -->
+        <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#333; margin-bottom:10px;">Favourites</div>
+        <div class="fav-row">
+          <div class="fav-chip">
+            <div class="fav-icon-wrap" style="background:var(--orange-lt); border:1px solid rgba(228,114,0,0.2);">🏠</div>
+            <div class="fav-name">Home</div>
+            <div class="fav-addr">Railway Colony</div>
+          </div>
+          <div class="fav-chip">
+            <div class="fav-icon-wrap" style="background:#0d1a2a; border:1px solid rgba(59,130,246,0.2);">💼</div>
+            <div class="fav-name">Work</div>
+            <div class="fav-addr">Market Road</div>
+          </div>
+          <div class="fav-chip empty">
+            <div class="fav-icon-wrap" style="background:var(--card2); border:1px dashed #2a2a2a;">⭐</div>
+            <div class="fav-name" style="color:#333;">Other</div>
+            <div class="fav-addr" style="color:#e47200; font-weight:700;">+ Add</div>
+          </div>
+        </div>
+        <!-- Quick routes -->
+        <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#333; margin-bottom:10px;">Quick Routes</div>
+        <div class="quick-row">
+          <div class="quick-chip"><div class="quick-icon">🚌</div><div class="quick-name">Bus Stand</div></div>
+          <div class="quick-chip"><div class="quick-icon">🚂</div><div class="quick-name">Railway</div></div>
+          <div class="quick-chip"><div class="quick-icon">🏥</div><div class="quick-name">Hospital</div></div>
+          <div class="quick-chip"><div class="quick-icon">⛪</div><div class="quick-name">Temple</div></div>
+        </div>
+        <!-- USP -->
+        <div class="usp-strip" style="margin-top:4px;">
+          <span style="font-size:14px;">✅</span>
+          <span class="usp-text">Govt. rates · Zero surge · Zero commission</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKING CONFIRM -->
+  <div class="phone-wrap">
+    <div class="phone-label">Booking Confirm</div>
+    <div class="phone">
+      <div class="map" style="height:200px;">
+        <div class="map-road-h" style="top:50%; height:9px;"></div>
+        <div class="map-road-v" style="left:42%; width:8px;"></div>
+        <!-- Pickup -->
+        <div style="position:absolute; top:28px; left:32%; z-index:10;">
+          <div style="background:#00D26A; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; box-shadow:0 4px 12px rgba(0,210,106,0.4);">📍</div>
+        </div>
+        <!-- Drop -->
+        <div style="position:absolute; top:28px; left:62%; z-index:10;">
+          <div style="background:#FF3B3B; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; box-shadow:0 4px 12px rgba(255,59,59,0.4);">🏁</div>
+        </div>
+        <!-- Route line -->
+        <div style="position:absolute; top:42px; left:33%; width:30%; height:2px; background:linear-gradient(90deg,#00D26A,#e47200,#FF3B3B); border-radius:1px; z-index:5;"></div>
+      </div>
+      <!-- Back btn -->
+      <div style="position:absolute; top:52px; left:14px; z-index:50;" class="icon-btn">←</div>
+
+      <div class="sheet" style="padding-top:12px;">
+        <div class="handle"></div>
+        <!-- Route -->
+        <div class="route-wrap">
+          <div class="route-spine">
+            <div class="r-dot" style="background:#00D26A;"></div>
+            <div class="r-line"></div>
+            <div class="r-dot" style="background:#FF3B3B;"></div>
+          </div>
+          <div class="route-stops">
+            <div class="route-stop">
+              <div class="stop-label" style="color:#00D26A;">From</div>
+              <div class="stop-addr">Railway Colony, Taliparamba</div>
+            </div>
+            <div class="route-stop">
+              <div class="stop-label" style="color:#FF3B3B;">To</div>
+              <div class="stop-addr">Taliparamba Bus Stand</div>
+            </div>
+          </div>
+        </div>
+        <!-- Fare HERO -->
+        <div class="fare-slab">
+          <div>
+            <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:8px;">Estimated Fare</div>
+            <div class="fare-num">₹42</div>
+          </div>
+          <div class="fare-meta-col">
+            <div class="fare-chip">📏 3.2 km</div>
+            <div class="fare-chip">⏱ 12 min</div>
+            <div class="fare-chip" style="color:var(--orange); border:1px solid rgba(228,114,0,0.2);">🛡 Govt. rate</div>
+          </div>
+        </div>
+        <!-- Payment toggle -->
+        <div style="display:flex; gap:8px; margin-bottom:14px;">
+          <div style="flex:1; background:var(--orange); border-radius:12px; padding:11px; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px;">
+            <span style="font-size:16px;">💵</span>
+            <span style="font-size:13px; font-weight:700; color:#fff;">Cash</span>
+          </div>
+          <div style="flex:1; background:var(--card); border-radius:12px; padding:11px; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px; border:1px solid var(--border);">
+            <span style="font-size:16px;">📱</span>
+            <span style="font-size:13px; font-weight:600; color:var(--grey2);">UPI</span>
+          </div>
+        </div>
+        <button class="accept-big">🛺 Book Auto · ₹42</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE RIDE — DRIVER ARRIVED -->
+  <div class="phone-wrap">
+    <div class="phone-label">Active Ride — Driver Arrived</div>
+    <div class="phone">
+      <div class="map" style="height:220px;">
+        <div class="map-road-h" style="top:50%; height:9px;"></div>
+        <div class="map-road-v" style="left:50%; width:8px;"></div>
+        <div class="map-glow" style="background:var(--orange); width:120px; height:120px; bottom:10px; left:40%; opacity:0.12;"></div>
+        <div style="position:absolute; bottom:24px; left:46%; transform:translateX(-50%); z-index:10;">
+          <div style="background:var(--orange); width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; border:2.5px solid rgba(228,114,0,0.4); box-shadow:0 0 0 8px rgba(228,114,0,0.12), 0 6px 20px rgba(228,114,0,0.4);">🛺</div>
+        </div>
+      </div>
+      <!-- SOS -->
+      <div style="position:absolute; top:52px; right:14px; z-index:50; background:rgba(255,59,59,0.15); border:1px solid rgba(255,59,59,0.35); border-radius:10px; padding:8px 14px; display:flex; align-items:center; gap:5px; backdrop-filter:blur(8px);">
+        <span style="font-size:12px; font-weight:800; color:#FF3B3B;">🚨 SOS</span>
+      </div>
+
+      <div class="sheet">
+        <div class="handle"></div>
+        <!-- Arrived banner -->
+        <div class="banner arrived mb12">
+          <div class="banner-dot" style="background:#00D26A;"></div>
+          <div>
+            <div class="banner-title" style="color:#00D26A;">Driver has arrived</div>
+            <div class="banner-sub" style="color:#006633;">Share OTP to start your ride</div>
+          </div>
+        </div>
+        <!-- OTP -->
+        <div class="otp-wrap mb12">
+          <div class="otp-glow"></div>
+          <div class="otp-label">Your Ride OTP</div>
+          <div class="otp-digits">4721</div>
+          <div class="otp-hint">Show this to your driver</div>
+        </div>
+        <!-- Driver card -->
+        <div class="driver-row">
+          <div class="d-avatar">👨</div>
+          <div>
+            <div class="d-name">Muhammed Shafeeq</div>
+            <div class="d-plate">KL-58 AB 1234</div>
+            <div class="d-rating">⭐ 4.8 · White Hero</div>
+          </div>
+          <div class="call-btn">📞</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="sep"></div>
+
+<!-- ===========================
+     DRIVER APP
+=========================== -->
+<div class="section-label">Driver App</div>
+
+<div class="phones-row">
+
+  <!-- DRIVER HOME OFFLINE -->
+  <div class="phone-wrap">
+    <div class="phone-label">Home — Offline</div>
+    <div class="phone">
+      <div class="map" style="height:360px;">
+        <div class="map-road-h" style="top:55%; height:11px;"></div>
+        <div class="map-road-v" style="left:46%; width:9px;"></div>
+        <!-- greyed auto icon -->
+        <div style="position:absolute; bottom:44px; left:44%; transform:translateX(-50%); z-index:10;">
+          <div style="background:#1a1a1a; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; border:2px solid #333; opacity:0.6;">🛺</div>
+        </div>
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.25);"></div>
+      </div>
+      <div class="top-bar">
+        <div class="icon-pill offline">
+          <div class="dot" style="background:var(--red);"></div>
+          Offline
+        </div>
+        <div class="top-actions">
+          <div class="icon-btn" style="font-size:11px; font-weight:700; width:44px; border-radius:10px;">EN</div>
+          <div class="icon-btn">👤</div>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="handle"></div>
+        <div style="margin-bottom:20px;">
+          <div style="font-size:20px; font-weight:800; color:var(--white); margin-bottom:4px;">Good morning, Shafeeq</div>
+          <div style="font-size:13px; color:var(--grey2);">Go online to start accepting rides</div>
+        </div>
+        <button class="accept-big">⚡ Go Online</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRIVER HOME ONLINE -->
+  <div class="phone-wrap">
+    <div class="phone-label">Home — Online / Waiting</div>
+    <div class="phone">
+      <div class="map" style="height:300px;">
+        <div class="map-road-h" style="top:55%; height:11px;"></div>
+        <div class="map-road-v" style="left:46%; width:9px;"></div>
+        <div class="map-glow" style="background:var(--orange); width:200px; height:200px; top:30%; left:25%; opacity:0.08;"></div>
+        <div style="position:absolute; bottom:32px; left:44%; transform:translateX(-50%); z-index:10; display:flex; flex-direction:column; align-items:center;">
+          <div style="background:var(--orange); width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; border:2.5px solid rgba(228,114,0,0.5); box-shadow:0 0 0 10px rgba(228,114,0,0.1), 0 6px 24px rgba(228,114,0,0.4);">🛺</div>
+          <div style="width:2px; height:10px; background:var(--orange); opacity:0.4;"></div>
+        </div>
+      </div>
+      <div class="top-bar">
+        <div class="icon-pill online">
+          <div class="dot" style="background:var(--green);"></div>
+          Online
+        </div>
+        <div class="top-actions">
+          <div class="icon-btn" style="font-size:11px; font-weight:700; width:44px; border-radius:10px;">EN</div>
+          <div class="icon-btn">👤</div>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="handle"></div>
+        <!-- Stats — earnings is BIG -->
+        <div class="stat-slab">
+          <div class="stat-cell">
+            <div class="stat-big">₹420</div>
+            <div class="stat-label">Today</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-big" style="font-size:22px; color:var(--white);">5</div>
+            <div class="stat-label">Rides</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-big" style="font-size:22px; color:var(--white);">₹30</div>
+            <div class="stat-label">Tips</div>
+          </div>
+        </div>
+        <!-- Waiting indicator -->
+        <div class="usp-strip mb12" style="justify-content:flex-start; gap:8px;">
+          <div style="width:7px; height:7px; border-radius:50%; background:var(--green); flex-shrink:0;"></div>
+          <span class="usp-text">Waiting for ride requests...</span>
+        </div>
+        <button class="btn btn-ghost">⏹ Go Offline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIDE REQUEST -->
+  <div class="phone-wrap">
+    <div class="phone-label">Ride Request</div>
+    <div class="phone" style="position:relative;">
+      <div class="map" style="height:100%; min-height:660px; position:absolute; inset:0;">
+        <div class="map-road-h" style="top:50%; height:11px;"></div>
+        <div class="map-road-v" style="left:46%; width:9px;"></div>
+        <div class="map-glow" style="background:var(--orange); width:220px; height:220px; top:20%; left:20%; opacity:0.1;"></div>
+      </div>
+      <div class="request-overlay">
+        <div class="request-card">
+          <div class="req-timer-track"><div class="req-timer-bar"></div></div>
+          <div class="req-body">
+            <!-- Header -->
+            <div class="req-header">
+              <div>
+                <div class="req-label">New Ride Request</div>
+                <div class="req-name">Arjun Menon</div>
+              </div>
+              <div style="text-align:center;">
+                <div class="req-timer-num">33</div>
+                <div class="req-timer-sec">seconds</div>
+              </div>
+            </div>
+            <!-- Fare — the hero -->
+            <div class="req-fare-slab">
+              <div>
+                <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:6px;">Fare</div>
+                <div class="req-fare-num">₹68</div>
+              </div>
+              <div class="req-chips">
+                <div class="req-chip">📏 4.8 km</div>
+                <div class="req-chip">⏱ 18 min</div>
+                <div class="req-chip" style="color:var(--orange);">⭐ 4.7</div>
+              </div>
+            </div>
+            <!-- Route -->
+            <div class="route-wrap" style="margin-bottom:0;">
+              <div class="route-spine">
+                <div class="r-dot" style="background:#00D26A;"></div>
+                <div class="r-line" style="min-height:12px;"></div>
+                <div class="r-dot" style="background:#FF3B3B;"></div>
+              </div>
+              <div class="route-stops">
+                <div class="route-stop" style="padding:7px 11px;">
+                  <div class="stop-label" style="color:#00D26A;">Pickup</div>
+                  <div class="stop-addr" style="font-size:12px;">Town Hall, Taliparamba</div>
+                </div>
+                <div class="route-stop" style="padding:7px 11px;">
+                  <div class="stop-label" style="color:#FF3B3B;">Drop</div>
+                  <div class="stop-addr" style="font-size:12px;">Govt. Hospital</div>
+                </div>
+              </div>
+            </div>
+            <!-- Actions -->
+            <div class="req-actions">
+              <button class="req-decline">✕ Decline</button>
+              <button class="req-accept">✓ Accept Ride</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBSCRIPTION -->
+  <div class="phone-wrap">
+    <div class="phone-label">Subscription</div>
+    <div class="phone">
+      <div style="padding:52px 18px 0; background:var(--bg); min-height:660px;">
+        <!-- Header -->
+        <div class="row-between mb16">
+          <div class="icon-btn">←</div>
+          <div style="font-size:15px; font-weight:700; color:var(--white);">Subscription</div>
+          <div style="width:36px;"></div>
+        </div>
+
+        <!-- Active card -->
+        <div class="sub-active">
+          <div class="sub-glow"></div>
+          <div class="active-badge">
+            <span style="width:6px; height:6px; border-radius:50%; background:var(--green);"></span>
+            Active
+          </div>
+          <div class="sub-plan-name">Monthly Plan</div>
+          <div class="sub-tagline">Zero commission · 100% your earnings</div>
+          <div class="sub-meta-row">
+            <div class="sub-meta-item">
+              <div class="sub-meta-label">Expires</div>
+              <div class="sub-meta-val" style="font-size:16px;">28 Jun 2026</div>
+            </div>
+            <div class="sub-meta-divider"></div>
+            <div class="sub-meta-item">
+              <div class="sub-meta-label">Days Left</div>
+              <div class="sub-meta-val orange">29</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plan list -->
+        <div style="font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#333; margin-bottom:12px;">Renew or Upgrade</div>
+
+        <div class="plan-card">
+          <div class="radio-ring"></div>
+          <div class="col flex1">
+            <div class="plan-name">Daily Pass</div>
+            <div class="plan-days">1 day access</div>
+          </div>
+          <div class="plan-price-col">
+            <div class="plan-price-num">₹25</div>
+            <div class="plan-price-day">₹25/day</div>
+          </div>
+        </div>
+
+        <div class="plan-card sel">
+          <div class="radio-ring on"></div>
+          <div class="col flex1">
+            <div class="plan-name">Monthly Plan</div>
+            <div class="plan-days">30 days access</div>
+          </div>
+          <div class="plan-price-col">
+            <div class="plan-price-num">₹500</div>
+            <div class="plan-price-day">₹17/day · Best value</div>
+          </div>
+        </div>
+
+        <button class="accept-big" style="margin-top:4px; font-size:15px;">Pay ₹500 via UPI</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="sep"></div>
+
+<!-- ===========================
+     V1 vs V2 COMPARE
+=========================== -->
+<div class="section-label">v1 vs v2 — What Changed</div>
+
+<div class="compare">
+  <div class="compare-row">
+    <div class="compare-cell head">Element</div>
+    <div class="compare-cell head" style="color:#333;">v1 — Light Premium</div>
+    <div class="compare-cell head" style="color:#e47200;">v2 — Dark / Bold</div>
+  </div>
+  <div class="compare-row">
+    <div class="compare-cell dim">Background</div>
+    <div class="compare-cell before">#FFFFFF — white. Looks like every app.</div>
+    <div class="compare-cell after">#0D0D0D — dark. Identity. Orange glows.</div>
+  </div>
+  <div class="compare-row">
+    <div class="compare-cell dim">Fare number</div>
+    <div class="compare-cell before">₹42 in small yellow on grey card. Easy to miss.</div>
+    <div class="compare-cell after">₹42 in 60px bold orange on dark slab. Impossible to miss.</div>
+  </div>
+  <div class="compare-row">
+    <div class="compare-cell dim">Driver Earnings</div>
+    <div class="compare-cell before">₹420 in amber on light grey surface. Underwhelming.</div>
+    <div class="compare-cell after">₹420 in 26px orange on dark grid. First thing you see.</div>
+  </div>
+  <div class="compare-row">
+    <div class="compare-cell dim">OTP Display</div>
+    <div class="compare-cell before">Navy card, orange digits. Decent but small.</div>
+    <div class="compare-cell after">Dark card, 64px orange digits, ambient glow. Unmissable at arm's length.</div>
+  </div>
+  <div class="compare-row">
+    <div class="compare-cell dim">Primary CTA</div>
+    <div class="compare-cell before">Navy button. Generic. Same as 1000 apps.</div>
+    <div class="compare-cell after">Full-width orange, shadow glow. It's the only thing to tap.</div>
+  </div>
+  <div class="compare-row">
+    <div class="compare-cell dim">Accept Ride button</div>
+    <div class="compare-cell before">Orange on white. Forgettable. Easy to not tap.</div>
+    <div class="compare-cell after">Orange on dark overlay. Glow shadow. Driver taps without thinking.</div>
+  </div>
+  <div class="compare-row">
+    <div class="compare-cell dim">Map</div>
+    <div class="compare-cell before">Green satellite placeholder. Clashes with white sheet.</div>
+    <div class="compare-cell after">Dark map (#0a1410). Seamless with dark sheet. Orange auto marker glows.</div>
+  </div>
+  <div class="compare-row">
+    <div class="compare-cell dim">Subscription card</div>
+    <div class="compare-cell before">Navy gradient. Looks out of place on white.</div>
+    <div class="compare-cell after">Dark card, orange top border strip, ambient glow. Premium. Consistent.</div>
+  </div>
+  <div class="compare-row">
+    <div class="compare-cell dim">Font</div>
+    <div class="compare-cell before">Poppins. Friendly, warm, rounded.</div>
+    <div class="compare-cell after">Inter. Sharp, modern, technical. Tesla uses it. Vercel uses it. Linear uses it.</div>
+  </div>
+  <div class="compare-row">
+    <div class="compare-cell dim">Card borders</div>
+    <div class="compare-cell before">1px #E2E8F0 on white. Multiple nested boxes. Spreadsheet feel.</div>
+    <div class="compare-cell after">1px #2a2a2a on dark. Barely visible. Depth through shade, not borders.</div>
+  </div>
+</div>
+
+<div style="text-align:center; color:#222; font-size:11px; letter-spacing:2px; padding-bottom:40px; text-transform:uppercase;">
+  Aye Auto · Dark Design System · #e47200 · Inter · v2
+</div>
+
+</body>
+</html>
