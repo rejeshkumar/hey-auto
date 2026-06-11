@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert, TextInput, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert, TextInput, Platform, ScrollView, KeyboardAvoidingView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { Button, StaticMapView } from '../../components';
@@ -155,13 +155,14 @@ export function ActiveRideScreen({ navigation }: any) {
   };
 
   const handleNavigate = () => {
-    if (!pickup) return;
-    const url = Platform.OS === 'ios'
-      ? `maps://app?daddr=${pickup.lat},${pickup.lng}`
-      : `google.navigation:q=${pickup.lat},${pickup.lng}`;
-    Linking.openURL(url).catch(() => {
-      Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${pickup.lat},${pickup.lng}`);
-    });
+    // Navigate to dropoff if ride started, otherwise to pickup
+    const dest = (phase === 'on_trip' && dropoff) ? dropoff : pickup;
+    if (!dest) return;
+    const googleMapsUrl = Platform.OS === 'ios'
+      ? `comgooglemaps://?daddr=${dest.lat},${dest.lng}&directionsmode=driving`
+      : `google.navigation:q=${dest.lat},${dest.lng}`;
+    const webFallback = `https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}&travelmode=driving`;
+    Linking.openURL(googleMapsUrl).catch(() => Linking.openURL(webFallback));
   };
 
   const driverCenter = {
@@ -233,7 +234,7 @@ export function ActiveRideScreen({ navigation }: any) {
         )}
 
         {phase === 'arrived_at_pickup' && (
-          <>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={20}>
             <Text style={styles.phaseTitle}>{t('ride.arrivedAtPickup')}</Text>
             <Text style={styles.phaseSubtitle}>{t('ride.enterOtp')}</Text>
 
@@ -243,16 +244,22 @@ export function ActiveRideScreen({ navigation }: any) {
                 placeholder="● ● ● ●"
                 placeholderTextColor={colors.textLight}
                 value={otpInput}
-                onChangeText={(v) => { setOtpInput(v.replace(/[^0-9]/g, '').slice(0, 4)); setOtpError(''); }}
+                onChangeText={(v) => {
+                  const clean = v.replace(/[^0-9]/g, '').slice(0, 4);
+                  setOtpInput(clean);
+                  setOtpError('');
+                  if (clean.length === 4) handleStartRide();
+                }}
                 keyboardType="number-pad"
                 maxLength={4}
                 textAlign="center"
+                autoFocus
               />
               {otpError ? <Text style={styles.otpError}>{otpError}</Text> : null}
             </View>
 
             <Button title={t('ride.startRide')} onPress={handleStartRide} loading={loading} disabled={otpInput.length < 4} />
-          </>
+          </KeyboardAvoidingView>
         )}
 
         {phase === 'on_trip' && (
