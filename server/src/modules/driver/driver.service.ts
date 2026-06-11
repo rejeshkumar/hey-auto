@@ -610,37 +610,28 @@ export class DriverService {
   }
 
   async getNearbyDrivers(lat: number, lng: number, radiusKm = 3) {
-    const results = await redis.georadius(
-      DRIVER_LOCATION_KEY,
-      lng,
-      lat,
-      radiusKm,
-      'km',
-      'WITHCOORD',
-      'WITHDIST',
-      'ASC',
-      'COUNT',
-      20,
-    );
+    // Query DB directly — no Redis dependency, works after every server restart
+    const allOnline = await prisma.driverProfile.findMany({
+      where: {
+        isOnline: true,
+        isOnRide: false,
+        currentLat: { not: null },
+        currentLng: { not: null },
+      },
+      select: { userId: true, currentLat: true, currentLng: true },
+    });
 
     const drivers: Array<{ userId: string; distance: number; lat: number; lng: number }> = [];
 
-    for (let i = 0; i < results.length; i++) {
-      const item = results[i] as unknown as [string, string, [string, string]];
-      const userId = item[0];
-      const distance = parseFloat(item[1]);
-      const [driverLng, driverLat] = item[2];
-
-      // Include all drivers in geo set — DB isOnline/isOnRide check happens in prepareDriverBatch
-      drivers.push({
-        userId,
-        distance,
-        lat: parseFloat(driverLat),
-        lng: parseFloat(driverLng),
-      });
+    for (const d of allOnline) {
+      const distance = haversineDistance(lat, lng, d.currentLat!, d.currentLng!);
+      if (distance <= radiusKm) {
+        drivers.push({ userId: d.userId, distance, lat: d.currentLat!, lng: d.currentLng! });
+      }
     }
 
-    return drivers;
+    drivers.sort((a, b) => a.distance - b.distance);
+    return drivers.slice(0, 20);
   }
 }
 

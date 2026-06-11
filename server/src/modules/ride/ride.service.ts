@@ -251,21 +251,7 @@ export class RideService {
   ): Promise<ScoredDriver[]> {
     let nearbyDrivers = await driverService.getNearbyDrivers(pickupLat, pickupLng, radiusKm);
 
-    // Rebuild Redis geo index from DB if empty (redeploy recovery)
-    if (nearbyDrivers.length === 0) {
-      const allWithLocation = await prisma.driverProfile.findMany({
-        where: { currentLat: { not: null }, currentLng: { not: null } },
-        select: { userId: true, currentLat: true, currentLng: true, isOnline: true },
-      });
-      logger.info({ total: allWithLocation.length, online: allWithLocation.filter(d => d.isOnline).length }, 'prepareDriverBatch: Redis geo empty, rebuilding from DB');
-      for (const d of allWithLocation) {
-        await redis.geoadd('driver_locations', d.currentLng!, d.currentLat!, d.userId);
-        // Set online key for ALL drivers with location — let DB filter handle online state
-        await redis.set(`driver_online:${d.userId}`, '1');
-      }
-      nearbyDrivers = await driverService.getNearbyDrivers(pickupLat, pickupLng, radiusKm);
-      logger.info({ nearbyCount: nearbyDrivers.length, radiusKm }, 'prepareDriverBatch: after rebuild');
-    }
+    logger.info({ nearbyCount: nearbyDrivers.length, radiusKm, city }, 'prepareDriverBatch: DB query results');
 
     // Load all 3 blocklists and build excluded set
     const [searchBlock, riderBlock, prevAttempted] = await Promise.all([
@@ -378,17 +364,6 @@ export class RideService {
       where: { id: riderId },
       select: { fullName: true, phone: true },
     });
-
-    // Always rebuild Redis geo from DB on each findDriver call to handle server restarts
-    const onlineDrivers = await prisma.driverProfile.findMany({
-      where: { isOnline: true, currentLat: { not: null }, currentLng: { not: null } },
-      select: { userId: true, currentLat: true, currentLng: true },
-    });
-    logger.info({ count: onlineDrivers.length, city }, 'findDriver: syncing Redis geo from DB');
-    for (const d of onlineDrivers) {
-      await redis.geoadd('driver_locations', d.currentLng!, d.currentLat!, d.userId);
-      await redis.set(`driver_online:${d.userId}`, '1');
-    }
 
     // Queue-first: if pickup is near a stand, offer queue members sequentially (#1 → #2 → #3 → city batch)
     let nearbyStands: any[] = [];
