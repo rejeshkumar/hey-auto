@@ -144,7 +144,7 @@ export class AdminService {
     if (action === 'verify') {
       await prisma.driverProfile.update({
         where: { userId: driverId },
-        data: { verificationStatus: 'VERIFIED', verifiedAt: new Date() },
+        data: { verificationStatus: 'VERIFIED', verifiedAt: new Date(), isOnRide: false, isOnline: false, onlineSince: null },
       });
       await prisma.user.update({
         where: { id: driverId },
