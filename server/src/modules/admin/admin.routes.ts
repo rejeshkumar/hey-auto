@@ -44,6 +44,7 @@ router.post('/fix-rider/:userId', async (req: Request, res: Response, next: Next
 router.post('/fix-driver/:userId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { userId } = req.params;
+    const { prisma } = await import('../../config/database');
     await prisma.driverProfile.update({
       where: { userId },
       data: { isOnRide: false, isOnline: false, onlineSince: null },
