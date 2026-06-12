@@ -41,6 +41,17 @@ router.post('/fix-rider/:userId', async (req: Request, res: Response, next: Next
   } catch (err) { next(err); }
 });
 
+router.post('/fix-driver/:userId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { userId } = req.params;
+    await prisma.driverProfile.update({
+      where: { userId },
+      data: { isOnRide: false, isOnline: false, onlineSince: null },
+    });
+    res.json({ success: true, data: { message: 'Driver state reset: isOnRide=false, isOnline=false' } });
+  } catch (err) { next(err); }
+});
+
 router.get('/dashboard', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const stats = await adminService.getDashboardStats();
