@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Vibration, Alert, ScrollView } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Vibration, Alert, ScrollView, AppState } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +30,7 @@ export function HomeScreen({ navigation }: any) {
   const [goHomeToggling, setGoHomeToggling] = useState(false);
   const [queueStatus, setQueueStatus] = useState<{ standName: string; position: number } | null>(null);
   const locationSubscription = React.useRef<Location.LocationSubscription | null>(null);
+  const appState = useRef(AppState.currentState);
 
   useEffect(() => {
     requestLocationPermission();
@@ -48,14 +50,33 @@ export function HomeScreen({ navigation }: any) {
     };
     pollQueue();
     const queueInterval = setInterval(pollQueue, 30000);
-    return () => { locationSubscription.current?.remove(); clearInterval(queueInterval); };
+    // Reconnect socket when app returns to foreground (covers lock screen wake)
+    const appStateSub = AppState.addEventListener('change', (nextState) => {
+      if (appState.current.match(/inactive|background/) && nextState === 'active') {
+        if (!socketService.isConnected()) socketService.connect();
+      }
+      appState.current = nextState;
+    });
+
+    return () => { locationSubscription.current?.remove(); clearInterval(queueInterval); appStateSub.remove(); };
   }, []);
 
   useEffect(() => {
     socketService.on<IncomingRideRequest>('ride:new_request', (data) => {
-      Vibration.vibrate([0, 500, 200, 500]);
+      Vibration.vibrate([0, 500, 200, 500, 200, 500]);
       setIncomingRequest(data);
       setPhase('ride_request');
+      // Fire local notification so driver sees alert on lock screen
+      Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🛺 New Ride Request!',
+          body: `${data.pickupAddress} → ${data.dropoffAddress} · ₹${Math.round(data.estimatedFare)}`,
+          sound: 'default',
+          priority: Notifications.AndroidNotificationPriority.MAX,
+          ...(Platform.OS === 'android' && { channelId: 'rides' }),
+        },
+        trigger: null,
+      }).catch(() => {});
     });
     socketService.on('ride:request_expired', () => {
       setIncomingRequest(null);

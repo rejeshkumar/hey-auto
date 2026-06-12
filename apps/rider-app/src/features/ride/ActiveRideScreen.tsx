@@ -48,16 +48,27 @@ export function ActiveRideScreen({ navigation }: any) {
           setPhase('driver_arrived');
         } else if (ride.status === 'IN_PROGRESS' || ride.status === 'OTP_VERIFIED') {
           setPhase('on_ride');
+        } else if (ride.status === 'COMPLETED') {
+          setCompletedRideData({
+            rideId: ride.id,
+            actualFare: ride.actualFare,
+            totalAmount: ride.totalAmount,
+            actualDistanceKm: ride.actualDistanceKm,
+            actualDurationMin: ride.actualDurationMin,
+            paymentMethod: ride.paymentMethod,
+          });
+          setPhase('ride_completed');
+          navigation.replace('RideComplete');
         } else if (ride.status === 'NO_DRIVERS') {
           setPhase('no_drivers');
         }
       } catch {}
     };
     pollRideStatus();
-    // Keep polling every 5s while searching or driver assigned
+    // Poll every 5s until ride completes — covers missed socket events
     const interval = setInterval(() => {
       const p = useRideStore.getState().phase;
-      if (p === 'searching_driver' || p === 'driver_assigned' || p === 'driver_arriving') {
+      if (p !== 'ride_completed' && p !== 'no_drivers') {
         pollRideStatus();
       }
     }, 5000);

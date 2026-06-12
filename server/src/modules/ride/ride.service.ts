@@ -142,7 +142,7 @@ export class RideService {
         estimatedDurationMin: estimate.durationMin,
         baseFare: estimate.baseFare,
         perKmRate: estimate.ratePerKm,
-        perMinRate: estimate.durationMin > 0 ? estimate.timeFare / estimate.durationMin : 1.5,
+        perMinRate: fareConfig?.perMinRate ?? 0,
         estimatedFare: estimate.totalFare,
         nightSurcharge: estimate.nightSurcharge,
         onwardSurcharge: estimate.onwardSurcharge,
@@ -735,7 +735,7 @@ export class RideService {
     if (actualDistanceKm > baseDistanceKm) {
       actualFare += (actualDistanceKm - baseDistanceKm) * (ride.perKmRate ?? 15);
     }
-    actualFare += actualDurationMin * (ride.perMinRate ?? 1.5);
+    actualFare += actualDurationMin * (ride.perMinRate ?? 0);
     actualFare += ride.nightSurcharge;
     actualFare = Math.max(actualFare, 30);
     actualFare = roundToRupee(actualFare);
