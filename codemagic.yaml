@@ -1,0 +1,66 @@
+workflows:
+  rider-android:
+    name: Rider App - Android APK
+    max_build_duration: 60
+    environment:
+      java: 17
+      node: "20"
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd apps/rider-app
+          npm install
+
+      - name: Expo prebuild
+        script: |
+          cd apps/rider-app
+          npx expo prebuild --platform android --clean --no-install
+
+      - name: Build APK
+        script: |
+          cd apps/rider-app/android
+          ./gradlew assembleRelease
+
+    artifacts:
+      - apps/rider-app/android/app/build/outputs/apk/release/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - rejesh@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  driver-android:
+    name: Driver App - Android APK
+    max_build_duration: 60
+    environment:
+      java: 17
+      node: "20"
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd apps/driver-app
+          npm install
+
+      - name: Expo prebuild
+        script: |
+          cd apps/driver-app
+          npx expo prebuild --platform android --clean --no-install
+
+      - name: Build APK
+        script: |
+          cd apps/driver-app/android
+          ./gradlew assembleRelease
+
+    artifacts:
+      - apps/driver-app/android/app/build/outputs/apk/release/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - rejesh@gmail.com
+        notify:
+          success: true
+          failure: true
