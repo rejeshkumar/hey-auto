@@ -443,11 +443,12 @@ export class RideService {
 
       if (batch.length === 0) {
         if (radiusKm < env.MAX_SEARCH_RADIUS_KM) {
-          // Expand radius and retry without consuming a batch round
           stepCount++;
           radiusKm = Math.min(env.MIN_SEARCH_RADIUS_KM + stepCount * env.RADIUS_STEP_KM, env.MAX_SEARCH_RADIUS_KM);
           await redis.setex(`${POOL_RADIUS_STEP_PREFIX}${rideId}`, env.POOL_STATE_TTL_SEC, String(stepCount));
           logger.info({ rideId, stepCount, radiusKm }, 'findDriver: no candidates, expanding radius');
+          // Small delay to avoid hammering DB on every expansion step
+          await new Promise((r) => setTimeout(r, 200));
           continue;
         }
         // At max radius with no drivers — give up

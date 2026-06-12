@@ -81,6 +81,21 @@ export function HomeScreen({ navigation }: any) {
   };
 
   const handleToggleOnline = async () => {
+    if (isOnline) {
+      Alert.alert(
+        'End Shift?',
+        'You will stop receiving ride requests.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'End Shift', style: 'destructive', onPress: () => performToggle() },
+        ],
+      );
+      return;
+    }
+    performToggle();
+  };
+
+  const performToggle = async () => {
     setToggling(true);
     try {
       if (isOnline) {

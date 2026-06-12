@@ -627,7 +627,6 @@ export class DriverService {
 
     for (const d of allOnline) {
       const distance = haversineDistance(lat, lng, d.currentLat!, d.currentLng!);
-      logger.info({ userId: d.userId, driverLat: d.currentLat, driverLng: d.currentLng, distance, radiusKm }, 'getNearbyDrivers: distance check');
       if (distance <= radiusKm) {
         drivers.push({ userId: d.userId, distance, lat: d.currentLat!, lng: d.currentLng! });
       }
