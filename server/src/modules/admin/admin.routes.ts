@@ -43,7 +43,7 @@ router.post('/fix-rider/:userId', async (req: Request, res: Response, next: Next
 
 router.post('/fix-driver/:userId', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { userId } = req.params;
+    const userId = req.params.userId as string;
     const { prisma } = await import('../../config/database');
     await prisma.driverProfile.update({
       where: { userId },
