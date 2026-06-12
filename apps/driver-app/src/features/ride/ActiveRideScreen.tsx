@@ -73,8 +73,9 @@ export function ActiveRideScreen({ navigation }: any) {
     try {
       await driverApi.arrivedAtPickup(currentRideId);
       setPhase('arrived_at_pickup');
-    } catch (err) {
-      console.error('Mark arrived error:', err);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error?.message || 'Could not mark arrived. Try again.';
+      Alert.alert('Error', msg);
     } finally {
       setLoading(false);
     }
@@ -183,7 +184,7 @@ export function ActiveRideScreen({ navigation }: any) {
   }, [currentLat, currentLng, phase, pickup, dropoff]);
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <StaticMapView
         center={driverCenter}
         markers={mapMarkers}
@@ -234,7 +235,7 @@ export function ActiveRideScreen({ navigation }: any) {
         )}
 
         {phase === 'arrived_at_pickup' && (
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={20}>
+          <>
             <Text style={styles.phaseTitle}>{t('ride.arrivedAtPickup')}</Text>
             <Text style={styles.phaseSubtitle}>{t('ride.enterOtp')}</Text>
 
@@ -259,7 +260,7 @@ export function ActiveRideScreen({ navigation }: any) {
             </View>
 
             <Button title={t('ride.startRide')} onPress={handleStartRide} loading={loading} disabled={otpInput.length < 4} />
-          </KeyboardAvoidingView>
+          </>
         )}
 
         {phase === 'on_trip' && (
@@ -314,7 +315,7 @@ export function ActiveRideScreen({ navigation }: any) {
           </View>
         )}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -333,7 +334,7 @@ const styles = StyleSheet.create({
   map: { flex: 1 },
   bottomSheet: {
     backgroundColor: colors.white, borderTopLeftRadius: borderRadius.xxl, borderTopRightRadius: borderRadius.xxl,
-    padding: spacing.lg, paddingBottom: spacing.xxxl,
+    padding: spacing.lg, paddingBottom: spacing.xl,
   },
   phaseTitle: { ...typography.h3, color: colors.text, marginBottom: spacing.xs },
   phaseSubtitle: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.base },

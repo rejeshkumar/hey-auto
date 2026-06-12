@@ -6,7 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, StaticMapView } from '../../components';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useRideStore } from '../../hooks/useRideStore';
-import { rideApi } from '../../services/ride';
+import { rideApi, RideWithDriver } from '../../services/ride';
 import { riderApi } from '../../services/rider';
 import { socketService } from '../../services/socket';
 
@@ -20,6 +20,49 @@ export function ActiveRideScreen({ navigation }: any) {
     setPhase, setDriverInfo, setDriverLocation, setRideOtp, setCompletedRideData, resetRide,
   } = useRideStore();
   const [sharing, setSharing] = useState(false);
+
+  // Poll ride status on mount — catches the case where socket event fired
+  // before this screen mounted (common race when driver accepts quickly)
+  useEffect(() => {
+    const pollRideStatus = async () => {
+      if (!currentRide?.id) return;
+      try {
+        const { data } = await rideApi.getRideDetails(currentRide.id);
+        const ride = data.data;
+        if (!ride) return;
+        if (ride.status === 'DRIVER_ASSIGNED' && ride.driver && useRideStore.getState().phase === 'searching_driver') {
+          setDriverInfo({
+            driverId: ride.driverId ?? '',
+            driverName: ride.driver.fullName,
+            driverPhone: ride.driver.phone,
+            driverRating: 5,
+            vehicleRegistrationNo: ride.vehicle?.registrationNo ?? '',
+            vehicleColor: ride.vehicle?.color,
+            vehicleModel: ride.vehicle?.model,
+            driverLat: 0,
+            driverLng: 0,
+          });
+          setPhase('driver_assigned');
+        } else if (ride.status === 'DRIVER_ARRIVED') {
+          if (ride.rideOtp) setRideOtp(ride.rideOtp);
+          setPhase('driver_arrived');
+        } else if (ride.status === 'IN_PROGRESS' || ride.status === 'OTP_VERIFIED') {
+          setPhase('on_ride');
+        } else if (ride.status === 'NO_DRIVERS') {
+          setPhase('no_drivers');
+        }
+      } catch {}
+    };
+    pollRideStatus();
+    // Keep polling every 5s while searching or driver assigned
+    const interval = setInterval(() => {
+      const p = useRideStore.getState().phase;
+      if (p === 'searching_driver' || p === 'driver_assigned' || p === 'driver_arriving') {
+        pollRideStatus();
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [currentRide?.id]);
 
   useEffect(() => {
     socketService.on('ride:driver_assigned', (data: any) => {
