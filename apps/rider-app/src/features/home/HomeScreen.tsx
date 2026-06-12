@@ -37,11 +37,18 @@ export function HomeScreen({ navigation }: any) {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status === 'granted') {
       setPermission(true);
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setCurrentLocation(loc.coords.latitude, loc.coords.longitude);
-    } else {
-      setCurrentLocation(TALIPARAMBA_CENTER.latitude, TALIPARAMBA_CENTER.longitude);
+      try {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+        setCurrentLocation(loc.coords.latitude, loc.coords.longitude);
+      } catch {
+        // GPS timeout — try last known position
+        const last = await Location.getLastKnownPositionAsync();
+        if (last) {
+          setCurrentLocation(last.coords.latitude, last.coords.longitude);
+        }
+      }
     }
+    // Do NOT fall back to hardcoded coords — null means "unknown, ask GPS again at booking time"
   };
 
   const handleLanguageToggle = () => {
@@ -50,18 +57,42 @@ export function HomeScreen({ navigation }: any) {
     storage.set('language', newLang);
   };
 
-  const handleSearchPress = () => {
-    if (currentLat && currentLng) {
-      setPickup({ lat: currentLat, lng: currentLng, address: t('booking.currentLocation') });
+  const handleSearchPress = async () => {
+    let lat = currentLat;
+    let lng = currentLng;
+    // If GPS not yet resolved, try one more time before proceeding
+    if (!lat || !lng) {
+      try {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        lat = loc.coords.latitude;
+        lng = loc.coords.longitude;
+        setCurrentLocation(lat, lng);
+      } catch {
+        const last = await Location.getLastKnownPositionAsync();
+        if (last) { lat = last.coords.latitude; lng = last.coords.longitude; }
+      }
+    }
+    if (lat && lng) {
+      setPickup({ lat, lng, address: t('booking.currentLocation') });
     }
     setPhase('selecting_destination');
     navigation.navigate('Search');
   };
 
-  const handleFavourite = (place: SavedPlace) => {
-    const lat = currentLat || TALIPARAMBA_CENTER.latitude;
-    const lng = currentLng || TALIPARAMBA_CENTER.longitude;
-    setPickup({ lat, lng, address: t('booking.currentLocation') });
+  const handleFavourite = async (place: SavedPlace) => {
+    let lat = currentLat;
+    let lng = currentLng;
+    if (!lat || !lng) {
+      try {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        lat = loc.coords.latitude; lng = loc.coords.longitude;
+        setCurrentLocation(lat, lng);
+      } catch {
+        const last = await Location.getLastKnownPositionAsync();
+        if (last) { lat = last.coords.latitude; lng = last.coords.longitude; }
+      }
+    }
+    setPickup({ lat: lat!, lng: lng!, address: t('booking.currentLocation') });
     useRideStore.getState().setDropoff({ lat: place.lat, lng: place.lng, address: place.address });
     setPhase('reviewing_estimate');
     navigation.navigate('BookingConfirm');
