@@ -134,8 +134,11 @@ export const driverApi = {
   arrivedAtPickup: (rideId: string) =>
     api.post<ApiResponse<any>>(`/rides/${rideId}/arrived`),
 
-  startRide: (rideId: string, otp: string) =>
-    api.post<ApiResponse<any>>(`/rides/${rideId}/start`, { otp }),
+  verifyRideOtp: (rideId: string, otp: string) =>
+    api.post<ApiResponse<any>>(`/rides/${rideId}/verify-otp`, { otp }),
+
+  startRide: (rideId: string) =>
+    api.post<ApiResponse<any>>(`/rides/${rideId}/start`),
 
   completeRide: (rideId: string) =>
     api.post<ApiResponse<any>>(`/rides/${rideId}/complete`),

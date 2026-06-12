@@ -86,7 +86,8 @@ export function ActiveRideScreen({ navigation }: any) {
     setOtpError('');
     setLoading(true);
     try {
-      await driverApi.startRide(currentRideId, otpInput);
+      await driverApi.verifyRideOtp(currentRideId, otpInput);
+      await driverApi.startRide(currentRideId);
       setPhase('on_trip');
       if (dropoff && currentLat && currentLng) {
         fetchRoute({ lat: currentLat, lng: currentLng }, dropoff);
