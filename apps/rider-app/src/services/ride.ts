@@ -53,7 +53,7 @@ export const rideApi = {
     dropoffLng: number;
     city?: string;
     rideType?: 'PASSENGER' | 'PARCEL';
-  }) => api.post<ApiResponse<FareEstimate>>('/rides/estimate', { city: 'bangalore', rideType: 'PASSENGER', ...data }),
+  }) => api.post<ApiResponse<FareEstimate>>('/rides/estimate', { city: 'taliparamba', rideType: 'PASSENGER', ...data }),
 
   requestRide: (data: {
     pickupLat: number;
@@ -67,7 +67,7 @@ export const rideApi = {
     parcelDescription?: string;
     recipientName?: string;
     recipientPhone?: string;
-  }) => api.post<ApiResponse<Ride>>('/rides/request', { city: 'bangalore', paymentMethod: 'CASH', rideType: 'PASSENGER', ...data }),
+  }) => api.post<ApiResponse<Ride>>('/rides/request', { city: 'taliparamba', paymentMethod: 'CASH', rideType: 'PASSENGER', ...data }),
 
   getRideDetails: (rideId: string) =>
     api.get<ApiResponse<RideWithDriver>>(`/rides/${rideId}`),
