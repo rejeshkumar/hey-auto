@@ -199,9 +199,12 @@ export class DriverService {
     }
     // ────────────────────────────────────────────────────────────────
 
+    const { logger } = await import('../../utils/logger');
+    logger.info(`goOnline userId=${userId} lat=${profile.currentLat} lng=${profile.currentLng}`);
+
     await prisma.driverProfile.update({
       where: { userId },
-      data: { isOnline: true, onlineSince: new Date() },
+      data: { isOnline: true, isOnRide: false, onlineSince: new Date() },
     });
 
     await redis.geoadd(
