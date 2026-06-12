@@ -1233,8 +1233,8 @@ async function loadActiveRides(count) {
 async function adminCancelRide(rideId) {
   if (!confirm('Force-cancel this ride?')) return;
   const res = await api('POST', `/admin/rides/${rideId}/cancel`);
-  if (res.success) { showToast('Ride cancelled'); loadDashboard(); }
-  else showToast('Failed: ' + (res.message || 'unknown error'), true);
+  if (res.success) { toast('Ride cancelled', 'success'); loadDashboard(); }
+  else toast('Failed: ' + (res.message || 'unknown error'), 'error');
 }
 
 function truncate(s, n) { return s && s.length > n ? s.slice(0, n) + '…' : (s || '—'); }
