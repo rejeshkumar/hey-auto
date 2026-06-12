@@ -220,8 +220,19 @@ export class DriverService {
 
   async goOffline(userId: string) {
     const { logger } = await import('../../utils/logger');
-    logger.warn({ userId, stack: new Error().stack?.split('\n').slice(1,4).join(' | ') }, 'goOffline called');
+    const stack = new Error().stack?.split('\n').slice(1,5).join(' | ') ?? '';
+    logger.warn(`goOffline called userId=${userId} stack=${stack}`);
     const profile = await prisma.driverProfile.findUnique({ where: { userId } });
+
+    // Guard: refuse to go offline if driver went online less than 10 seconds ago.
+    // This prevents a race where the app calls goOffline immediately after goOnline.
+    if (profile?.onlineSince) {
+      const secondsOnline = (Date.now() - new Date(profile.onlineSince).getTime()) / 1000;
+      if (secondsOnline < 10) {
+        logger.warn(`goOffline BLOCKED — driver ${userId} only online for ${secondsOnline.toFixed(1)}s`);
+        return { isOnline: true };
+      }
+    }
 
     await prisma.driverProfile.update({
       where: { userId },
