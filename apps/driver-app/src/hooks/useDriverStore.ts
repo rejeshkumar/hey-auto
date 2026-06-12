@@ -108,7 +108,14 @@ export const useDriverStore = create<DriverState>((set, get) => ({
   loadProfile: async () => {
     try {
       const { data } = await driverApi.getProfile();
-      set({ profile: data.data });
+      const profile = data.data;
+      set({ profile });
+      // Sync online state from server — source of truth
+      if (profile?.isOnline && get().phase === 'offline') {
+        set({ isOnline: true, phase: 'online_idle' });
+      } else if (!profile?.isOnline) {
+        set({ isOnline: false, phase: 'offline' });
+      }
     } catch {}
   },
 

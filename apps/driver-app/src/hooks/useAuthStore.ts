@@ -111,6 +111,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user, isAuthenticated: true, isLoading: false });
       socketService.connect();
       registerPushToken();
+      // Restore online/offline state from server after session restore
+      const { useDriverStore } = await import('./useDriverStore');
+      useDriverStore.getState().loadProfile();
     } catch {
       set({ isLoading: false });
     }

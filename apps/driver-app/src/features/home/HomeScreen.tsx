@@ -110,7 +110,8 @@ export function HomeScreen({ navigation }: any) {
           { text: 'Subscribe Now', onPress: () => navigation.navigate('Subscription') },
         ]);
       } else {
-        Alert.alert('Error', parsed?.message || errData?.message || 'Something went wrong');
+        const msg = parsed?.message || errData?.message || JSON.stringify(errData) || 'Could not go online. Check verification status and subscription.';
+        Alert.alert('Cannot Go Online', msg);
       }
     } finally {
       setToggling(false);
