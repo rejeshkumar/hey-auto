@@ -610,7 +610,7 @@ export class DriverService {
   }
 
   async getNearbyDrivers(lat: number, lng: number, radiusKm = 3) {
-    // Query DB directly — no Redis dependency, works after every server restart
+    const { logger } = await import('../../utils/logger');
     const allOnline = await prisma.driverProfile.findMany({
       where: {
         isOnline: true,
@@ -621,10 +621,13 @@ export class DriverService {
       select: { userId: true, currentLat: true, currentLng: true },
     });
 
+    logger.info({ totalOnline: allOnline.length, searchLat: lat, searchLng: lng, radiusKm }, 'getNearbyDrivers: online drivers in DB');
+
     const drivers: Array<{ userId: string; distance: number; lat: number; lng: number }> = [];
 
     for (const d of allOnline) {
       const distance = haversineDistance(lat, lng, d.currentLat!, d.currentLng!);
+      logger.info({ userId: d.userId, driverLat: d.currentLat, driverLng: d.currentLng, distance, radiusKm }, 'getNearbyDrivers: distance check');
       if (distance <= radiusKm) {
         drivers.push({ userId: d.userId, distance, lat: d.currentLat!, lng: d.currentLng! });
       }
