@@ -621,7 +621,7 @@ export class DriverService {
       select: { userId: true, currentLat: true, currentLng: true },
     });
 
-    logger.info({ totalOnline: allOnline.length, searchLat: lat, searchLng: lng, radiusKm }, 'getNearbyDrivers: online drivers in DB');
+    logger.info(`getNearbyDrivers: totalOnline=${allOnline.length} search=${lat},${lng} radius=${radiusKm} drivers=${JSON.stringify(allOnline.map(d => ({ u: d.userId.slice(-6), lat: d.currentLat, lng: d.currentLng })))}`);
 
     const drivers: Array<{ userId: string; distance: number; lat: number; lng: number }> = [];
 

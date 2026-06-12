@@ -173,7 +173,7 @@ export class RideService {
       }
     });
 
-    logger.info({ rideId: ride.id, riderId }, 'Ride requested');
+    logger.info(`Ride requested: pickup=${input.pickupLat},${input.pickupLng} dropoff=${input.dropoffLat},${input.dropoffLng} city=${input.city}`);
 
     return {
       ...ride,
