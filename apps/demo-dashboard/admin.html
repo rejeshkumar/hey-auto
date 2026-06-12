@@ -1214,7 +1214,7 @@ async function loadActiveRides(count) {
     return;
   }
   el.innerHTML = `<table style="width:100%">
-    <thead><tr><th>Rider</th><th>Driver</th><th>Route</th><th>Status</th><th>Fare</th><th>Time</th></tr></thead>
+    <thead><tr><th>Rider</th><th>Driver</th><th>Route</th><th>Status</th><th>Fare</th><th>Time</th><th></th></tr></thead>
     <tbody>
       ${data.data.map(r => `
         <tr>
@@ -1224,9 +1224,17 @@ async function loadActiveRides(count) {
           <td>${statusBadge(r.status)}</td>
           <td>${fmtMoney(r.estimatedFare)}</td>
           <td>${fmtTime(r.startedAt || r.createdAt)}</td>
+          <td><button class="btn btn-sm" style="background:var(--red);color:#fff;border:none;cursor:pointer" onclick="adminCancelRide('${r.id}')">Cancel</button></td>
         </tr>`).join('')}
     </tbody>
   </table>`;
+}
+
+async function adminCancelRide(rideId) {
+  if (!confirm('Force-cancel this ride?')) return;
+  const res = await api('POST', `/admin/rides/${rideId}/cancel`);
+  if (res.success) { showToast('Ride cancelled'); loadDashboard(); }
+  else showToast('Failed: ' + (res.message || 'unknown error'), true);
 }
 
 function truncate(s, n) { return s && s.length > n ? s.slice(0, n) + '…' : (s || '—'); }

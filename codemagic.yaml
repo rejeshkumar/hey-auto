@@ -32,6 +32,94 @@ workflows:
           success: true
           failure: true
 
+  rider-ios:
+    name: Rider App - iOS IPA
+    max_build_duration: 60
+    environment:
+      xcode: latest
+      node: "20"
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: in.heyauto.rider
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd apps/rider-app
+          npm install
+
+      - name: Expo prebuild
+        script: |
+          cd apps/rider-app
+          npx expo prebuild --platform ios --clean --no-install
+
+      - name: Build IPA
+        script: |
+          cd apps/rider-app/ios
+          xcodebuild -workspace HeyAuto.xcworkspace \
+            -scheme HeyAuto \
+            -configuration Release \
+            -archivePath $CM_BUILD_DIR/HeyAuto.xcarchive \
+            archive | xcpretty
+          xcodebuild -exportArchive \
+            -archivePath $CM_BUILD_DIR/HeyAuto.xcarchive \
+            -exportOptionsPlist exportOptions.plist \
+            -exportPath $CM_BUILD_DIR/output | xcpretty
+
+    artifacts:
+      - $CM_BUILD_DIR/output/*.ipa
+
+    publishing:
+      email:
+        recipients:
+          - rejesh@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  driver-ios:
+    name: Driver App - iOS IPA
+    max_build_duration: 60
+    environment:
+      xcode: latest
+      node: "20"
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: in.heyauto.driver
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd apps/driver-app
+          npm install
+
+      - name: Expo prebuild
+        script: |
+          cd apps/driver-app
+          npx expo prebuild --platform ios --clean --no-install
+
+      - name: Build IPA
+        script: |
+          cd apps/driver-app/ios
+          xcodebuild -workspace HeyAutoDriver.xcworkspace \
+            -scheme HeyAutoDriver \
+            -configuration Release \
+            -archivePath $CM_BUILD_DIR/HeyAutoDriver.xcarchive \
+            archive | xcpretty
+          xcodebuild -exportArchive \
+            -archivePath $CM_BUILD_DIR/HeyAutoDriver.xcarchive \
+            -exportOptionsPlist exportOptions.plist \
+            -exportPath $CM_BUILD_DIR/output | xcpretty
+
+    artifacts:
+      - $CM_BUILD_DIR/output/*.ipa
+
+    publishing:
+      email:
+        recipients:
+          - rejesh@gmail.com
+        notify:
+          success: true
+          failure: true
+
   driver-android:
     name: Driver App - Android APK
     max_build_duration: 60
