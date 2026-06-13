@@ -61,7 +61,7 @@ const envSchema = z.object({
   // Matching — batch dispatch
   BATCH_SIZE:              z.coerce.number().int().default(3),
   MAX_BATCH_ROUNDS:        z.coerce.number().int().default(4),
-  RIDE_REQUEST_TIMEOUT_SEC: z.coerce.number().default(15),
+  RIDE_REQUEST_TIMEOUT_SEC: z.coerce.number().default(30),
   // Scoring weights (relative integers — normalized internally)
   ARRIVAL_PROXIMITY_THRESHOLD_KM: z.coerce.number().default(0.15),
   SCORE_W_PROXIMITY:       z.coerce.number().int().default(35),

@@ -451,7 +451,16 @@ export class RideService {
           await new Promise((r) => setTimeout(r, 200));
           continue;
         }
-        // At max radius with no drivers — give up
+        // At max radius with no drivers — clear prevAttempted blocklist and retry once
+        // (handles the case where the only available driver timed out)
+        if (batchNum === 0) {
+          await redis.del(`${PREV_ATTEMPTED_PREFIX}${rideId}`);
+          stepCount = 0;
+          radiusKm = env.MIN_SEARCH_RADIUS_KM;
+          batchNum++;
+          logger.info({ rideId }, 'findDriver: cleared prevAttempted, retrying from scratch');
+          continue;
+        }
         break;
       }
 
