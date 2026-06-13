@@ -23,6 +23,7 @@
     "expo-notifications": "~0.32.17",
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
+    "expo-task-manager": "^56.0.18",
     "i18next": "^24.2.2",
     "react": "19.1.0",
     "react-i18next": "^15.4.1",

@@ -15,6 +15,7 @@ import { driverApi } from '../services/driver';
 import { preloadStorage } from '../utils/storage';
 import { colors } from '../theme';
 import { registerPushToken } from '../services/pushNotifications';
+import '../services/backgroundLocation'; // register background task on app load
 
 SplashScreen.preventAutoHideAsync();
 

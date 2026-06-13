@@ -11,6 +11,7 @@ import { useDriverStore, IncomingRideRequest } from '../../hooks/useDriverStore'
 import { useLocationStore } from '../../hooks/useLocationStore';
 import { socketService } from '../../services/socket';
 import { storage } from '../../utils/storage';
+import { startBackgroundLocation, stopBackgroundLocation } from '../../services/backgroundLocation';
 import { RideRequestCard } from './RideRequestCard';
 import { StaticMapView } from '../../components';
 import { LiveMapView } from '../../components/LiveMapView';
@@ -122,6 +123,7 @@ export function HomeScreen({ navigation }: any) {
       if (isOnline) {
         await goOffline();
         socketService.stopLocationUpdates();
+        stopBackgroundLocation().catch(() => {});
       } else {
         const lat = currentLat || TALIPARAMBA_CENTER.latitude;
         const lng = currentLng || TALIPARAMBA_CENTER.longitude;
@@ -130,6 +132,7 @@ export function HomeScreen({ navigation }: any) {
           const store = useLocationStore.getState();
           return store.currentLat && store.currentLng ? { lat: store.currentLat, lng: store.currentLng } : null;
         });
+        startBackgroundLocation().catch(() => {});
       }
       loadEarnings();
     } catch (err: any) {

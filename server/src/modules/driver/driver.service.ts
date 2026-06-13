@@ -207,12 +207,8 @@ export class DriverService {
       data: { isOnline: true, isOnRide: false, onlineSince: new Date() },
     });
 
-    await redis.geoadd(
-      DRIVER_LOCATION_KEY,
-      profile.currentLng,
-      profile.currentLat,
-      userId,
-    );
+    // Location is set by the controller via updateLocation() before this runs.
+    // Don't overwrite with potentially stale DB coordinates here.
     await redis.set(`${DRIVER_ONLINE_PREFIX}${userId}`, '1');
 
     // Trigger initial stand queue sync
