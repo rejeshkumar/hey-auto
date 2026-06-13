@@ -102,6 +102,11 @@ workflows:
           cd apps/driver-app
           npx expo prebuild --platform ios --clean --no-install
 
+      - name: Install CocoaPods
+        script: |
+          cd apps/driver-app/ios
+          pod install
+
       - name: Set code signing
         script: |
           cd apps/driver-app/ios
