@@ -120,9 +120,14 @@ workflows:
             -archivePath $CM_BUILD_DIR/HeyAutoDriver.xcarchive \
             -exportOptionsPlist $CM_BUILD_DIR/export_options.plist \
             -exportPath $CM_BUILD_DIR/output | xcpretty
+          echo "=== IPA files ==="
+          find $CM_BUILD_DIR -name "*.ipa" 2>/dev/null || true
+          find . -name "*.ipa" 2>/dev/null || true
 
     artifacts:
       - $CM_BUILD_DIR/output/*.ipa
+      - $CM_BUILD_DIR/**/*.ipa
+      - "**/*.ipa"
 
     publishing:
       email:
