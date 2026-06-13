@@ -112,7 +112,7 @@ workflows:
           cd apps/driver-app/ios
           WORKSPACE=$(find . -name "*.xcworkspace" -maxdepth 1 | head -1 | xargs basename)
           SCHEME="${WORKSPACE%.xcworkspace}"
-          echo "Workspace: $WORKSPACE  Scheme: $SCHEME"
+          echo "Workspace: [$WORKSPACE]  Scheme: [$SCHEME]"
           xcode-project build-ipa \
             --workspace "$WORKSPACE" \
             --scheme "$SCHEME"
