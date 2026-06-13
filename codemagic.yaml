@@ -116,7 +116,7 @@ workflows:
         script: |
           cd apps/driver-app/ios
           xcode-project build-ipa \
-            --project HeyAutoDriver.xcodeproj \
+            --workspace HeyAutoDriver.xcworkspace \
             --scheme HeyAutoDriver
 
     artifacts:
