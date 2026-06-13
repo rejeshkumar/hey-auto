@@ -67,7 +67,6 @@
           "cameraPermission": "Aye Auto Driver needs camera access to take document photos."
         }
       ],
-      "expo-task-manager",
       "expo-font",
       [
         "expo-notifications",

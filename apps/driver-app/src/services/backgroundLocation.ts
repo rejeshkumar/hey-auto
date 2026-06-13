@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
-import { storage } from '../utils/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const BACKGROUND_LOCATION_TASK = 'BACKGROUND_LOCATION_TASK';
 
@@ -10,7 +10,8 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }: any) =>
   if (error || !data?.locations?.length) return;
   const { latitude, longitude } = data.locations[0].coords;
   try {
-    const token = storage.getString('accessToken');
+    // Use AsyncStorage directly — memCache is unavailable in background task context
+    const token = await AsyncStorage.getItem('accessToken');
     if (!token) return;
     await fetch(`${API_URL}/driver/location`, {
       method: 'PUT',
