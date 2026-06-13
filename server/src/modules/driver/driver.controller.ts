@@ -116,11 +116,18 @@ export class DriverController {
 
   async getEarnings(req: Request, res: Response, next: NextFunction) {
     try {
-      const period = (req.query.period as string) || 'today';
-      const result = await driverService.getEarnings(
-        req.user!.userId,
-        period as 'today' | 'week' | 'month',
-      );
+      const result = await driverService.getEarnings(req.user!.userId);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getRideHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const page = parseInt((req.query.page as string) || '1', 10);
+      const limit = parseInt((req.query.limit as string) || '20', 10);
+      const result = await driverService.getRideHistory(req.user!.userId, page, limit);
       res.json({ success: true, data: result });
     } catch (err) {
       next(err);

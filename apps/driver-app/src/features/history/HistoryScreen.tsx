@@ -18,9 +18,11 @@ export function HistoryScreen() {
   const loadRides = async (pageNum = 1) => {
     try {
       const { data } = await driverApi.getRideHistory(pageNum);
-      if (pageNum === 1) setRides(data.data);
-      else setRides((prev) => [...prev, ...data.data]);
-      setHasMore(data.hasMore);
+      const payload = data.data;
+      const rideList: RideHistoryItem[] = payload?.rides ?? payload ?? [];
+      if (pageNum === 1) setRides(rideList);
+      else setRides((prev) => [...prev, ...rideList]);
+      setHasMore(payload?.hasMore ?? false);
       setPage(pageNum);
     } catch (err) {
       console.error('Load rides error:', err);
@@ -45,7 +47,7 @@ export function HistoryScreen() {
   const renderRide = ({ item }: { item: RideHistoryItem }) => (
     <View style={styles.rideCard}>
       <View style={styles.rideHeader}>
-        <Text style={styles.rideDate}>{formatDate(item.requestedAt)} • {formatTime(item.requestedAt)}</Text>
+        <Text style={styles.rideDate}>{formatDate(item.completedAt || item.requestedAt)} • {formatTime(item.completedAt || item.requestedAt)}</Text>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
           <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
             {item.status === 'COMPLETED' ? t('history.completed') : t('history.cancelled')}

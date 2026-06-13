@@ -34,7 +34,7 @@ workflows:
 
   rider-ios:
     name: Rider App - iOS IPA
-    max_build_duration: 60
+    max_build_duration: 90
     environment:
       xcode: latest
       node: "20"
@@ -52,6 +52,11 @@ workflows:
           cd apps/rider-app
           npx expo prebuild --platform ios --clean --no-install
 
+      - name: Set code signing
+        script: |
+          cd apps/rider-app/ios
+          xcode-project use-profiles
+
       - name: Build IPA
         script: |
           cd apps/rider-app/ios
@@ -59,10 +64,11 @@ workflows:
             -scheme HeyAuto \
             -configuration Release \
             -archivePath $CM_BUILD_DIR/HeyAuto.xcarchive \
+            -allowProvisioningUpdates \
             archive | xcpretty
           xcodebuild -exportArchive \
             -archivePath $CM_BUILD_DIR/HeyAuto.xcarchive \
-            -exportOptionsPlist exportOptions.plist \
+            -exportOptionsPlist $CM_BUILD_DIR/export_options.plist \
             -exportPath $CM_BUILD_DIR/output | xcpretty
 
     artifacts:
@@ -78,13 +84,15 @@ workflows:
 
   driver-ios:
     name: Driver App - iOS IPA
-    max_build_duration: 60
+    max_build_duration: 90
     environment:
       xcode: latest
       node: "20"
       ios_signing:
         distribution_type: ad_hoc
         bundle_identifier: in.heyauto.driver
+        certificate_pattern: "Apple Distribution: Rejesh Kumar"
+        provisioning_profile_pattern: "HeyAutoDriver AdHoc"
     scripts:
       - name: Install dependencies
         script: |
@@ -96,6 +104,11 @@ workflows:
           cd apps/driver-app
           npx expo prebuild --platform ios --clean --no-install
 
+      - name: Set code signing
+        script: |
+          cd apps/driver-app/ios
+          xcode-project use-profiles
+
       - name: Build IPA
         script: |
           cd apps/driver-app/ios
@@ -103,10 +116,11 @@ workflows:
             -scheme HeyAutoDriver \
             -configuration Release \
             -archivePath $CM_BUILD_DIR/HeyAutoDriver.xcarchive \
+            -allowProvisioningUpdates \
             archive | xcpretty
           xcodebuild -exportArchive \
             -archivePath $CM_BUILD_DIR/HeyAutoDriver.xcarchive \
-            -exportOptionsPlist exportOptions.plist \
+            -exportOptionsPlist $CM_BUILD_DIR/export_options.plist \
             -exportPath $CM_BUILD_DIR/output | xcpretty
 
     artifacts:

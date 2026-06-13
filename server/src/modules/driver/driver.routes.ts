@@ -29,6 +29,7 @@ router.put('/location', validate(updateLocationSchema), driverController.updateL
 
 router.get('/ride-request', driverController.getPendingRideRequest);
 router.get('/earnings', driverController.getEarnings);
+router.get('/rides/history', driverController.getRideHistory);
 
 router.put('/home-location', driverController.setHomeLocation);
 router.post('/go-home', driverController.toggleGoHomeMode);

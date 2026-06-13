@@ -298,50 +298,77 @@ export class DriverService {
     }
   }
 
-  async getEarnings(userId: string, period: 'today' | 'week' | 'month' = 'today') {
+  async getEarnings(userId: string) {
     const profile = await prisma.driverProfile.findUnique({ where: { userId } });
     if (!profile) throw new NotFoundError('Driver profile not found');
 
     const now = new Date();
-    let startDate: Date;
+    // Use IST for day boundary (UTC+5:30)
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffset);
+    const todayStart = new Date(Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate()) - istOffset);
+    const weekStart = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
+    const monthStart = new Date(Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), 1) - istOffset);
 
-    switch (period) {
-      case 'today':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        break;
-      case 'week':
-        startDate = new Date(now);
-        startDate.setDate(startDate.getDate() - 7);
-        break;
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-    }
+    const [todayRides, weekRides, monthRides] = await Promise.all([
+      prisma.ride.findMany({
+        where: { driverId: userId, status: 'COMPLETED', completedAt: { gte: todayStart } },
+        select: { totalAmount: true, tipAmount: true },
+      }),
+      prisma.ride.findMany({
+        where: { driverId: userId, status: 'COMPLETED', completedAt: { gte: weekStart } },
+        select: { totalAmount: true, tipAmount: true },
+      }),
+      prisma.ride.findMany({
+        where: { driverId: userId, status: 'COMPLETED', completedAt: { gte: monthStart } },
+        select: { totalAmount: true, tipAmount: true },
+      }),
+    ]);
 
-    const rides = await prisma.ride.findMany({
-      where: {
-        driverId: userId,
-        status: 'COMPLETED',
-        completedAt: { gte: startDate },
-      },
-      select: {
-        totalAmount: true,
-        tipAmount: true,
-        completedAt: true,
-      },
-      orderBy: { completedAt: 'desc' },
-    });
+    const sum = (rides: { totalAmount: number | null }[]) =>
+      rides.reduce((s, r) => s + (r.totalAmount ?? 0), 0);
+    const tips = (rides: { tipAmount: number }[]) =>
+      rides.reduce((s, r) => s + r.tipAmount, 0);
 
-    const totalEarnings = rides.reduce((sum, r) => sum + (r.totalAmount ?? 0), 0);
-    const totalTips = rides.reduce((sum, r) => sum + r.tipAmount, 0);
+    const todayTotal = sum(todayRides);
+    const weekTotal = sum(weekRides);
 
     return {
-      period,
-      totalRides: rides.length,
-      totalEarnings,
-      totalTips,
-      rides,
+      today: todayTotal,
+      thisWeek: weekTotal,
+      thisMonth: sum(monthRides),
+      totalRidesToday: todayRides.length,
+      totalRidesWeek: weekRides.length,
+      totalRidesMonth: monthRides.length,
+      averagePerRide: weekRides.length > 0 ? Math.round(weekTotal / weekRides.length) : 0,
+      tipsToday: tips(todayRides),
     };
+  }
+
+  async getRideHistory(userId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [rides, total] = await Promise.all([
+      prisma.ride.findMany({
+        where: { driverId: userId, status: 'COMPLETED' },
+        orderBy: { completedAt: 'desc' },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          pickupAddress: true,
+          dropoffAddress: true,
+          totalAmount: true,
+          estimatedFare: true,
+          tipAmount: true,
+          actualDistanceKm: true,
+          status: true,
+          completedAt: true,
+          paymentMethod: true,
+        },
+      }),
+      prisma.ride.count({ where: { driverId: userId, status: 'COMPLETED' } }),
+    ]);
+    return { rides, total, page, hasMore: skip + rides.length < total };
   }
 
   /**

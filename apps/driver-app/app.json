@@ -24,7 +24,8 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Aye Auto Driver tracks your location while you are online to match you with nearby riders.",
         "NSCameraUsageDescription": "Aye Auto Driver needs camera access to upload your documents.",
         "NSPhotoLibraryUsageDescription": "Aye Auto Driver needs photo library access to upload your documents.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": ["location", "fetch"]
       }
     },
     "android": {

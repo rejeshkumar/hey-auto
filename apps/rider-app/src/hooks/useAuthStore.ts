@@ -100,18 +100,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Proactively refresh if token is missing or about to expire
     if ((!token || isTokenExpired(token)) && refreshToken) {
       try {
-        const axios = (await import('axios')).default;
         const BASE_URL = 'https://hey-auto-server-production.up.railway.app/api/v1';
-        const { data } = await axios.post(`${BASE_URL}/auth/refresh-token`, { refreshToken });
-        const { accessToken: newAccess, refreshToken: newRefresh } = data.data.tokens;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch(`${BASE_URL}/auth/refresh-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        const json = await res.json();
+        const { accessToken: newAccess, refreshToken: newRefresh } = json.data.tokens;
         storage.set('accessToken', newAccess);
         storage.set('refreshToken', newRefresh);
       } catch {
-        storage.delete('accessToken');
-        storage.delete('refreshToken');
-        storage.delete('user');
-        set({ isLoading: false });
-        return;
+        // Network unavailable or refresh failed — proceed with existing token (may fail later)
+        // Don't clear session — user should stay logged in and retry when online
       }
     }
 
