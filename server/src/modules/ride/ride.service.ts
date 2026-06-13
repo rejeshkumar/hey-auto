@@ -142,7 +142,7 @@ export class RideService {
         estimatedDurationMin: estimate.durationMin,
         baseFare: estimate.baseFare,
         perKmRate: estimate.ratePerKm,
-        perMinRate: fareConfig?.perMinRate ?? 0,
+        perMinRate: 0,
         estimatedFare: estimate.totalFare,
         nightSurcharge: estimate.nightSurcharge,
         onwardSurcharge: estimate.onwardSurcharge,
