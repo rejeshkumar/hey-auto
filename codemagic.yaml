@@ -120,7 +120,7 @@ workflows:
             --scheme HeyAutoDriver
 
     artifacts:
-      - build/ios/ipa/*.ipa
+      - apps/driver-app/ios/build/ios/ipa/*.ipa
 
     publishing:
       email:
