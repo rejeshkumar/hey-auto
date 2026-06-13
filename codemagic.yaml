@@ -110,17 +110,23 @@ workflows:
       - name: Build IPA
         script: |
           cd apps/driver-app/ios
-          xcodebuild -workspace HeyAutoDriver.xcworkspace \
-            -scheme HeyAutoDriver \
+          # Find workspace name dynamically
+          WORKSPACE=$(find . -name "*.xcworkspace" -maxdepth 1 | head -1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          echo "Building workspace: $WORKSPACE scheme: $SCHEME"
+          xcodebuild -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
             -configuration Release \
-            -archivePath $CM_BUILD_DIR/HeyAutoDriver.xcarchive \
+            -archivePath "$CM_BUILD_DIR/$SCHEME.xcarchive" \
             -allowProvisioningUpdates \
             archive | xcpretty
           xcodebuild -exportArchive \
-            -archivePath $CM_BUILD_DIR/HeyAutoDriver.xcarchive \
-            -exportOptionsPlist $CM_BUILD_DIR/export_options.plist \
-            -exportPath $CM_BUILD_DIR/ipa_output | xcpretty
-          ls -la $CM_BUILD_DIR/ipa_output/ || true
+            -archivePath "$CM_BUILD_DIR/$SCHEME.xcarchive" \
+            -exportOptionsPlist "$CM_BUILD_DIR/export_options.plist" \
+            -exportPath "$CM_BUILD_DIR/ipa_output" | xcpretty
+          echo "=== IPA output ==="
+          ls -la "$CM_BUILD_DIR/ipa_output/" || echo "No ipa_output dir"
+          find "$CM_BUILD_DIR" -name "*.ipa" || echo "No IPA found"
 
     artifacts:
       - $CM_BUILD_DIR/ipa_output/*.ipa
