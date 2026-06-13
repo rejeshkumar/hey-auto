@@ -110,9 +110,12 @@ workflows:
       - name: Build IPA
         script: |
           cd apps/driver-app/ios
+          echo "=== Available workspaces and schemes ==="
+          find . -name "*.xcworkspace" -maxdepth 2
+          xcodebuild -list 2>&1 | head -30 || true
           WORKSPACE=$(find . -name "*.xcworkspace" -maxdepth 1 | head -1 | xargs basename)
-          SCHEME="${WORKSPACE%.xcworkspace}"
-          echo "Workspace: [$WORKSPACE]  Scheme: [$SCHEME]"
+          SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list 2>/dev/null | awk '/Schemes:/,0' | grep -v "Schemes:" | head -1 | xargs)
+          echo "Using workspace: [$WORKSPACE]  scheme: [$SCHEME]"
           xcode-project build-ipa \
             --workspace "$WORKSPACE" \
             --scheme "$SCHEME"
