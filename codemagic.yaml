@@ -84,43 +84,32 @@ workflows:
 
   driver-ios:
     name: Driver App - iOS IPA
-    max_build_duration: 90
+    max_build_duration: 120
     environment:
       xcode: latest
       node: "20"
-      ios_signing:
-        distribution_type: ad_hoc
-        bundle_identifier: in.heyauto.driver
+      vars:
+        EXPO_TOKEN: $EXPO_TOKEN
     scripts:
+      - name: Install EAS CLI
+        script: npm install -g eas-cli
+
       - name: Install dependencies
         script: |
           cd apps/driver-app
           npm install
 
-      - name: Expo prebuild
+      - name: EAS local build
         script: |
           cd apps/driver-app
-          npx expo prebuild --platform ios --clean --no-install
-
-      - name: Install CocoaPods
-        script: |
-          cd apps/driver-app/ios
-          pod install
-
-      - name: Set code signing
-        script: |
-          cd apps/driver-app/ios
-          xcode-project use-profiles
-
-      - name: Build IPA
-        script: |
-          cd apps/driver-app/ios
-          xcode-project build-ipa \
-            --workspace HeyAutoDriver.xcworkspace \
-            --scheme HeyAutoDriver
+          eas build --local \
+            --platform ios \
+            --profile preview \
+            --non-interactive \
+            --output $CM_BUILD_DIR/HeyAutoDriver.ipa
 
     artifacts:
-      - apps/driver-app/ios/build/ios/ipa/*.ipa
+      - $CM_BUILD_DIR/HeyAutoDriver.ipa
 
     publishing:
       email:
