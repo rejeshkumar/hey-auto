@@ -88,28 +88,46 @@ workflows:
     environment:
       xcode: latest
       node: "20"
-      groups:
-        - expo
     scripts:
-      - name: Install EAS CLI
-        script: npm install -g eas-cli
-
       - name: Install dependencies
         script: |
           cd apps/driver-app
           npm install
 
-      - name: EAS local build
+      - name: Expo prebuild
         script: |
           cd apps/driver-app
-          EXPO_TOKEN=$EXPO_TOKEN eas build --local \
+          npx expo prebuild --platform ios --clean --no-install
+
+      - name: Bundle JS
+        script: |
+          cd apps/driver-app
+          npx react-native bundle \
             --platform ios \
-            --profile preview \
-            --non-interactive \
-            --output $CM_BUILD_DIR/HeyAutoDriver.ipa
+            --dev false \
+            --entry-file index.js \
+            --bundle-output ios/main.jsbundle \
+            --assets-dest ios
+
+      - name: Install CocoaPods
+        script: |
+          cd apps/driver-app/ios
+          pod install
+
+      - name: Set code signing
+        script: |
+          cd apps/driver-app/ios
+          xcode-project use-profiles
+
+      - name: Build IPA
+        script: |
+          cd apps/driver-app/ios
+          xcode-project build-ipa \
+            --workspace HeyAutoDriver.xcworkspace \
+            --scheme HeyAutoDriver
 
     artifacts:
-      - $CM_BUILD_DIR/HeyAutoDriver.ipa
+      - apps/driver-app/ios/build/ios/ipa/*.ipa
 
     publishing:
       email:

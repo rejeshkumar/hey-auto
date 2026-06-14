@@ -3,8 +3,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { View, ActivityIndicator, AppState, AppStateStatus } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import * as SplashScreen from 'expo-splash-screen';
-
 import '../i18n';
 import i18n from '../i18n';
 import { Navigation } from './Navigation';
@@ -42,9 +40,6 @@ export default function App() {
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
-    // Must be called from component lifecycle (after RN bridge connects) — not at module load time
-    SplashScreen.hideAsync().catch(() => {});
-
     const appStateSub = AppState.addEventListener('change', (nextState) => {
       if (appState.current.match(/inactive|background/) && nextState === 'active') {
         registerPushToken(true).catch(() => {});

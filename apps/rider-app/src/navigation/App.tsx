@@ -10,8 +10,6 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { preloadStorage } from '../utils/storage';
 import { colors } from '../theme';
 
-import * as SplashScreen from 'expo-splash-screen';
-
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2, staleTime: 1000 * 60 * 5 } },
 });
@@ -23,9 +21,6 @@ export default function App() {
   const responseListener = useRef<Notifications.Subscription>();
 
   useEffect(() => {
-    // Must be called from component lifecycle (after RN bridge connects) — not at module load time
-    SplashScreen.hideAsync().catch(() => {});
-
     preloadStorage().then(({ getString }) => {
       const savedLang = getString('language');
       if (savedLang && savedLang !== i18n.language) {
