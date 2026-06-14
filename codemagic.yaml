@@ -88,8 +88,6 @@ workflows:
     environment:
       xcode: latest
       node: "20"
-      vars:
-        EXPO_TOKEN: $EXPO_TOKEN
     scripts:
       - name: Install EAS CLI
         script: npm install -g eas-cli
@@ -102,7 +100,7 @@ workflows:
       - name: EAS local build
         script: |
           cd apps/driver-app
-          eas build --local \
+          EXPO_TOKEN=$EXPO_TOKEN eas build --local \
             --platform ios \
             --profile preview \
             --non-interactive \
