@@ -17,9 +17,6 @@ import { registerPushToken } from '../services/pushNotifications';
 // Register background task — must be outside component, wrapped for safety
 try { require('../services/backgroundLocation'); } catch {}
 
-// Dismiss native splash immediately — show our own loading screen instead
-SplashScreen.hideAsync().catch(() => {});
-
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2, staleTime: 1000 * 60 * 5 } },
 });
@@ -45,6 +42,9 @@ export default function App() {
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
+    // Must be called from component lifecycle (after RN bridge connects) — not at module load time
+    SplashScreen.hideAsync().catch(() => {});
+
     const appStateSub = AppState.addEventListener('change', (nextState) => {
       if (appState.current.match(/inactive|background/) && nextState === 'active') {
         registerPushToken(true).catch(() => {});
