@@ -88,6 +88,8 @@ workflows:
     environment:
       xcode: latest
       node: "20"
+      groups:
+        - expo
     scripts:
       - name: Install EAS CLI
         script: npm install -g eas-cli
