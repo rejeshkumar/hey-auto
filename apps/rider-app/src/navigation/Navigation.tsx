@@ -68,7 +68,14 @@ function AuthStack() {
 
 export function Navigation() {
   const { isAuthenticated, isLoading, isNewUser } = useAuthStore();
-  if (isLoading) return null;
+  const [loadingTimedOut, setLoadingTimedOut] = React.useState(false);
+
+  React.useEffect(() => {
+    const t = setTimeout(() => setLoadingTimedOut(true), 6000);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (isLoading && !loadingTimedOut) return null;
 
   return (
     <NavigationContainer>

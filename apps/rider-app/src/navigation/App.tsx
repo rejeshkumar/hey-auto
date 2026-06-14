@@ -35,17 +35,20 @@ export default function App() {
     Inter_900Black,
   });
 
-  // If fonts don't load within 3 seconds, proceed anyway with system font
+  // Force splash hide after 3s regardless of font loading status
   useEffect(() => {
-    const t = setTimeout(() => setFontTimeout(true), 3000);
+    const t = setTimeout(() => {
+      setFontTimeout(true);
+      SplashScreen.hideAsync().catch(() => {});
+    }, 3000);
     return () => clearTimeout(t);
   }, []);
 
   const fontsReady = fontsLoaded || fontTimeout;
 
   useEffect(() => {
-    if (fontsReady) SplashScreen.hideAsync().catch(() => {});
-  }, [fontsReady]);
+    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded]);
 
   useEffect(() => {
     preloadStorage().then(({ getString }) => {

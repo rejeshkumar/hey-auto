@@ -15,7 +15,8 @@ import { driverApi } from '../services/driver';
 import { preloadStorage } from '../utils/storage';
 import { colors } from '../theme';
 import { registerPushToken } from '../services/pushNotifications';
-import '../services/backgroundLocation'; // register background task on app load
+// Register background task — wrapped to prevent startup crash if native module unavailable
+try { require('../services/backgroundLocation'); } catch {}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -54,17 +55,20 @@ export default function App() {
     Inter_900Black,
   });
 
-  // If fonts don't load within 3 seconds, proceed anyway with system font
+  // Force splash hide after 3s regardless of font loading status
   useEffect(() => {
-    const t = setTimeout(() => setFontTimeout(true), 3000);
+    const t = setTimeout(() => {
+      setFontTimeout(true);
+      SplashScreen.hideAsync().catch(() => {});
+    }, 3000);
     return () => clearTimeout(t);
   }, []);
 
   const fontsReady = fontsLoaded || fontTimeout;
 
   useEffect(() => {
-    if (fontsReady) SplashScreen.hideAsync().catch(() => {});
-  }, [fontsReady]);
+    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded]);
 
   useEffect(() => {
     // Re-register token when app returns to foreground — catches drivers who
