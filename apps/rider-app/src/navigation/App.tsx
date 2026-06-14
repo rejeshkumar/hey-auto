@@ -3,9 +3,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { View, ActivityIndicator } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold, Inter_900Black } from '@expo-google-fonts/inter';
-import * as SplashScreen from 'expo-splash-screen';
-
 import '../i18n';
 import i18n from '../i18n';
 import { Navigation } from './Navigation';
@@ -13,42 +10,19 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { preloadStorage } from '../utils/storage';
 import { colors } from '../theme';
 
-SplashScreen.preventAutoHideAsync();
+// Dismiss native splash immediately
+import * as SplashScreen from 'expo-splash-screen';
+SplashScreen.hideAsync().catch(() => {});
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2, staleTime: 1000 * 60 * 5 } },
 });
 
 export default function App() {
-  const [storageReady, setStorageReady] = useState(false);
-  const [fontTimeout, setFontTimeout] = useState(false);
+  const [ready, setReady] = useState(false);
   const loadSession = useAuthStore((s) => s.loadSession);
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
-  const [fontsLoaded] = useFonts({
-    Inter: Inter_400Regular,
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    Inter_900Black,
-  });
-
-  // Force splash hide after 3s regardless of font loading status
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setFontTimeout(true);
-      SplashScreen.hideAsync().catch(() => {});
-    }, 3000);
-    return () => clearTimeout(t);
-  }, []);
-
-  const fontsReady = fontsLoaded || fontTimeout;
-
-  useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
-  }, [fontsLoaded]);
 
   useEffect(() => {
     preloadStorage().then(({ getString }) => {
@@ -56,17 +30,11 @@ export default function App() {
       if (savedLang && savedLang !== i18n.language) {
         i18n.changeLanguage(savedLang);
       }
-      loadSession();
-      setStorageReady(true);
-    });
+      loadSession().finally(() => setReady(true));
+    }).catch(() => setReady(true));
 
-    notificationListener.current = Notifications.addNotificationReceivedListener(() => {
-      // Foreground: sound/vibration fires; socket handles in-app UI updates
-    });
-
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(_response => {
-      // Rider tapped a notification — app opens to foreground automatically
-    });
+    notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {});
 
     return () => {
       notificationListener.current?.remove();
@@ -74,7 +42,7 @@ export default function App() {
     };
   }, []);
 
-  if (!storageReady || !fontsReady) {
+  if (!ready) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color={colors.primary} />

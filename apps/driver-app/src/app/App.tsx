@@ -3,7 +3,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { View, ActivityIndicator, AppState, AppStateStatus } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold, Inter_900Black } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 
 import '../i18n';
@@ -15,10 +14,11 @@ import { driverApi } from '../services/driver';
 import { preloadStorage } from '../utils/storage';
 import { colors } from '../theme';
 import { registerPushToken } from '../services/pushNotifications';
-// Register background task — wrapped to prevent startup crash if native module unavailable
+// Register background task — must be outside component, wrapped for safety
 try { require('../services/backgroundLocation'); } catch {}
 
-SplashScreen.preventAutoHideAsync();
+// Dismiss native splash immediately — show our own loading screen instead
+SplashScreen.hideAsync().catch(() => {});
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2, staleTime: 1000 * 60 * 5 } },
@@ -30,7 +30,6 @@ async function recoverPendingRideRequest() {
     const request = data.data;
     if (!request) return;
     const store = useDriverStore.getState();
-    // Only surface it if driver is not already on a ride
     if (store.phase === 'offline' || store.phase === 'online_idle') {
       store.setIncomingRequest(request);
       store.setPhase('ride_request');
@@ -39,43 +38,16 @@ async function recoverPendingRideRequest() {
 }
 
 export default function App() {
-  const [storageReady, setStorageReady] = useState(false);
-  const [fontTimeout, setFontTimeout] = useState(false);
+  const [ready, setReady] = useState(false);
   const loadSession = useAuthStore((s) => s.loadSession);
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
   const appState = useRef<AppStateStatus>(AppState.currentState);
-  const [fontsLoaded] = useFonts({
-    Inter: Inter_400Regular,
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    Inter_900Black,
-  });
-
-  // Force splash hide after 3s regardless of font loading status
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setFontTimeout(true);
-      SplashScreen.hideAsync().catch(() => {});
-    }, 3000);
-    return () => clearTimeout(t);
-  }, []);
-
-  const fontsReady = fontsLoaded || fontTimeout;
 
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
-  }, [fontsLoaded]);
-
-  useEffect(() => {
-    // Re-register token when app returns to foreground — catches drivers who
-    // enabled notifications in device Settings after initially denying
     const appStateSub = AppState.addEventListener('change', (nextState) => {
       if (appState.current.match(/inactive|background/) && nextState === 'active') {
-        registerPushToken(true); // silent — just refresh token, no prompts
+        registerPushToken(true).catch(() => {});
       }
       appState.current = nextState;
     });
@@ -85,29 +57,18 @@ export default function App() {
       if (savedLang && savedLang !== i18n.language) {
         i18n.changeLanguage(savedLang);
       }
-      loadSession();
-      setStorageReady(true);
-    });
+      loadSession().finally(() => setReady(true));
+    }).catch(() => setReady(true));
 
-    // Foreground notification — socket already handles the in-app UI
     notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
-
-    // Driver tapped the push notification while app was backgrounded
     responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data as any;
-      if (data?.type === 'ride:new_request') {
-        // Socket may have missed the event while backgrounded — fetch from server
-        recoverPendingRideRequest();
-      }
+      if (data?.type === 'ride:new_request') recoverPendingRideRequest();
     });
-
-    // Also recover on cold start (app killed, notification tapped)
     Notifications.getLastNotificationResponseAsync().then(response => {
       if (!response) return;
       const data = response.notification.request.content.data as any;
-      if (data?.type === 'ride:new_request') {
-        recoverPendingRideRequest();
-      }
+      if (data?.type === 'ride:new_request') recoverPendingRideRequest();
     });
 
     return () => {
@@ -117,7 +78,7 @@ export default function App() {
     };
   }, []);
 
-  if (!storageReady || !fontsReady) {
+  if (!ready) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color={colors.primary} />
