@@ -99,16 +99,6 @@ workflows:
           cd apps/driver-app
           npx expo prebuild --platform ios --clean --no-install
 
-      - name: Bundle JS
-        script: |
-          cd apps/driver-app
-          npx react-native bundle \
-            --platform ios \
-            --dev false \
-            --entry-file index.js \
-            --bundle-output ios/main.jsbundle \
-            --assets-dest ios
-
       - name: Install CocoaPods
         script: |
           cd apps/driver-app/ios
