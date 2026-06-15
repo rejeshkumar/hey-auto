@@ -26,7 +26,10 @@
         "NSCameraUsageDescription": "Aye Auto Driver needs camera access to upload your documents.",
         "NSPhotoLibraryUsageDescription": "Aye Auto Driver needs photo library access to upload your documents.",
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["location", "fetch"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ]
       }
     },
     "android": {
@@ -80,9 +83,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "63955e68-b790-4b60-a828-f1108e1bac6f"
+        "projectId": "09388a3d-1406-421c-8a4f-ddb614549830"
       }
     },
-    "owner": "rejesh"
+    "owner": "rejeshkumarkp"
   }
 }
