@@ -10,13 +10,12 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000",
-      "hideExponentText": true
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "in.heyauto.driver",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "config": {
         "googleMapsApiKey": "AIzaSyBaOw8Yu2FKHSOSqnBbZNfPVBfJcD4J2i8"
       },
@@ -38,7 +37,7 @@
         "backgroundColor": "#000000"
       },
       "package": "in.heyauto.driver",
-      "versionCode": 3,
+      "versionCode": 4,
       "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {
