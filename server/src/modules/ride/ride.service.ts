@@ -872,9 +872,11 @@ export class RideService {
         where: { userId: ride.driverId },
         data: { isOnRide: false, isGoHomeMode: false },
       });
-      // If rider cancelled after driver was assigned, block that driver for this rider for 24h
-      if (role === 'RIDER' && ride.status === 'DRIVER_ASSIGNED') {
-        await addToBlocklist(`${BLOCKLIST_RIDER_PREFIX}${ride.riderId}`, ride.driverId, 86400);
+      // Only block the driver for this rider if a cancellation charge actually applied —
+      // that means the driver genuinely waited past grace period. In small towns with few
+      // drivers a blanket 24h ban locks the rider out completely after any early cancel.
+      if (role === 'RIDER' && cancellationCharge > 0) {
+        await addToBlocklist(`${BLOCKLIST_RIDER_PREFIX}${ride.riderId}`, ride.driverId, 1800);
       }
     }
 

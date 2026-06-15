@@ -41,6 +41,17 @@ router.post('/fix-rider/:userId', async (req: Request, res: Response, next: Next
   } catch (err) { next(err); }
 });
 
+// Clear the per-rider driver blocklist so the rider can be matched with any available driver again
+router.post('/fix-rider-blocklist/:userId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { userId } = req.params;
+    const key = `blocklist_rider:${userId}`;
+    const members = await redis.smembers(key);
+    await redis.del(key);
+    res.json({ success: true, data: { cleared: key, removedDrivers: members } });
+  } catch (err) { next(err); }
+});
+
 router.post('/fix-driver/:userId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.params.userId as string;

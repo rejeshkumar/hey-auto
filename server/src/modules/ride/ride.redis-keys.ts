@@ -12,7 +12,7 @@ export const POOL_BATCH_NUM_PREFIX   = 'pool_batch_num:';
 
 // Blocklist keys
 export const BLOCKLIST_SEARCH_PREFIX = 'blocklist_search:'; // per rideId,  TTL 3600s
-export const BLOCKLIST_RIDER_PREFIX  = 'blocklist_rider:';  // per riderId, TTL 86400s
+export const BLOCKLIST_RIDER_PREFIX  = 'blocklist_rider:';  // per riderId, TTL 1800s (only set on charged cancel)
 export const PREV_ATTEMPTED_PREFIX   = 'prev_attempted:';   // per rideId,  TTL 3600s
 
 export async function addToBlocklist(key: string, driverId: string, ttl: number): Promise<void> {

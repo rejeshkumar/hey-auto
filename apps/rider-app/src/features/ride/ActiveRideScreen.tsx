@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert, Platform, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Button, StaticMapView } from '../../components';
+import { Button, StaticMapView, RiderLiveMapView } from '../../components';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useRideStore } from '../../hooks/useRideStore';
 import { rideApi, RideWithDriver } from '../../services/ride';
@@ -20,6 +20,7 @@ export function ActiveRideScreen({ navigation }: any) {
     setPhase, setDriverInfo, setDriverLocation, setRideOtp, setCompletedRideData, resetRide,
   } = useRideStore();
   const [sharing, setSharing] = useState(false);
+  const [searchSecs, setSearchSecs] = useState(0);
 
   // Poll ride status on mount — catches the case where socket event fired
   // before this screen mounted (common race when driver accepts quickly)
@@ -74,6 +75,14 @@ export function ActiveRideScreen({ navigation }: any) {
     }, 5000);
     return () => clearInterval(interval);
   }, [currentRide?.id]);
+
+  // Elapsed timer while searching — resets when driver is found
+  useEffect(() => {
+    if (phase !== 'searching_driver') { setSearchSecs(0); return; }
+    setSearchSecs(0);
+    const t = setInterval(() => setSearchSecs(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [phase]);
 
   useEffect(() => {
     socketService.on('ride:driver_assigned', (data: any) => {
@@ -168,24 +177,19 @@ export function ActiveRideScreen({ navigation }: any) {
   const liveDriverLoc = driverLocation
     || (driverInfo ? { lat: driverInfo.driverLat, lng: driverInfo.driverLng } : null);
 
-  const mapCenter = liveDriverLoc || pickup || TALIPARAMBA;
-
-  const mapMarkers = useMemo(() => {
-    const m: { lat: number; lng: number; color: string; label?: string }[] = [];
-    if (liveDriverLoc) m.push({ lat: liveDriverLoc.lat, lng: liveDriverLoc.lng, color: '0xF5C800', label: 'D' });
-    if (pickup) m.push({ lat: pickup.lat, lng: pickup.lng, color: '0x00C853', label: 'P' });
-    if (dropoff && phase === 'on_ride') m.push({ lat: dropoff.lat, lng: dropoff.lng, color: '0xFF3B30', label: 'X' });
-    return m;
-  }, [liveDriverLoc, pickup, dropoff, phase]);
-
-  const showMap = phase !== 'searching_driver' && phase !== 'no_drivers';
+  const showLiveMap = phase !== 'searching_driver' && phase !== 'no_drivers' && liveDriverLoc != null;
 
   return (
     <View style={styles.container}>
-      {showMap ? (
-        <StaticMapView
-          center={{ lat: mapCenter.lat, lng: mapCenter.lng }}
-          markers={mapMarkers}
+      {showLiveMap ? (
+        <RiderLiveMapView
+          driverLat={liveDriverLoc!.lat}
+          driverLng={liveDriverLoc!.lng}
+          pickupLat={pickup?.lat}
+          pickupLng={pickup?.lng}
+          dropoffLat={dropoff?.lat}
+          dropoffLng={dropoff?.lng}
+          showDropoff={phase === 'on_ride'}
           style={styles.map}
         />
       ) : (
@@ -217,7 +221,15 @@ export function ActiveRideScreen({ navigation }: any) {
             </View>
             <Text style={styles.phaseTitle}>{t('ride.searchingDriver')}</Text>
             <Text style={styles.phaseSub}>{t('ride.searchingSub')}</Text>
-            <Button title={t('ride.cancelRide')} variant="outline" onPress={handleCancel} style={{ marginTop: spacing.lg }} />
+            <Text style={styles.searchTimer}>
+              {searchSecs < 30
+                ? 'Checking nearby drivers...'
+                : searchSecs < 90
+                ? 'Expanding search area...'
+                : 'Almost there, checking more drivers...'}
+              {'  '}{Math.floor(searchSecs / 60) > 0 ? `${Math.floor(searchSecs / 60)}m ` : ''}{searchSecs % 60}s
+            </Text>
+            <Button title={t('ride.cancelRide')} variant="outline" onPress={handleCancel} style={{ marginTop: spacing.base }} />
           </View>
         )}
 
@@ -361,6 +373,7 @@ const styles = StyleSheet.create({
   },
   phaseTitle: { ...typography.h3, color: colors.text, textAlign: 'center', marginBottom: spacing.xs },
   phaseSub: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
+  searchTimer: { ...typography.small, color: colors.textLight, textAlign: 'center', marginTop: spacing.sm },
 
   acceptedBanner: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,

@@ -63,7 +63,7 @@ const envSchema = z.object({
   MAX_BATCH_ROUNDS:        z.coerce.number().int().default(4),
   RIDE_REQUEST_TIMEOUT_SEC: z.coerce.number().default(30),
   // Scoring weights (relative integers — normalized internally)
-  ARRIVAL_PROXIMITY_THRESHOLD_KM: z.coerce.number().default(0.15),
+  ARRIVAL_PROXIMITY_THRESHOLD_KM: z.coerce.number().default(0.35),
   SCORE_W_PROXIMITY:       z.coerce.number().int().default(35),
   SCORE_W_RATING:          z.coerce.number().int().default(20),
   SCORE_W_ACCEPTANCE:      z.coerce.number().int().default(15),

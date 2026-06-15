@@ -15,7 +15,10 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "in.heyauto.rider",
-      "buildNumber": "3",
+      "buildNumber": "4",
+      "config": {
+        "googleMapsApiKey": "AIzaSyBaOw8Yu2FKHSOSqnBbZNfPVBfJcD4J2i8"
+      },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Aye Auto needs your location to find nearby drivers and show your position on the map.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Aye Auto needs your location to track your ride.",
@@ -28,7 +31,7 @@
         "backgroundColor": "#000000"
       },
       "package": "in.heyauto.rider",
-      "versionCode": 3,
+      "versionCode": 4,
       "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {
@@ -45,6 +48,12 @@
       ]
     },
     "plugins": [
+      [
+        "react-native-maps",
+        {
+          "googleMapsApiKey": "AIzaSyBaOw8Yu2FKHSOSqnBbZNfPVBfJcD4J2i8"
+        }
+      ],
       [
         "expo-location",
         {

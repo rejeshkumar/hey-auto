@@ -9,8 +9,9 @@ import { useAuthStore } from '../../hooks/useAuthStore';
 import { useRideStore } from '../../hooks/useRideStore';
 import { useLocationStore } from '../../hooks/useLocationStore';
 import { riderApi, SavedPlace } from '../../services/rider';
+import { StaticMapView } from '../../components';
 
-const TALIPARAMBA_CENTER = { latitude: 12.9716, longitude: 77.5946 };
+const TALIPARAMBA_CENTER = { lat: 12.9716, lng: 77.5946 };
 
 const FAVE_SLOTS = [
   { key: 'Home',  icon: 'home'      as const },
@@ -101,9 +102,16 @@ export function HomeScreen({ navigation }: any) {
   const firstName = user?.fullName?.split(' ')[0] || '';
   const greeting = getTimeGreeting();
 
+  const mapCenter = currentLat && currentLng
+    ? { lat: currentLat, lng: currentLng }
+    : TALIPARAMBA_CENTER;
+
   return (
     <View style={styles.container}>
-      <View style={styles.map} />
+      <StaticMapView
+        center={mapCenter}
+        style={styles.map}
+      />
 
       {/* Top header */}
       <View style={styles.header}>

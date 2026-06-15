@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Button } from '../../components';
+import { Button, StaticMapView } from '../../components';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useRideStore } from '../../hooks/useRideStore';
 import { rideApi, FareEstimate } from '../../services/ride';
@@ -73,9 +73,19 @@ export function BookingConfirmScreen({ navigation }: any) {
 
   if (!pickup || !dropoff) return null;
 
+  // Center map between pickup and dropoff
+  const mapCenter = {
+    lat: (pickup.lat + dropoff.lat) / 2,
+    lng: (pickup.lng + dropoff.lng) / 2,
+  };
+  const mapMarkers = [
+    { lat: pickup.lat,  lng: pickup.lng,  color: '0x00C853', label: 'A' },
+    { lat: dropoff.lat, lng: dropoff.lng, color: '0xFF3B30', label: 'B' },
+  ];
+
   return (
     <View style={styles.container}>
-      <View style={styles.map} />
+      <StaticMapView center={mapCenter} markers={mapMarkers} style={styles.map} />
 
       <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
         <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
