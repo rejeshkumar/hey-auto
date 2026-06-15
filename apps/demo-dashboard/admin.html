@@ -456,6 +456,7 @@
             <h3>Drivers</h3>
             <div class="table-filters">
               <button class="btn btn-primary btn-sm" onclick="openAddDriverModal()">➕ Add Driver</button>
+              <button class="btn btn-sm" style="background:#22c55e;color:#fff;border:none" onclick="openSeedDriverModal()">⚡ Quick Test Driver</button>
               <input class="search-input" id="driverSearch" placeholder="Search name or phone…" oninput="debouncedDriverSearch()" />
               <select class="filter-select" id="driverStatusFilter" onchange="loadDrivers(1)">
                 <option value="">All Status</option>
@@ -898,6 +899,42 @@
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="closeModal('addDriverModal')">Cancel</button>
       <button class="btn btn-primary btn-sm" id="addDriverBtn" onclick="submitAddDriver()">➕ Add Driver</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SEED TEST DRIVER MODAL ══ -->
+<div class="modal-overlay hidden" id="seedDriverModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3>⚡ Quick Test Driver</h3>
+      <button class="modal-close" onclick="closeModal('seedDriverModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Creates a fully verified driver with active subscription — no documents, no approval steps. Login with OTP <strong>123456</strong>.</p>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="fare-form-group">
+          <label>Phone Number</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;font-weight:700;color:var(--text2)">+91</span>
+            <input type="tel" id="sd-phone" placeholder="8888888888" maxlength="10" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+          </div>
+        </div>
+        <div class="fare-form-group">
+          <label>Name (optional)</label>
+          <input type="text" id="sd-name" placeholder="Test Driver 2" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+        </div>
+        <div class="fare-form-group">
+          <label>City</label>
+          <input type="text" id="sd-city" value="taliparamba" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+        </div>
+      </div>
+      <div id="seedDriverErr" class="err-msg" style="margin-top:12px"></div>
+      <div id="seedDriverSuccess" style="display:none;margin-top:12px;padding:12px;background:#f0fff4;border:1.5px solid #22c55e;border-radius:8px;font-size:13px;color:#16a34a"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('seedDriverModal')">Cancel</button>
+      <button class="btn btn-sm" style="background:#22c55e;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-weight:700;cursor:pointer" id="seedDriverBtn" onclick="submitSeedDriver()">⚡ Create & Activate</button>
     </div>
   </div>
 </div>
@@ -1750,6 +1787,48 @@ async function submitAddDriver() {
 function showAddDriverErr(msg) {
   const el = document.getElementById('addDriverErr');
   el.textContent = msg; el.style.display = 'block';
+}
+
+// ─── SEED TEST DRIVER ─────────────────────────────────────────────
+
+function openSeedDriverModal() {
+  document.getElementById('sd-phone').value = '';
+  document.getElementById('sd-name').value = '';
+  document.getElementById('sd-city').value = 'taliparamba';
+  document.getElementById('seedDriverErr').style.display = 'none';
+  document.getElementById('seedDriverSuccess').style.display = 'none';
+  document.getElementById('seedDriverModal').classList.remove('hidden');
+  document.getElementById('sd-phone').focus();
+}
+
+async function submitSeedDriver() {
+  const phone = document.getElementById('sd-phone').value.trim();
+  const fullName = document.getElementById('sd-name').value.trim() || 'Test Driver';
+  const city = document.getElementById('sd-city').value.trim() || 'taliparamba';
+
+  if (!phone || phone.length !== 10 || !/^\d+$/.test(phone)) {
+    const el = document.getElementById('seedDriverErr');
+    el.textContent = 'Enter a valid 10-digit phone number'; el.style.display = 'block'; return;
+  }
+
+  const btn = document.getElementById('seedDriverBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Creating…';
+  document.getElementById('seedDriverErr').style.display = 'none';
+  document.getElementById('seedDriverSuccess').style.display = 'none';
+
+  const data = await api('POST', '/admin/seed-test-driver', { phone, fullName, city });
+
+  btn.disabled = false; btn.textContent = '⚡ Create & Activate';
+
+  if (data.success) {
+    const ok = document.getElementById('seedDriverSuccess');
+    ok.innerHTML = `✅ <strong>${data.data.fullName || fullName}</strong> created!<br>Phone: <strong>+91${phone}</strong> · OTP: <strong>123456</strong><br><small>${data.data.note || ''}</small>`;
+    ok.style.display = 'block';
+    loadDrivers(1);
+  } else {
+    const el = document.getElementById('seedDriverErr');
+    el.textContent = data.error?.message || 'Failed to create driver'; el.style.display = 'block';
+  }
 }
 
 // ─── SUBSCRIPTION PLANS ──────────────────────────────────────────

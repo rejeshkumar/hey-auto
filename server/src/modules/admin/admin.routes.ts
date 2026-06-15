@@ -185,6 +185,91 @@ router.post('/drivers', async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
+// One-shot test driver: creates user + profile + vehicle + active subscription, no documents needed
+router.post('/seed-test-driver', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { prisma } = await import('../../config/database');
+    const {
+      phone, fullName = 'Test Driver', city = 'taliparamba',
+      lat, lng,
+    } = req.body as { phone: string; fullName?: string; city?: string; lat?: number; lng?: number };
+
+    if (!phone) throw new Error('phone is required');
+    const normalised = phone.startsWith('+91') ? phone : `+91${phone}`;
+
+    const existing = await prisma.user.findFirst({ where: { phone: normalised } });
+    if (existing) {
+      // If already exists, just make sure profile is verified + subscription active
+      const profile = await prisma.driverProfile.findUnique({ where: { userId: existing.id } });
+      if (profile) {
+        await prisma.driverProfile.update({
+          where: { userId: existing.id },
+          data: { verificationStatus: 'VERIFIED', verifiedAt: new Date() },
+        });
+        await prisma.user.update({ where: { id: existing.id }, data: { status: 'ACTIVE' } });
+        // Upsert a 1-year subscription
+        const plan = await prisma.subscriptionPlan.findFirst({ orderBy: { price: 'asc' } });
+        if (plan) {
+          await prisma.driverSubscription.upsert({
+            where: { id: (await prisma.driverSubscription.findFirst({ where: { driverId: profile.id } }))?.id ?? '00000000-0000-0000-0000-000000000000' },
+            update: { status: 'ACTIVE', expiresAt: new Date(Date.now() + 365 * 86400000) },
+            create: {
+              driverId: profile.id, planId: plan.id,
+              startsAt: new Date(), expiresAt: new Date(Date.now() + 365 * 86400000),
+              status: 'ACTIVE',
+            },
+          });
+        }
+        return res.json({ success: true, data: { userId: existing.id, phone: normalised, note: 'existing driver re-verified' } });
+      }
+    }
+
+    const user = await prisma.user.create({
+      data: { phone: normalised, fullName, role: 'DRIVER', status: 'ACTIVE' },
+    });
+
+    const profile = await prisma.driverProfile.create({
+      data: {
+        userId: user.id,
+        licenseNumber: `TEST-${Date.now()}`,
+        city,
+        verificationStatus: 'VERIFIED',
+        verifiedAt: new Date(),
+        isOnline: false,
+        currentLat: lat ?? 12.9716,
+        currentLng: lng ?? 77.5946,
+        rating: 5.0,
+        acceptanceRate: 100,
+      },
+    });
+
+    await prisma.vehicle.create({
+      data: {
+        driverId: profile.id,
+        registrationNo: `KL13-TEST-${phone.slice(-4)}`,
+        make: 'Bajaj',
+        model: 'RE Auto',
+        vehicleType: 'AUTO',
+        color: 'Yellow-Green',
+        isActive: true,
+      },
+    });
+
+    const plan = await prisma.subscriptionPlan.findFirst({ orderBy: { price: 'asc' } });
+    if (plan) {
+      await prisma.driverSubscription.create({
+        data: {
+          driverId: profile.id, planId: plan.id,
+          startsAt: new Date(), expiresAt: new Date(Date.now() + 365 * 86400000),
+          status: 'ACTIVE',
+        },
+      });
+    }
+
+    res.status(201).json({ success: true, data: { userId: user.id, phone: normalised, fullName, city, note: 'Login with OTP 123456' } });
+  } catch (err) { next(err); }
+});
+
 router.get('/subscription-plans', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const plans = await adminService.getSubscriptionPlans();
