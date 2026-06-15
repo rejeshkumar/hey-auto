@@ -235,7 +235,13 @@ export function ActiveRideScreen({ navigation }: any) {
         {/* Driver assigned / arriving */}
         {(phase === 'driver_assigned' || phase === 'driver_arriving') && driverInfo && (
           <>
-            <Text style={styles.statusBadge}>🛺 {t('ride.driverOnWay')}</Text>
+            <View style={styles.acceptedBanner}>
+              <MaterialCommunityIcons name="check-circle" size={22} color={colors.secondary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.acceptedTitle}>Driver accepted your ride!</Text>
+                <Text style={styles.acceptedSub}>Your Sarathi is on the way to pick you up 🛺</Text>
+              </View>
+            </View>
             <View style={styles.driverCard}>
               <View style={styles.driverAvatar}>
                 <Text style={{ fontSize: 26 }}>👤</Text>
@@ -355,6 +361,15 @@ const styles = StyleSheet.create({
   },
   phaseTitle: { ...typography.h3, color: colors.text, textAlign: 'center', marginBottom: spacing.xs },
   phaseSub: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
+
+  acceptedBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    backgroundColor: '#F0FFF4', borderRadius: borderRadius.xl,
+    padding: spacing.base, marginBottom: spacing.base,
+    borderWidth: 1.5, borderColor: colors.secondary,
+  },
+  acceptedTitle: { ...typography.bodyBold, color: colors.text },
+  acceptedSub: { ...typography.small, color: colors.textSecondary, marginTop: 2 },
 
   statusBadge: { ...typography.smallBold, color: colors.secondary, marginBottom: spacing.base },
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenWrapper } from '../../components';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useAuthStore } from '../../hooks/useAuthStore';
@@ -28,6 +29,7 @@ function MenuItem({ icon, label, onPress, color }: MenuItemProps) {
 export function ProfileScreen({ navigation }: any) {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const handleLogout = () => {
     Alert.alert(t('profile.logout'), t('profile.logoutConfirm'), [
@@ -45,7 +47,7 @@ export function ProfileScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 96 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
         <Text style={styles.screenTitle}>{t('profile.title')}</Text>
 
         <View style={styles.profileCard}>
