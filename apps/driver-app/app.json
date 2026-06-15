@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "HeyAutoDriver",
+    "name": "Hey Auto Driver",
     "slug": "hey-auto-driver",
     "version": "1.0.1",
     "orientation": "portrait",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "in.heyauto.driver",
-      "buildNumber": "4",
+      "buildNumber": "2",
       "config": {
         "googleMapsApiKey": "AIzaSyBaOw8Yu2FKHSOSqnBbZNfPVBfJcD4J2i8"
       },
@@ -24,11 +24,7 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Aye Auto Driver tracks your location while you are online to match you with nearby riders.",
         "NSCameraUsageDescription": "Aye Auto Driver needs camera access to upload your documents.",
         "NSPhotoLibraryUsageDescription": "Aye Auto Driver needs photo library access to upload your documents.",
-        "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": [
-          "location",
-          "fetch"
-        ]
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -37,7 +33,7 @@
         "backgroundColor": "#000000"
       },
       "package": "in.heyauto.driver",
-      "versionCode": 4,
+      "versionCode": 5,
       "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {
