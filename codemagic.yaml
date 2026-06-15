@@ -102,6 +102,13 @@ workflows:
           cd apps/driver-app
           npx expo prebuild --platform ios --clean --no-install
 
+      - name: Remove Push Notifications entitlement
+        script: |
+          ENTITLEMENTS="apps/driver-app/ios/HeyAutoDriver/HeyAutoDriver.entitlements"
+          if [ -f "$ENTITLEMENTS" ]; then
+            plutil -remove 'aps-environment' "$ENTITLEMENTS" 2>/dev/null || true
+          fi
+
       - name: Install CocoaPods
         script: |
           cd apps/driver-app/ios
