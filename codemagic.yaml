@@ -88,6 +88,9 @@ workflows:
     environment:
       xcode: latest
       node: "20"
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: in.heyauto.driver
     scripts:
       - name: Install dependencies
         script: |
