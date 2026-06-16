@@ -9,6 +9,7 @@ import { check, sleep } from 'k6';
 import { Counter } from 'k6/metrics';
 
 const BASE = 'https://hey-auto-server-production.up.railway.app/api/v1';
+const LOAD_TEST_SECRET = __ENV.LOAD_TEST_SECRET || '';
 const errors = new Counter('spike_errors');
 
 export const options = {
@@ -27,7 +28,10 @@ export const options = {
 
 export default function () {
   const phone = `91111${String(__VU).padStart(5, '0')}`;
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(LOAD_TEST_SECRET ? { 'X-Load-Test': LOAD_TEST_SECRET } : {}),
+  };
 
   // Just hit the auth endpoint — most common spike pattern
   const res = http.post(`${BASE}/auth/send-otp`,

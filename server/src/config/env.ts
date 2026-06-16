@@ -77,6 +77,7 @@ const envSchema = z.object({
   OTP_EXPIRY_SEC:          z.coerce.number().default(300),
 
   // Comma-separated phone numbers exempt from subscription check (testing only)
+  LOAD_TEST_SECRET: z.string().optional(),
   BYPASS_SUBSCRIPTION_PHONES: z.string().optional(),
   // Comma-separated phone numbers that always get OTP 123456 (testing, even when WhatsApp is live)
   DEMO_OTP_PHONES: z.string().optional(),

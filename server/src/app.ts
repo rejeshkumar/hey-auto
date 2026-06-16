@@ -69,11 +69,13 @@ app.use(cors({
 app.set('trust proxy', 1);
 
 // Rate limiting — global: 300 requests per 15 min per IP
+// Skip if X-Load-Test header matches LOAD_TEST_SECRET (stress testing only)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => !!env.LOAD_TEST_SECRET && req.headers['x-load-test'] === env.LOAD_TEST_SECRET,
   message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many requests' } },
 });
 app.use(limiter);

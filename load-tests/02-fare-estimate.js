@@ -10,9 +10,8 @@ import { Trend } from 'k6/metrics';
 const BASE = 'https://hey-auto-server-production.up.railway.app/api/v1';
 const estimateDuration = new Trend('fare_estimate_duration', true);
 
-// Pre-created test token — run 01-auth.js first and paste a token here
-// or use the known test driver token
-const TEST_TOKEN = __ENV.AUTH_TOKEN || '';
+const TEST_TOKEN      = __ENV.AUTH_TOKEN || '';
+const LOAD_TEST_SECRET = __ENV.LOAD_TEST_SECRET || '';
 
 export const options = {
   stages: [
@@ -49,11 +48,12 @@ export default function () {
   const headers = {
     'Content-Type': 'application/json',
     ...(TEST_TOKEN ? { Authorization: `Bearer ${TEST_TOKEN}` } : {}),
+    ...(LOAD_TEST_SECRET ? { 'X-Load-Test': LOAD_TEST_SECRET } : {}),
   };
 
   const start = Date.now();
   const res = http.get(
-    `${BASE}/rides/fare-estimate?pickupLat=${pickup.lat}&pickupLng=${pickup.lng}&dropoffLat=${dropoff.lat}&dropoffLng=${dropoff.lng}`,
+    `${BASE}/rides/fare-estimate?pickupLat=${pickup.lat}&pickupLng=${pickup.lng}&dropoffLat=${dropoff.lat}&dropoffLng=${dropoff.lng}&city=taliparamba`,
     { headers }
   );
   estimateDuration.add(Date.now() - start);

@@ -9,6 +9,7 @@ import { check, sleep } from 'k6';
 import { Counter, Trend } from 'k6/metrics';
 
 const BASE = 'https://hey-auto-server-production.up.railway.app/api/v1';
+const LOAD_TEST_SECRET = __ENV.LOAD_TEST_SECRET || '';
 
 const bookingErrors  = new Counter('booking_errors');
 const cancelErrors   = new Counter('cancel_errors');
@@ -65,6 +66,7 @@ export default function (data) {
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,
+    ...(LOAD_TEST_SECRET ? { 'X-Load-Test': LOAD_TEST_SECRET } : {}),
   };
 
   const pickup  = PICKUPS[__VU % PICKUPS.length];
