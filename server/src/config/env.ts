@@ -54,14 +54,13 @@ const envSchema = z.object({
   WHATSAPP_ACCESS_TOKEN: z.string().optional(),
   WHATSAPP_API_VERSION: z.string().default('v19.0'),
 
-  // Matching — stepped radius expansion
-  MIN_SEARCH_RADIUS_KM:    z.coerce.number().default(0.5),
-  RADIUS_STEP_KM:          z.coerce.number().default(0.05),
-  MAX_SEARCH_RADIUS_KM:    z.coerce.number().default(5),
-  // Matching — batch dispatch
-  BATCH_SIZE:              z.coerce.number().int().default(3),
-  MAX_BATCH_ROUNDS:        z.coerce.number().int().default(4),
-  RIDE_REQUEST_TIMEOUT_SEC: z.coerce.number().default(30),
+  // Matching — tiered broadcast
+  // Each tier is a JSON array of { radiusKm, batchSize, timeoutSec }
+  // Override the whole array via env var to tune without redeploying
+  TIER_CONFIG: z.string().default(
+    '[{"radiusKm":1,"batchSize":3,"timeoutSec":8},{"radiusKm":2,"batchSize":5,"timeoutSec":8},{"radiusKm":5,"batchSize":8,"timeoutSec":10}]',
+  ),
+  RIDE_REQUEST_TIMEOUT_SEC: z.coerce.number().default(8), // kept for stand-queue path
   // Scoring weights (relative integers — normalized internally)
   ARRIVAL_PROXIMITY_THRESHOLD_KM: z.coerce.number().default(0.35),
   SCORE_W_PROXIMITY:       z.coerce.number().int().default(35),

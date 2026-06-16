@@ -6,8 +6,7 @@ export const RIDE_REQUEST_PREFIX  = 'ride_request:';
 export const DRIVER_LOCATION_KEY  = 'driver_locations';
 export const DRIVER_ONLINE_PREFIX = 'driver_online:';
 
-// Pool-state keys per rideId (TTL: POOL_STATE_TTL_SEC)
-export const POOL_RADIUS_STEP_PREFIX = 'pool_radius_step:';
+// Pool-state key per rideId (TTL: POOL_STATE_TTL_SEC)
 export const POOL_BATCH_NUM_PREFIX   = 'pool_batch_num:';
 
 // Blocklist keys

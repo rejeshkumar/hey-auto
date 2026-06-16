@@ -12,7 +12,6 @@ import type { FareEstimateInput, RequestRideInput, CancelRideInput, RateRideInpu
 import {
   ACTIVE_RIDE_PREFIX,
   RIDE_REQUEST_PREFIX,
-  POOL_RADIUS_STEP_PREFIX,
   POOL_BATCH_NUM_PREFIX,
   BLOCKLIST_SEARCH_PREFIX,
   BLOCKLIST_RIDER_PREFIX,
@@ -245,15 +244,14 @@ export class RideService {
     pickupLng: number,
     dropoffLat: number,
     dropoffLng: number,
-    city: string,
     radiusKm: number,
+    batchSize: number,
     rideType: string = 'PASSENGER',
   ): Promise<ScoredDriver[]> {
-    let nearbyDrivers = await driverService.getNearbyDrivers(pickupLat, pickupLng, radiusKm);
+    const nearbyDrivers = await driverService.getNearbyDrivers(pickupLat, pickupLng, radiusKm);
 
-    logger.info({ nearbyCount: nearbyDrivers.length, radiusKm, city }, 'prepareDriverBatch: DB query results');
+    logger.info({ nearbyCount: nearbyDrivers.length, radiusKm }, 'prepareDriverBatch: DB query results');
 
-    // Load all 3 blocklists and build excluded set
     const [searchBlock, riderBlock, prevAttempted] = await Promise.all([
       getBlocklistMembers(`${BLOCKLIST_SEARCH_PREFIX}${rideId}`),
       getBlocklistMembers(`${BLOCKLIST_RIDER_PREFIX}${riderId}`),
@@ -261,37 +259,24 @@ export class RideService {
     ]);
     const excluded = new Set([...searchBlock, ...riderBlock, ...prevAttempted]);
 
-    const candidateIds = nearbyDrivers
-      .filter((d) => !excluded.has(d.userId))
-      .map((d) => d.userId);
-
+    const candidateIds = nearbyDrivers.filter((d) => !excluded.has(d.userId)).map((d) => d.userId);
     if (candidateIds.length === 0) return [];
 
-    // Single batch DB query for all candidate profiles
-    const profiles = await prisma.driverProfile.findMany({
-      where: { userId: { in: candidateIds } },
-    });
+    const profiles = await prisma.driverProfile.findMany({ where: { userId: { in: candidateIds } } });
     const profileMap = new Map(profiles.map((p) => [p.userId, p]));
 
     const validCandidates = nearbyDrivers.filter((d) => {
       if (excluded.has(d.userId)) return false;
       const p = profileMap.get(d.userId);
-      if (!p) { logger.info({ userId: d.userId }, 'prepareDriverBatch: no profile found'); return false; }
-      if (!p.isOnline) { logger.info({ userId: d.userId, isOnline: p.isOnline }, 'prepareDriverBatch: driver not online'); return false; }
-      if (p.isOnRide) { logger.info({ userId: d.userId }, 'prepareDriverBatch: driver on ride'); return false; }
-      // City string match removed — radius-based geospatial filter is sufficient
+      if (!p || !p.isOnline || p.isOnRide) return false;
       if (rideType === 'PARCEL' && !p.acceptsParcels) return false;
       return true;
     });
 
-    logger.info({ nearbyCount: nearbyDrivers.length, candidateCount: candidateIds.length, validCount: validCandidates.length, city, radiusKm }, 'prepareDriverBatch: filter results');
-
+    logger.info({ validCount: validCandidates.length, radiusKm, batchSize }, 'prepareDriverBatch: filter results');
     if (validCandidates.length === 0) return [];
 
-    // Compute ridesLast24h in parallel for all valid candidates
-    const ridesLast24hList = await Promise.all(
-      validCandidates.map((d) => this.computeRidesLast24h(d.userId)),
-    );
+    const ridesLast24hList = await Promise.all(validCandidates.map((d) => this.computeRidesLast24h(d.userId)));
 
     const scored = validCandidates.map((d, i) => {
       const p = profileMap.get(d.userId)!;
@@ -316,13 +301,13 @@ export class RideService {
     });
 
     scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, env.BATCH_SIZE);
+    return scored.slice(0, batchSize);
   }
 
-  private async waitForBatchResponse(rideId: string, driverIds: string[]): Promise<boolean> {
+  private async waitForBatchResponse(rideId: string, driverIds: string[], timeoutSec: number): Promise<boolean> {
     const driverSet = new Set(driverIds);
     return new Promise((resolve) => {
-      const timeout = setTimeout(() => resolve(false), env.RIDE_REQUEST_TIMEOUT_SEC * 1000);
+      const timeout = setTimeout(() => resolve(false), timeoutSec * 1000);
 
       const checkInterval = setInterval(async () => {
         const ride = await prisma.ride.findUnique({ where: { id: rideId } });
@@ -337,7 +322,7 @@ export class RideService {
           clearInterval(checkInterval);
           resolve(false);
         }
-      }, 2000);
+      }, 1000);
     });
   }
 
@@ -347,25 +332,14 @@ export class RideService {
 
     const riderId = ride.riderId;
 
-    // Restore pool state from Redis (survives process restarts within TTL)
-    const [stepRaw, batchRaw] = await Promise.all([
-      redis.get(`${POOL_RADIUS_STEP_PREFIX}${rideId}`),
-      redis.get(`${POOL_BATCH_NUM_PREFIX}${rideId}`),
-    ]);
-    let stepCount = stepRaw ? parseInt(stepRaw, 10) : 0;
-    let batchNum  = batchRaw ? parseInt(batchRaw, 10) : 0;
-
-    let radiusKm = Math.min(
-      env.MIN_SEARCH_RADIUS_KM + stepCount * env.RADIUS_STEP_KM,
-      env.MAX_SEARCH_RADIUS_KM,
-    );
+    const tiers: { radiusKm: number; batchSize: number; timeoutSec: number }[] = JSON.parse(env.TIER_CONFIG);
 
     const riderUser = await prisma.user.findUnique({
       where: { id: riderId },
       select: { fullName: true, phone: true },
     });
 
-    // Queue-first: if pickup is near a stand, offer queue members sequentially (#1 → #2 → #3 → city batch)
+    // Queue-first: if pickup is near a stand, offer queue members sequentially
     let nearbyStands: any[] = [];
     try {
       nearbyStands = await prisma.$queryRaw`
@@ -381,7 +355,6 @@ export class RideService {
     for (const stand of nearbyStands) {
       const distM = haversineDistance(pickupLat, pickupLng, stand.lat, stand.lng) * 1000;
       if (distM <= stand.radiusMeters * 2) {
-        // Load the full queue ordered by join time
         const queueEntries = await prisma.standQueueEntry.findMany({
           where: { standId: stand.id },
           orderBy: { joinedAt: 'asc' },
@@ -390,7 +363,7 @@ export class RideService {
         for (let qi = 0; qi < queueEntries.length; qi++) {
           const entry = queueEntries[qi];
           const profile = await prisma.driverProfile.findUnique({ where: { id: entry.driverId } });
-          if (!profile || !profile.isOnline || profile.isOnRide) continue; // skip unavailable drivers
+          if (!profile || !profile.isOnline || profile.isOnRide) continue;
 
           const queuePosition = qi + 1;
           logger.info({ rideId, standName: stand.name, driverId: profile.userId, queuePosition }, 'findDriver: queue offer');
@@ -423,14 +396,13 @@ export class RideService {
             { type: 'ride:new_request', rideId },
           ).catch((err: unknown) => logger.warn({ err }, 'Push notification failed'));
 
-          const accepted = await this.waitForBatchResponse(rideId, [profile.userId]);
+          const accepted = await this.waitForBatchResponse(rideId, [profile.userId], env.RIDE_REQUEST_TIMEOUT_SEC);
           await redis.del(`${RIDE_REQUEST_PREFIX}${profile.userId}`);
 
           if (accepted) {
-            await redis.del(`${POOL_RADIUS_STEP_PREFIX}${rideId}`, `${POOL_BATCH_NUM_PREFIX}${rideId}`);
+            await redis.del(`${POOL_BATCH_NUM_PREFIX}${rideId}`);
             return;
           }
-          // Driver declined/timed out — penalise and move to next in queue
           await addToBlocklist(`${PREV_ATTEMPTED_PREFIX}${rideId}`, profile.userId, 3600);
         }
 
@@ -438,61 +410,50 @@ export class RideService {
       }
     }
 
-    while (batchNum < env.MAX_BATCH_ROUNDS) {
-      const batch = await this.prepareDriverBatch(rideId, riderId, pickupLat, pickupLng, dropoffLat, dropoffLng, city, radiusKm, rideType);
+    // Restore tier index from Redis (survives process restarts within TTL)
+    const batchRaw = await redis.get(`${POOL_BATCH_NUM_PREFIX}${rideId}`);
+    let tierIndex = batchRaw ? parseInt(batchRaw, 10) : 0;
+
+    while (tierIndex < tiers.length) {
+      const tier = tiers[tierIndex];
+
+      const batch = await this.prepareDriverBatch(
+        rideId, riderId, pickupLat, pickupLng, dropoffLat, dropoffLng,
+        tier.radiusKm, tier.batchSize, rideType,
+      );
 
       if (batch.length === 0) {
-        if (radiusKm < env.MAX_SEARCH_RADIUS_KM) {
-          stepCount++;
-          radiusKm = Math.min(env.MIN_SEARCH_RADIUS_KM + stepCount * env.RADIUS_STEP_KM, env.MAX_SEARCH_RADIUS_KM);
-          await redis.setex(`${POOL_RADIUS_STEP_PREFIX}${rideId}`, env.POOL_STATE_TTL_SEC, String(stepCount));
-          logger.info({ rideId, stepCount, radiusKm }, 'findDriver: no candidates, expanding radius');
-          // Small delay to avoid hammering DB on every expansion step
-          await new Promise((r) => setTimeout(r, 200));
-          continue;
-        }
-        // At max radius with no drivers — clear prevAttempted blocklist and retry once
-        // (handles the case where the only available driver timed out)
-        if (batchNum === 0) {
-          await redis.del(`${PREV_ATTEMPTED_PREFIX}${rideId}`);
-          stepCount = 0;
-          radiusKm = env.MIN_SEARCH_RADIUS_KM;
-          batchNum++;
-          logger.info({ rideId }, 'findDriver: cleared prevAttempted, retrying from scratch');
-          continue;
-        }
-        break;
+        logger.info({ rideId, tierIndex, radiusKm: tier.radiusKm }, 'findDriver: no candidates in tier, advancing');
+        tierIndex++;
+        await redis.setex(`${POOL_BATCH_NUM_PREFIX}${rideId}`, env.POOL_STATE_TTL_SEC, String(tierIndex));
+        continue;
       }
 
-      logger.info({ rideId, batchNum, radiusKm, batchSize: batch.length }, 'findDriver: dispatching batch');
+      logger.info({ rideId, tierIndex, radiusKm: tier.radiusKm, batchSize: batch.length, timeoutSec: tier.timeoutSec }, 'findDriver: dispatching tier');
 
-      // Dispatch all drivers in batch simultaneously
       await Promise.all(batch.map(async (driver) => {
         await redis.setex(
           `${RIDE_REQUEST_PREFIX}${driver.userId}`,
-          env.RIDE_REQUEST_TIMEOUT_SEC,
-          JSON.stringify({ rideId, batchNum }),
+          tier.timeoutSec,
+          JSON.stringify({ rideId, tierIndex }),
         );
-        await redis.publish(
-          'ride_events',
-          JSON.stringify({
-            type: 'ride:new_request',
-            driverId: driver.userId,
-            rideId,
-            pickupLat,
-            pickupLng,
-            pickupAddress: ride.pickupAddress,
-            dropoffAddress: ride.dropoffAddress,
-            estimatedFare: ride.estimatedFare,
-            distance: driver.distance,
-            riderName: riderUser?.fullName,
-            riderPhone: riderUser?.phone,
-            timeoutSec: env.RIDE_REQUEST_TIMEOUT_SEC,
-            rideType: ride.rideType,
-            parcelDescription: ride.parcelDescription,
-            recipientName: ride.recipientName,
-          }),
-        );
+        await redis.publish('ride_events', JSON.stringify({
+          type: 'ride:new_request',
+          driverId: driver.userId,
+          rideId,
+          pickupLat,
+          pickupLng,
+          pickupAddress: ride.pickupAddress,
+          dropoffAddress: ride.dropoffAddress,
+          estimatedFare: ride.estimatedFare,
+          distance: driver.distance,
+          riderName: riderUser?.fullName,
+          riderPhone: riderUser?.phone,
+          timeoutSec: tier.timeoutSec,
+          rideType: ride.rideType,
+          parcelDescription: ride.parcelDescription,
+          recipientName: ride.recipientName,
+        }));
         notificationService.sendPushNotification(
           driver.userId,
           '🛺 New Ride Request',
@@ -501,47 +462,34 @@ export class RideService {
         ).catch((err: unknown) => logger.warn({ err }, 'Push notification failed'));
       }));
 
-      const accepted = await this.waitForBatchResponse(rideId, batch.map((d) => d.userId));
+      const accepted = await this.waitForBatchResponse(rideId, batch.map((d) => d.userId), tier.timeoutSec);
+
+      // Always clean up ride_request keys for this batch
+      await Promise.all(batch.map((d) => redis.del(`${RIDE_REQUEST_PREFIX}${d.userId}`)));
 
       if (accepted) {
-        // Clean up ride_request keys for drivers that didn't accept in this batch
-        await Promise.all(
-          batch.map((d) => redis.del(`${RIDE_REQUEST_PREFIX}${d.userId}`)),
-        );
-        await redis.del(`${POOL_RADIUS_STEP_PREFIX}${rideId}`, `${POOL_BATCH_NUM_PREFIX}${rideId}`);
+        await redis.del(`${POOL_BATCH_NUM_PREFIX}${rideId}`);
         return;
       }
 
-      // Timeout — drivers that still have a ride_request key didn't respond (timeout = cancel)
+      // Penalise non-responders and block them from future tiers of this ride
       await Promise.all(batch.map(async (driver) => {
-        const stillPending = await redis.get(`${RIDE_REQUEST_PREFIX}${driver.userId}`);
-        if (stillPending) {
-          await addToBlocklist(`${PREV_ATTEMPTED_PREFIX}${rideId}`, driver.userId, 3600);
-          // Treat timeout same as cancel — increment cancellationRate
-          const profile = await prisma.driverProfile.findUnique({ where: { userId: driver.userId } });
-          if (profile) {
-            await prisma.driverProfile.update({
-              where: { userId: driver.userId },
-              data: { cancellationRate: Math.min(100, profile.cancellationRate + 2) },
-            });
-          }
-          await redis.del(`${RIDE_REQUEST_PREFIX}${driver.userId}`);
-        }
+        await addToBlocklist(`${PREV_ATTEMPTED_PREFIX}${rideId}`, driver.userId, 3600);
+        await prisma.driverProfile.updateMany({
+          where: { userId: driver.userId },
+          data: { cancellationRate: { increment: 2 } },
+        });
       }));
 
-      batchNum++;
-      stepCount++;
-      radiusKm = Math.min(env.MIN_SEARCH_RADIUS_KM + stepCount * env.RADIUS_STEP_KM, env.MAX_SEARCH_RADIUS_KM);
-      await redis.setex(`${POOL_BATCH_NUM_PREFIX}${rideId}`, env.POOL_STATE_TTL_SEC, String(batchNum));
-      await redis.setex(`${POOL_RADIUS_STEP_PREFIX}${rideId}`, env.POOL_STATE_TTL_SEC, String(stepCount));
-
-      logger.info({ rideId, batchNum, radiusKm }, 'findDriver: batch timed out, next round');
+      tierIndex++;
+      await redis.setex(`${POOL_BATCH_NUM_PREFIX}${rideId}`, env.POOL_STATE_TTL_SEC, String(tierIndex));
+      logger.info({ rideId, tierIndex }, 'findDriver: tier timed out, advancing');
     }
 
-    // NO_DRIVERS — all rounds exhausted
+    // All tiers exhausted — NO_DRIVERS
     await prisma.ride.update({ where: { id: rideId }, data: { status: 'NO_DRIVERS' } });
     await redis.del(`${ACTIVE_RIDE_PREFIX}${riderId}`);
-    await redis.del(`${POOL_RADIUS_STEP_PREFIX}${rideId}`, `${POOL_BATCH_NUM_PREFIX}${rideId}`);
+    await redis.del(`${POOL_BATCH_NUM_PREFIX}${rideId}`);
     await redis.publish('ride_events', JSON.stringify({ type: 'ride:no_drivers', rideId, riderId }));
     notificationService.sendPushNotification(
       riderId,
@@ -590,7 +538,7 @@ export class RideService {
     });
 
     await redis.del(`${RIDE_REQUEST_PREFIX}${driverId}`);
-    await redis.del(`${POOL_RADIUS_STEP_PREFIX}${rideId}`, `${POOL_BATCH_NUM_PREFIX}${rideId}`);
+    await redis.del(`${POOL_BATCH_NUM_PREFIX}${rideId}`);
 
     const driverUser = await prisma.user.findUnique({ where: { id: driverId } });
 
