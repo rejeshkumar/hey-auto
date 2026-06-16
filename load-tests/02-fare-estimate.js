@@ -52,8 +52,9 @@ export default function () {
   };
 
   const start = Date.now();
-  const res = http.get(
-    `${BASE}/rides/fare-estimate?pickupLat=${pickup.lat}&pickupLng=${pickup.lng}&dropoffLat=${dropoff.lat}&dropoffLng=${dropoff.lng}&city=taliparamba`,
+  const res = http.post(
+    `${BASE}/rides/estimate`,
+    JSON.stringify({ pickupLat: pickup.lat, pickupLng: pickup.lng, dropoffLat: dropoff.lat, dropoffLng: dropoff.lng, city: 'taliparamba' }),
     { headers }
   );
   estimateDuration.add(Date.now() - start);

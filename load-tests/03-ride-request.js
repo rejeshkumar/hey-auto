@@ -41,9 +41,8 @@ const DROPOFFS = [
 ];
 
 export function setup() {
-  // Login as rider to get token
-  const phone = '9000099999';
-  const headers = { 'Content-Type': 'application/json' };
+  const phone = '9111111111'; // whitelisted in DEMO_OTP_PHONES
+  const headers = { 'Content-Type': 'application/json', ...(LOAD_TEST_SECRET ? { 'X-Load-Test': LOAD_TEST_SECRET } : {}) };
 
   http.post(`${BASE}/auth/send-otp`, JSON.stringify({ phone, role: 'RIDER' }), { headers });
   const res = http.post(`${BASE}/auth/verify-otp`,
@@ -82,6 +81,7 @@ export default function (data) {
     dropoffLng:     dropoff.lng,
     dropoffAddress: dropoff.address,
     paymentMethod:  'CASH',
+    city:           'taliparamba',
   }), { headers });
   bookingTime.add(Date.now() - bookStart);
 
