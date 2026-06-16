@@ -37,8 +37,8 @@ export class AuthService {
     const demoPhones = (env.DEMO_OTP_PHONES || '').split(',').map(p => p.trim()).filter(Boolean);
     const useDemoOtp = noGateway || demoPhones.includes(phone);
 
-    // Hard block: never fall back to demo OTP silently in production
-    if (env.NODE_ENV === 'production' && noGateway && !demoPhones.includes(phone)) {
+    // C2 fix: in production, never fall back to demo OTP — require a real SMS gateway
+    if (env.NODE_ENV === 'production' && noGateway) {
       throw new BadRequestError('SMS service is not configured. Contact support.', 'SMS_UNAVAILABLE');
     }
 
@@ -118,25 +118,35 @@ export class AuthService {
       // Guard: phone may already exist with a different role
       const phoneOwner = await prisma.user.findFirst({ where: { phone } });
       if (phoneOwner) {
+        // Generic message — do not reveal what role the phone is registered under
         throw new BadRequestError(
-          `This phone number is already registered as a ${phoneOwner.role}. Please use the correct login.`,
+          'This phone number is already registered. Please use the correct app to log in.',
           'PHONE_ROLE_MISMATCH',
         );
       }
+
+      // C1 fix: never trust the client-supplied role for new user creation.
+      // Public OTP endpoints can only create RIDER accounts. DRIVER accounts are
+      // created by the driver app (accepted) but role is forced to DRIVER only from
+      // the /driver/register flow, not here. ADMIN can never be self-registered.
+      const allowedSelfRegisterRoles: UserRole[] = ['RIDER', 'DRIVER'];
+      const safeRole: UserRole = allowedSelfRegisterRoles.includes(role as UserRole)
+        ? (role as UserRole)
+        : 'RIDER';
 
       try {
         user = await prisma.user.create({
           data: {
             phone,
             fullName: '',
-            role: role as UserRole,
-            status: role === 'DRIVER' ? 'PENDING_VERIFICATION' : 'ACTIVE',
+            role: safeRole,
+            status: safeRole === 'DRIVER' ? 'PENDING_VERIFICATION' : 'ACTIVE',
           },
         });
       } catch (err: any) {
         // P2002 = unique constraint — concurrent request already created the user
         if (err?.code === 'P2002') {
-          const existing = await prisma.user.findFirst({ where: { phone, role: role as UserRole } });
+          const existing = await prisma.user.findFirst({ where: { phone, role: safeRole } });
           if (!existing) throw new BadRequestError('Phone number already registered with a different role', 'PHONE_ROLE_MISMATCH');
           user = existing;
           isNewUser = false;
@@ -210,7 +220,7 @@ export class AuthService {
   async refreshToken(refreshToken: string) {
     let payload: AuthPayload;
     try {
-      payload = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as AuthPayload;
+      payload = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }) as AuthPayload;
     } catch {
       throw new UnauthorizedError('Invalid refresh token', 'INVALID_REFRESH_TOKEN');
     }
@@ -268,15 +278,27 @@ export class AuthService {
 
   private async generateTokens(userId: string, role: UserRole, deviceId?: string) {
     const accessToken = jwt.sign({ userId, role }, env.JWT_ACCESS_SECRET, {
+      algorithm: 'HS256',
       expiresIn: env.JWT_ACCESS_EXPIRY as string & { __brand: 'StringValue' },
     } as jwt.SignOptions);
 
     const refreshToken = jwt.sign({ userId, role }, env.JWT_REFRESH_SECRET, {
+      algorithm: 'HS256',
       expiresIn: env.JWT_REFRESH_EXPIRY as string & { __brand: 'StringValue' },
     } as jwt.SignOptions);
 
+    // Parse JWT_REFRESH_EXPIRY (e.g. "30d", "7d") to derive the DB expiry — keeps them in sync
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
+    const refreshExpiry = env.JWT_REFRESH_EXPIRY;
+    const daysMatch = refreshExpiry.match(/^(\d+)d$/);
+    const hoursMatch = refreshExpiry.match(/^(\d+)h$/);
+    if (daysMatch) {
+      expiresAt.setDate(expiresAt.getDate() + parseInt(daysMatch[1]));
+    } else if (hoursMatch) {
+      expiresAt.setHours(expiresAt.getHours() + parseInt(hoursMatch[1]));
+    } else {
+      expiresAt.setDate(expiresAt.getDate() + 30); // safe default
+    }
 
     await prisma.refreshToken.create({
       data: {

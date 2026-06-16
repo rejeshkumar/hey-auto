@@ -29,7 +29,9 @@ import { subscriptionRoutes } from './modules/payment/subscription.routes';
 import { voiceRoutes } from './modules/voice/voice.routes';
 
 const app = express();
-app.set('trust proxy', 1); // Railway sits behind a proxy
+// Trust only the first Railway proxy hop — prevents X-Forwarded-For spoofing
+// '1' means trust exactly one hop (Railway's edge), so the real client IP is used for rate limiting
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // Socket.io setup
@@ -48,7 +50,20 @@ const io = new Server(server, {
 
 // Security
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
-app.use(cors({ origin: true, credentials: true }));
+const allowedOrigins = [
+  'https://hey-auto-server-production.up.railway.app',
+  'http://localhost:3000',
+  'http://localhost:8081',
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
 
 // Trust Railway's reverse proxy so express-rate-limit reads the real client IP
 app.set('trust proxy', 1);
@@ -68,6 +83,13 @@ const otpLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 5,
   message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many OTP requests. Please wait a minute.' } },
+});
+
+// Share-token tracking rate limit — prevents brute-force enumeration of live ride tokens
+const trackLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many tracking requests.' } },
 });
 
 // Body parsing
@@ -97,6 +119,7 @@ app.get('/health', async (_req, res) => {
 const apiPrefix = `/api/${env.API_VERSION}`;
 
 app.use(`${apiPrefix}/auth/send-otp`, otpLimiter);
+app.use(`${apiPrefix}/rides/track`, trackLimiter);
 app.use(`${apiPrefix}/auth`, authRoutes);
 app.use(`${apiPrefix}/rider`, riderRoutes);
 app.use(`${apiPrefix}/driver`, driverRoutes);

@@ -3,6 +3,12 @@ import { redis } from '../../config/redis';
 import { NotFoundError, BadRequestError } from '../../utils/errors';
 import { notificationService } from '../notification/notification.service';
 
+// Masks phone for display: +919876543210 → +91*****3210
+function maskPhone(phone: string): string {
+  if (phone.length <= 4) return '****';
+  return phone.slice(0, 3) + '*'.repeat(phone.length - 7) + phone.slice(-4);
+}
+
 export class AdminService {
   async getDashboardStats() {
     const today = new Date();
@@ -100,7 +106,7 @@ export class AdminService {
       data: drivers.map((u) => ({
         id: u.id,
         fullName: u.fullName,
-        phone: u.phone,
+        phone: maskPhone(u.phone),
         status: u.status,
         createdAt: u.createdAt,
         profile: u.driverProfile,
@@ -128,7 +134,7 @@ export class AdminService {
     return {
       id: user.id,
       fullName: user.fullName,
-      phone: user.phone,
+      phone: maskPhone(user.phone),
       status: user.status,
       createdAt: user.createdAt,
       profile: user.driverProfile,

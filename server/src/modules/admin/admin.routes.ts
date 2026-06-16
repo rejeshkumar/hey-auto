@@ -18,8 +18,17 @@ router.post('/auth/send-otp', validate(adminSendOtpSchema), async (req: Request,
 
 router.post('/auth/verify-otp', validate(adminVerifyOtpSchema), async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const { prisma } = await import('../../config/database');
+    // C3 fix: confirm this phone is a known ADMIN before even attempting OTP verification.
+    // Prevents a RIDER using the admin OTP endpoint to probe the system.
+    const adminUser = await prisma.user.findFirst({
+      where: { phone: req.body.phone?.startsWith('+91') ? req.body.phone : `+91${req.body.phone}`, role: 'ADMIN' },
+    });
+    if (!adminUser) {
+      return res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Not an admin account' } });
+    }
+
     const result = await authService.verifyOtp({ ...req.body, role: 'ADMIN' });
-    // Verify the resolved user is actually ADMIN role
     if (result.user.role !== 'ADMIN') {
       return res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: 'Not an admin account' } });
     }
@@ -197,6 +206,10 @@ router.post('/seed-test-driver', async (req: Request, res: Response, next: NextF
     if (!phone) throw new Error('phone is required');
     const normalised = phone.startsWith('+91') ? phone : `+91${phone}`;
 
+    // Validate coordinate bounds
+    if (lat !== undefined && (lat < -90 || lat > 90)) throw new Error('lat must be between -90 and 90');
+    if (lng !== undefined && (lng < -180 || lng > 180)) throw new Error('lng must be between -180 and 180');
+
     const existing = await prisma.user.findFirst({ where: { phone: normalised } });
     if (existing) {
       // If already exists, just make sure profile is verified + subscription active
@@ -315,10 +328,20 @@ router.put('/subscriptions/:id/verify', async (req: Request, res: Response, next
 router.put('/users/fix-role', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { phone, role, status } = req.body;
+    const validRoles = ['RIDER', 'DRIVER'];
+    const validStatuses = ['ACTIVE', 'SUSPENDED', 'PENDING_VERIFICATION', 'DEACTIVATED'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ success: false, error: { message: 'Invalid role — must be RIDER or DRIVER' } });
+    }
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, error: { message: 'Invalid status' } });
+    }
     const { prisma } = await import('../../config/database');
+    const { logger } = await import('../../utils/logger');
+    logger.info({ adminId: req.user!.userId, phone, role, status }, 'Admin: user role/status changed');
     const updated = await prisma.user.updateMany({
       where: { phone: phone.startsWith('+91') ? phone : `+91${phone}` },
-      data: { role, status },
+      data: { role, ...(status && { status }) },
     });
     res.json({ success: true, data: { updated: updated.count, phone, role, status } });
   } catch (err) {

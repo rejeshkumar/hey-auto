@@ -3,7 +3,7 @@ import { prisma } from '../../config/database';
 import { redis } from '../../config/redis';
 import { env } from '../../config/env';
 import { logger } from '../../utils/logger';
-import { BadRequestError, NotFoundError, ForbiddenError } from '../../utils/errors';
+import { BadRequestError, NotFoundError, ForbiddenError, TooManyRequestsError } from '../../utils/errors';
 import { haversineDistance, isNightTime, roundToRupee, generateRideOTP } from '../../utils/helpers';
 import { driverService } from '../driver/driver.service';
 import { mapsService } from '../../services/maps';
@@ -691,7 +691,26 @@ export class RideService {
     const ride = await prisma.ride.findUnique({ where: { id: rideId } });
     if (!ride || ride.driverId !== driverId) throw new NotFoundError('Ride not found');
     if (ride.status !== 'DRIVER_ARRIVED') throw new BadRequestError('Driver has not arrived yet');
-    if (ride.rideOtp !== otp) throw new BadRequestError('Invalid OTP');
+
+    // C8 fix: rate-limit OTP attempts per ride — max 5 tries before lockout
+    const attemptsKey = `ride_otp_attempts:${rideId}`;
+    const attempts = parseInt((await redis.get(attemptsKey)) || '0');
+    if (attempts >= 5) {
+      throw new TooManyRequestsError('Too many incorrect OTP attempts. Ask the rider for a new OTP by cancelling and rebooking.');
+    }
+
+    if (ride.rideOtp !== otp) {
+      await redis.incr(attemptsKey);
+      await redis.expire(attemptsKey, 600); // counter expires after 10 min
+      const remaining = 4 - attempts;
+      throw new BadRequestError(
+        remaining > 0 ? `Invalid OTP. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.` : 'Invalid OTP.',
+        'INVALID_OTP',
+      );
+    }
+
+    // Clear attempt counter on success
+    await redis.del(attemptsKey);
 
     const updated = await prisma.ride.update({
       where: { id: rideId },
@@ -729,6 +748,23 @@ export class RideService {
 
     const driverProfile = await prisma.driverProfile.findUnique({ where: { userId: driverId } });
     if (!driverProfile) throw new NotFoundError('Driver not found');
+
+    // Verify driver is near the dropoff — prevents fare inflation via GPS spoofing before completion
+    if (driverProfile.currentLat && driverProfile.currentLng) {
+      const distToDropoff = haversineDistance(
+        driverProfile.currentLat,
+        driverProfile.currentLng,
+        ride.dropoffLat,
+        ride.dropoffLng,
+      );
+      const MAX_COMPLETE_DISTANCE_KM = 1.0; // 1 km tolerance for GPS drift and traffic stops
+      if (distToDropoff > MAX_COMPLETE_DISTANCE_KM) {
+        throw new BadRequestError(
+          `You are ${Math.round(distToDropoff * 1000)}m from the dropoff. Move closer to complete the ride.`,
+          'TOO_FAR_FROM_DROPOFF',
+        );
+      }
+    }
 
     const actualDistanceKm = haversineDistance(
       ride.pickupLat,
@@ -841,19 +877,30 @@ export class RideService {
 
     const status: RideStatus = role === 'RIDER' ? 'CANCELLED_RIDER' : 'CANCELLED_DRIVER';
 
-    // Compute cancellation charge for rider cancellation after grace period
+    // Compute cancellation charge / driver penalty after grace period
     let cancellationCharge = 0;
-    if (role === 'RIDER' && ride.status === 'DRIVER_ASSIGNED' && ride.acceptedAt) {
+    if (ride.status === 'DRIVER_ASSIGNED' && ride.acceptedAt) {
       const fareConfig = await prisma.fareConfig.findFirst({
         where: { city: ride.city, isActive: true },
         orderBy: { effectiveFrom: 'desc' },
       });
       const chargeEnabled = fareConfig?.cancellationChargeEnabled ?? true;
-      const chargeAmount = fareConfig?.cancellationChargeAmount ?? 20;
       const gracePeriodMin = fareConfig?.cancellationGracePeriodMin ?? 3;
       const waitedMin = (Date.now() - ride.acceptedAt.getTime()) / 60000;
+
       if (chargeEnabled && waitedMin >= gracePeriodMin) {
-        cancellationCharge = chargeAmount;
+        if (role === 'RIDER') {
+          cancellationCharge = fareConfig?.cancellationChargeAmount ?? 20;
+        } else if (role === 'DRIVER' && ride.driverId) {
+          // Penalise driver for late cancellation — decrement acceptance rate
+          await prisma.driverProfile.update({
+            where: { userId: ride.driverId },
+            data: {
+              acceptanceRate: { decrement: 5 },
+            },
+          });
+          logger.info({ rideId, driverId: ride.driverId }, 'Driver late-cancel penalty applied');
+        }
       }
     }
 

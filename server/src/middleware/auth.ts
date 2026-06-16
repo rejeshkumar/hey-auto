@@ -26,7 +26,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
     }
 
     const token = authHeader.split(' ')[1];
-    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET) as AuthPayload;
+    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET, { algorithms: ['HS256'] }) as AuthPayload;
 
     req.user = payload;
     next();
@@ -55,7 +55,7 @@ export function authorize(...roles: UserRole[]) {
 
 export async function authenticateSocket(token: string): Promise<AuthPayload | null> {
   try {
-    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET) as AuthPayload;
+    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET, { algorithms: ['HS256'] }) as AuthPayload;
     const user = await prisma.user.findUnique({ where: { id: payload.userId } });
     if (!user || user.status !== 'ACTIVE') return null;
     return payload;

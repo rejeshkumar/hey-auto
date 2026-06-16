@@ -1,101 +1,58 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Animated, Easing,
-  Platform, Alert, ActivityIndicator, ScrollView,
+  Alert, ActivityIndicator,
 } from 'react-native';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useRideStore } from '../../hooks/useRideStore';
 import { useLocationStore } from '../../hooks/useLocationStore';
+import { useAuthStore } from '../../hooks/useAuthStore';
 import { api } from '../../services/api';
 
 const TALIPARAMBA = { lat: 12.9716, lng: 77.5946 };
-const SILENCE_TIMEOUT_MS = 3000; // auto-stop recording after 3s of user not releasing
 
 interface ResolvedPlace { name: string; address: string; lat: number; lng: number; }
-interface ChatMessage  { role: 'bot' | 'user'; text: string; }
 
-type ConvState =
-  | 'greeting'     // playing welcome message
-  | 'listening'    // actively recording
-  | 'processing'   // server processing
-  | 'speaking'     // playing bot TTS reply
-  | 'confirming'   // waiting for yes/no
-  | 'done';        // ride confirmed, navigating
-
-const STRINGS = {
-  en: {
-    title:         'Hey Auto',
-    sub:           'Voice Assistant',
-    welcome:       'Hello! Welcome to Hey Auto. Where would you like to go?',
-    listening:     'Listening...',
-    thinking:      'Just a moment...',
-    tapToSpeak:    'Tap to speak',
-    tapToStop:     'Tap to stop',
-    searchManual:  'Type instead',
-    booking:       'Booking your ride...',
-    retry:         'Sorry, I didn\'t catch that. Please try again.',
-    confirmYes:    'Yes',
-    confirmNo:     'No, change it',
-  },
-  ml: {
-    title:         'Hey Auto',
-    sub:           'വോയ്സ് അസിസ്റ്റന്റ്',
-    welcome:       'ഹലോ! Hey Auto-ലേക്ക് സ്വാഗതം. എവിടേക്ക് പോകണം?',
-    listening:     'കേൾക്കുന്നു...',
-    thinking:      'ഒരു നിമിഷം...',
-    tapToSpeak:    'സംസാരിക്കാൻ ടാപ്പ് ചെയ്യൂ',
-    tapToStop:     'നിർത്താൻ ടാപ്പ് ചെയ്യൂ',
-    searchManual:  'ടൈപ്പ് ചെയ്യൂ',
-    booking:       'ബുക്ക് ചെയ്യുന്നു...',
-    retry:         'ക്ഷമിക്കണം, മനസ്സിലായില്ല. വീണ്ടും പറയൂ.',
-    confirmYes:    'ആവട്ടെ',
-    confirmNo:     'വേണ്ട, മാറ്റണം',
-  },
-};
+type Phase =
+  | 'greeting'     // speaking welcome
+  | 'listening'    // mic open, waiting for speech
+  | 'processing'   // sending to server
+  | 'confirming'   // showing destination card, waiting for confirm
+  | 'booking'      // confirmed, navigating
+  | 'error';       // something failed
 
 export function VoiceBookingScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { i18n } = useTranslation();
-  const lang = i18n.language === 'ml' ? 'ml' : 'en';
-  const s = STRINGS[lang];
-
-  const { setPickup, setDropoff, setPhase } = useRideStore();
+  const { setPickup, setDropoff, setPhase: setRidePhase } = useRideStore();
   const { currentLat, currentLng } = useLocationStore();
+  const user = useAuthStore(s => s.user);
+  const firstName = user?.fullName?.split(' ')[0] || 'there';
 
-  const [convState, setConvState]         = useState<ConvState>('greeting');
-  const [messages, setMessages]           = useState<ChatMessage[]>([]);
-  const [pendingPlace, setPendingPlace]   = useState<ResolvedPlace | null>(null);
-  const [pendingDest, setPendingDest]     = useState<string | undefined>();
-  const [statusHint, setStatusHint]       = useState('');
+  const [phase, setPhase]             = useState<Phase>('greeting');
+  const [statusText, setStatusText]   = useState('');
+  const [place, setPlace]             = useState<ResolvedPlace | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
 
-  const recordingRef    = useRef<Audio.Recording | null>(null);
-  const soundRef        = useRef<Audio.Sound | null>(null);
-  const pulseAnim       = useRef(new Animated.Value(1)).current;
-  const pulseLoopRef    = useRef<Animated.CompositeAnimation | null>(null);
-  const scrollRef       = useRef<ScrollView>(null);
-  const mountedRef      = useRef(true);
+  const recordingRef = useRef<Audio.Recording | null>(null);
+  const soundRef     = useRef<Audio.Sound | null>(null);
+  const pulseAnim    = useRef(new Animated.Value(1)).current;
+  const pulseLoop    = useRef<Animated.CompositeAnimation | null>(null);
+  const mountedRef   = useRef(true);
+  const voiceCtxRef  = useRef<'initial' | 'confirming'>('initial');
+  const pendingPlace = useRef<ResolvedPlace | null>(null);
+  const lang         = 'ml'; // Malayalam by default
+
+  const greetingText = lang === 'ml'
+    ? `ഹലോ ${firstName}! Hey Auto-ലേക്ക് സ്വാഗതം. എവിടേക്ക് പോകണം?`
+    : `Hello ${firstName}! Welcome to Hey Auto. Where would you like to go?`;
 
   useEffect(() => {
     mountedRef.current = true;
-    Audio.requestPermissionsAsync().then(({ status }) => {
-      if (status !== 'granted') {
-        Alert.alert(
-          lang === 'ml' ? 'മൈക്രോഫോൺ അനുമതി' : 'Microphone Access',
-          lang === 'ml'
-            ? 'Settings → Apps → Hey Auto → Permissions → Microphone'
-            : 'Please allow microphone access in Settings → Apps → Hey Auto → Permissions',
-          [{ text: 'OK' }]
-        );
-      } else {
-        // Start the conversation immediately
-        startConversation();
-      }
-    });
+    startFlow();
     return () => {
       mountedRef.current = false;
       stopPulse();
@@ -104,232 +61,208 @@ export function VoiceBookingScreen({ navigation }: any) {
     };
   }, []);
 
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-  }, [messages]);
-
-  // ── Pulse animation ───────────────────────────────────────────────────────
   const startPulse = () => {
-    pulseLoopRef.current = Animated.loop(
+    pulseLoop.current = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.3, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1,   duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.25, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1,    duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
       ])
     );
-    pulseLoopRef.current.start();
+    pulseLoop.current.start();
   };
+
   const stopPulse = () => {
-    pulseLoopRef.current?.stop();
+    pulseLoop.current?.stop();
     pulseAnim.setValue(1);
   };
 
-  // ── TTS playback ──────────────────────────────────────────────────────────
-  const speak = async (text: string): Promise<void> => {
+  const speak = async (text: string) => {
     try {
       const { data: res } = await api.post('/voice/tts', { text, language: lang });
-      if (!res.success || !res.data.audio) return;
-      const uri = `${FileSystem.cacheDirectory}bot_reply_${Date.now()}.wav`;
+      if (!res.success || !res.data?.audio) return;
+      const uri = `${FileSystem.cacheDirectory}tts_${Date.now()}.wav`;
       await FileSystem.writeAsStringAsync(uri, res.data.audio, { encoding: FileSystem.EncodingType.Base64 });
-      // Force speaker output — not earpiece — so user hears without holding to ear
       await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false, // always use speaker on Android
+        allowsRecordingIOS: false, playsInSilentModeIOS: true,
+        staysActiveInBackground: false, shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
       });
-      if (soundRef.current) { await soundRef.current.unloadAsync().catch(() => {}); }
+      if (soundRef.current) await soundRef.current.unloadAsync().catch(() => {});
       const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true, volume: 1.0 });
       soundRef.current = sound;
-      await sound.playAsync();
-      // Wait for playback to finish before returning
       await new Promise<void>(resolve => {
         sound.setOnPlaybackStatusUpdate((st: any) => {
-          if (st.didJustFinish || st.error) {
-            sound.unloadAsync().catch(() => {});
-            resolve();
-          }
+          if (st.didJustFinish || st.error) { sound.unloadAsync().catch(() => {}); resolve(); }
         });
       });
-    } catch {
-      // Silently fall through — text bubble is already shown
+    } catch { /* fall through silently */ }
+  };
+
+  const startFlow = async () => {
+    const { status } = await Audio.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Microphone Access Needed', 'Please allow microphone in Settings to use voice booking.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+      return;
     }
-  };
-
-  // ── Add message to chat ───────────────────────────────────────────────────
-  const addMessage = (role: 'bot' | 'user', text: string) => {
-    setMessages(prev => [...prev, { role, text }]);
-  };
-
-  // ── Start the whole conversation ──────────────────────────────────────────
-  const startConversation = async () => {
     if (!mountedRef.current) return;
-    addMessage('bot', s.welcome);
-    setConvState('speaking');
-    setStatusHint('');
-    await speak(s.welcome);
+    setPhase('greeting');
+    setStatusText(lang === 'ml' ? 'സ്വാഗതം...' : 'Welcome...');
+    await speak(greetingText);
     if (!mountedRef.current) return;
-    setConvState('listening');
-    setStatusHint(s.tapToSpeak);
+    await startListeningWithContext('initial');
   };
 
-  // ── Start recording ───────────────────────────────────────────────────────
   const startListening = async () => {
-    if (convState !== 'listening') return;
+    if (!mountedRef.current) return;
     try {
       if (recordingRef.current) {
         await recordingRef.current.stopAndUnloadAsync().catch(() => {});
         recordingRef.current = null;
       }
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-      });
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true, staysActiveInBackground: false });
+      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
       recordingRef.current = recording;
+      setPhase('listening');
+      setIsRecording(true);
+      setStatusText(lang === 'ml' ? 'കേൾക്കുന്നു... സംസാരിക്കൂ' : 'Listening... speak now');
       startPulse();
-      setStatusHint(s.tapToStop);
-    } catch (e: any) {
-      Alert.alert('Microphone Error', e?.message || 'Could not start recording.');
+    } catch {
+      setPhase('error');
+      setStatusText(lang === 'ml' ? 'മൈക്രോഫോൺ പ്രശ്‌നം' : 'Microphone error');
     }
   };
 
-  // ── Stop recording & process ──────────────────────────────────────────────
-  const stopListening = async () => {
-    if (!recordingRef.current) return;
+  const stopListeningAndProcess = async () => {
+    if (!recordingRef.current || !mountedRef.current) return;
     stopPulse();
-    setConvState('processing');
-    setStatusHint(s.thinking);
+    setIsRecording(false);
+    setPhase('processing');
+    setStatusText(lang === 'ml' ? 'മനസ്സിലാക്കുന്നു...' : 'Understanding...');
 
     try {
       await recordingRef.current.stopAndUnloadAsync();
       const uri = recordingRef.current.getURI();
       recordingRef.current = null;
-      if (!uri) throw new Error('No recording URI');
+      if (!uri) throw new Error('No audio');
 
       const formData = new FormData();
       formData.append('audio', { uri, name: 'voice.m4a', type: 'audio/m4a' } as any);
-      formData.append('context', convState === 'confirming' ? 'confirming' : 'initial');
       formData.append('language', lang);
-      if (pendingDest) formData.append('pendingDestination', pendingDest);
+      formData.append('context', voiceCtxRef.current);
 
       const { data: res } = await api.post('/voice/process', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      if (!res.success) throw new Error(res.error?.message || 'Processing failed');
-
-      await processResponse(res.data);
+      if (!res.success) throw new Error('Server error');
+      await handleServerResponse(res.data);
     } catch {
       if (!mountedRef.current) return;
-      addMessage('bot', s.retry);
-      setConvState('speaking');
-      await speak(s.retry);
+      const retry = lang === 'ml' ? 'ക്ഷമിക്കണം, വ്യക്തമായി കേൾക്കാനായില്ല. ഒന്നുകൂടി പറയൂ.' : 'Sorry, I didn\'t catch that. Please try again.';
+      setStatusText(retry);
+      await speak(retry);
       if (!mountedRef.current) return;
-      setConvState('listening');
-      setStatusHint(s.tapToSpeak);
+      await startListeningWithContext(voiceCtxRef.current);
     }
   };
 
-  // ── Process server response & continue conversation ───────────────────────
-  const processResponse = async (data: any) => {
+  const handleServerResponse = async (data: any) => {
     if (!mountedRef.current) return;
 
-    // Show what user said
-    if (data.transcript) addMessage('user', data.transcript);
+    if (voiceCtxRef.current === 'confirming') {
+      // User replied yes/no to confirmation
+      const confirmed = data.intent === 'confirm_yes' || (data.transcript && /^(yes|yeah|ok|ആകട്ടെ|ശരി|ഉണ്ട്|അതെ)/i.test(data.transcript));
+      const denied    = data.intent === 'confirm_no'  || (data.transcript && /^(no|nope|വേണ്ട|അല്ല|change|മാറ്റ)/i.test(data.transcript));
 
-    // Show bot reply
-    const replyText = data.replyText || '';
+      if (confirmed && pendingPlace.current) {
+        await bookRide(pendingPlace.current);
+      } else if (denied) {
+        pendingPlace.current = null;
+        setPlace(null);
+        voiceCtxRef.current = 'initial';
+        const msg = lang === 'ml' ? 'ശരി. വേറെ എവിടേക്ക് പോകണം?' : 'OK. Where would you like to go?';
+        setStatusText(msg);
+        await speak(msg);
+        if (!mountedRef.current) return;
+        await startListeningWithContext('initial');
+      } else {
+        // Unclear — ask again
+        const again = lang === 'ml' ? 'ഉണ്ടോ, ഇല്ലേ?' : 'Yes or no?';
+        setStatusText(again);
+        await speak(again);
+        if (!mountedRef.current) return;
+        await startListeningWithContext('confirming');
+      }
+      return;
+    }
 
+    // initial context — user spoke a destination
     if (data.intent === 'book_ride' && data.resolvedPlace) {
-      // Destination found — show confirmation
-      setPendingDest(data.destination);
-      setPendingPlace(data.resolvedPlace);
-      addMessage('bot', replyText || (lang === 'ml'
-        ? `${data.resolvedPlace.name}-ലേക്ക് ബുക്ക് ചെയ്യട്ടെ?`
-        : `Shall I book a ride to ${data.resolvedPlace.name}?`));
-      setConvState('speaking');
-      await speak(replyText || (lang === 'ml'
-        ? `${data.resolvedPlace.name}-ലേക്ക് ബുക്ക് ചെയ്യട്ടെ?`
-        : `Shall I book a ride to ${data.resolvedPlace.name}?`));
+      const p: ResolvedPlace = data.resolvedPlace;
+      pendingPlace.current = p;
+      setPlace(p);
+      setPhase('confirming');
+      voiceCtxRef.current = 'confirming';
+      const confirmText = lang === 'ml'
+        ? `${p.name}-ലേക്ക് ഒരു ഓട്ടോ ബുക്ക് ചെയ്യട്ടെ?`
+        : `Shall I book a ride to ${p.name}?`;
+      setStatusText(confirmText);
+      await speak(confirmText);
+      // Auto-listen for yes/no
       if (!mountedRef.current) return;
-      setConvState('confirming');
-      setStatusHint(lang === 'ml' ? '"ആവട്ടെ" അല്ലെങ്കിൽ "വേണ്ട"' : '"Yes" or "No"');
-
-    } else if (data.intent === 'book_ride' && data.destination) {
-      // Heard destination but couldn't resolve coords
-      addMessage('bot', replyText);
-      setConvState('speaking');
+      await startListeningWithContext('confirming');
+    } else {
+      const replyText = data.replyText || (lang === 'ml' ? 'ഒന്നുകൂടി പറയൂ?' : 'Could you say that again?');
+      setStatusText(replyText);
       await speak(replyText);
       if (!mountedRef.current) return;
-      setConvState('listening');
-      setStatusHint(s.tapToSpeak);
-
-    } else if (data.intent === 'confirm' && data.confirmationAnswer === 'yes' && pendingPlace) {
-      // Confirmed — book
-      const confirmMsg = lang === 'ml' ? 'ശരി! ബുക്ക് ചെയ്യുന്നു...' : 'Great! Booking your ride now...';
-      addMessage('bot', confirmMsg);
-      setConvState('speaking');
-      await speak(confirmMsg);
-      if (!mountedRef.current) return;
-      setConvState('done');
-      setPickup({
-        lat: currentLat || TALIPARAMBA.lat,
-        lng: currentLng || TALIPARAMBA.lng,
-        address: lang === 'ml' ? 'നിലവിലെ സ്ഥാനം' : 'Current Location',
-      });
-      setDropoff({ lat: pendingPlace.lat, lng: pendingPlace.lng, address: pendingPlace.name });
-      setPhase('reviewing_estimate');
-      setTimeout(() => navigation.replace('BookingConfirm'), 600);
-
-    } else if (data.intent === 'confirm' && data.confirmationAnswer === 'no') {
-      // User said no — ask again
-      const askAgain = lang === 'ml' ? 'ശരി. വേറെ എവിടേക്ക് വേണം?' : 'OK. Where would you like to go?';
-      setPendingDest(undefined);
-      setPendingPlace(null);
-      addMessage('bot', askAgain);
-      setConvState('speaking');
-      await speak(askAgain);
-      if (!mountedRef.current) return;
-      setConvState('listening');
-      setStatusHint(s.tapToSpeak);
-
-    } else {
-      // Unclear — let bot reply guide the user
-      if (replyText) {
-        addMessage('bot', replyText);
-        setConvState('speaking');
-        await speak(replyText);
-        if (!mountedRef.current) return;
-      }
-      setConvState('listening');
-      setStatusHint(s.tapToSpeak);
+      await startListeningWithContext('initial');
     }
   };
 
-  // ── Tap mic button handler ────────────────────────────────────────────────
+  const startListeningWithContext = async (ctx: 'initial' | 'confirming') => {
+    voiceCtxRef.current = ctx;
+    await startListening();
+  };
+
+  const bookRide = async (p: ResolvedPlace) => {
+    if (!mountedRef.current) return;
+    setPhase('booking');
+    const msg = lang === 'ml' ? 'ശരി! ഓട്ടോ ബുക്ക് ചെയ്യുന്നു...' : 'Great! Booking your auto...';
+    setStatusText(msg);
+    await speak(msg);
+    setPickup({
+      lat: currentLat || TALIPARAMBA.lat,
+      lng: currentLng || TALIPARAMBA.lng,
+      address: lang === 'ml' ? 'നിലവിലെ സ്ഥാനം' : 'Current Location',
+    });
+    setDropoff({ lat: p.lat, lng: p.lng, address: p.name });
+    setRidePhase('reviewing_estimate');
+    setTimeout(() => navigation.replace('BookingConfirm'), 400);
+  };
+
+  const handleTapYes = () => { if (pendingPlace.current) bookRide(pendingPlace.current); };
+  const handleTapNo  = async () => {
+    pendingPlace.current = null;
+    setPlace(null);
+    voiceCtxRef.current = 'initial';
+    const msg = lang === 'ml' ? 'ശരി. വേറെ എവിടേക്ക് പോകണം?' : 'OK. Where would you like to go?';
+    setStatusText(msg);
+    await speak(msg);
+    if (!mountedRef.current) return;
+    await startListeningWithContext('initial');
+  };
+
   const handleMicTap = () => {
-    if (convState === 'listening') {
-      if (recordingRef.current) {
-        stopListening();
-      } else {
-        startListening();
-      }
-    } else if (convState === 'confirming') {
-      // In confirming state, mic tap starts listening for yes/no
-      startListening();
+    if (phase === 'listening') {
+      if (isRecording) stopListeningAndProcess();
+      else startListeningWithContext(voiceCtxRef.current);
     }
   };
 
-  const isListening  = convState === 'listening';
-  const isProcessing = convState === 'processing';
-  const isSpeaking   = convState === 'speaking' || convState === 'greeting';
-  const isRecording  = !!recordingRef.current;
-  const isDone       = convState === 'done';
+  const orbColor = phase === 'listening' && isRecording ? colors.primary
+    : phase === 'confirming' ? '#22C55E'
+    : phase === 'processing' ? colors.textSecondary
+    : colors.primary;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -339,110 +272,83 @@ export function VoiceBookingScreen({ navigation }: any) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <MaterialCommunityIcons name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{s.title}</Text>
-          <Text style={styles.headerSub}>{s.sub}</Text>
-        </View>
+        <Text style={styles.headerTitle}>Hey Auto</Text>
         <TouchableOpacity style={styles.searchBtn} onPress={() => navigation.navigate('Search')}>
-          <MaterialCommunityIcons name="magnify" size={20} color={colors.primary} />
+          <MaterialCommunityIcons name="keyboard" size={20} color={colors.primary} />
+          <Text style={styles.searchBtnText}>{lang === 'ml' ? 'ടൈപ്പ്' : 'Type'}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Chat bubbles */}
-      <ScrollView
-        ref={scrollRef}
-        style={styles.chat}
-        contentContainerStyle={styles.chatContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {messages.map((msg, i) => (
-          <View key={i} style={[styles.bubble, msg.role === 'user' ? styles.userBubble : styles.botBubble]}>
-            {msg.role === 'bot' && (
-              <View style={styles.botAvatar}>
-                <MaterialCommunityIcons name="robot-happy-outline" size={16} color={colors.primary} />
-              </View>
-            )}
-            <View style={[styles.bubbleInner, msg.role === 'user' ? styles.userBubbleInner : styles.botBubbleInner]}>
-              <Text style={[styles.bubbleText, msg.role === 'user' ? styles.userBubbleText : styles.botBubbleText]}>
-                {msg.text}
-              </Text>
-            </View>
-          </View>
-        ))}
-
-        {/* Pending place card */}
-        {pendingPlace && convState === 'confirming' && (
-          <View style={styles.placeCard}>
-            <View style={styles.placeIcon}>
-              <MaterialCommunityIcons name="map-marker" size={20} color={colors.primary} />
-            </View>
-            <View style={styles.placeInfo}>
-              <Text style={styles.placeName}>{pendingPlace.name}</Text>
-              <Text style={styles.placeAddr} numberOfLines={1}>{pendingPlace.address}</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Confirm buttons */}
-        {convState === 'confirming' && pendingPlace && (
-          <View style={styles.confirmRow}>
-            <TouchableOpacity style={styles.confirmNo} onPress={() => {
-              addMessage('user', s.confirmNo);
-              processResponse({ intent: 'confirm', confirmationAnswer: 'no', transcript: s.confirmNo, replyText: '' });
-            }}>
-              <Text style={styles.confirmNoText}>{s.confirmNo}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.confirmYes} onPress={() => {
-              addMessage('user', s.confirmYes);
-              processResponse({ intent: 'confirm', confirmationAnswer: 'yes', transcript: s.confirmYes, replyText: '' });
-            }}>
-              <MaterialCommunityIcons name="check" size={18} color={colors.ink} />
-              <Text style={styles.confirmYesText}>{s.confirmYes}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Typing/speaking indicator */}
-        {(isProcessing || isSpeaking) && (
-          <View style={styles.bubble}>
-            <View style={styles.botAvatar}>
-              <MaterialCommunityIcons name="robot-happy-outline" size={16} color={colors.primary} />
-            </View>
-            <View style={styles.botBubbleInner}>
-              <ActivityIndicator size="small" color={colors.primary} />
-            </View>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Mic area */}
-      {!isDone && (
-        <View style={[styles.micArea, { paddingBottom: Math.max(insets.bottom + 16, 24) }]}>
-          <Text style={styles.statusHint}>{isSpeaking ? (lang === 'ml' ? 'കേൾക്കൂ...' : 'Listening to reply...') : statusHint}</Text>
-          <Animated.View style={[styles.micRing, { transform: [{ scale: pulseAnim }] },
-            isRecording && styles.micRingActive]}>
-            <TouchableOpacity
-              style={[styles.micBtn, isRecording && styles.micBtnActive,
-                (isSpeaking || isProcessing) && styles.micBtnDisabled]}
-              onPress={handleMicTap}
-              disabled={isSpeaking || isProcessing || isDone}
-              activeOpacity={0.8}
-            >
+      {/* Center orb */}
+      <View style={styles.orbArea}>
+        <Animated.View style={[styles.orbRing, { transform: [{ scale: pulseAnim }], borderColor: orbColor + '40' }]}>
+          <View style={[styles.orb, { backgroundColor: orbColor + '18', borderColor: orbColor }]}>
+            {phase === 'processing' || phase === 'greeting' ? (
+              <ActivityIndicator size="large" color={orbColor} />
+            ) : phase === 'booking' ? (
+              <MaterialCommunityIcons name="check-circle" size={52} color="#22C55E" />
+            ) : (
               <MaterialCommunityIcons
-                name={isRecording ? 'stop' : isProcessing ? 'loading' : 'microphone'}
-                size={36}
-                color={isRecording ? colors.ink : isSpeaking || isProcessing ? colors.textLight : colors.primary}
+                name={isRecording ? 'microphone' : phase === 'confirming' ? 'map-marker-check' : 'microphone-outline'}
+                size={52}
+                color={orbColor}
               />
-            </TouchableOpacity>
-          </Animated.View>
-          <Text style={styles.micLabel}>
-            {isRecording  ? (lang === 'ml' ? 'നിർത്താൻ ടാപ്പ് ചെയ്യൂ' : 'Tap to stop')  :
-             isProcessing ? (lang === 'ml' ? 'ഒരു നിമിഷം...' : 'Processing...')         :
-             isSpeaking   ? ''                                                           :
-             (lang === 'ml' ? 'ടാപ്പ് ചെയ്ത് സംസാരിക്കൂ' : 'Tap to speak')}
+            )}
+          </View>
+        </Animated.View>
+
+        <Text style={styles.statusText}>{statusText}</Text>
+
+        {phase === 'listening' && (
+          <Text style={styles.hintText}>
+            {isRecording
+              ? (lang === 'ml' ? 'നിർത്താൻ ടാപ്പ് ചെയ്യൂ' : 'Tap to stop')
+              : (lang === 'ml' ? 'ടാപ്പ് ചെയ്ത് സംസാരിക്കൂ' : 'Tap mic to speak')}
           </Text>
+        )}
+      </View>
+
+      {/* Destination card — shown when confirming */}
+      {phase === 'confirming' && place && (
+        <View style={styles.placeCard}>
+          <View style={styles.placeIconWrap}>
+            <MaterialCommunityIcons name="map-marker" size={24} color={colors.primary} />
+          </View>
+          <View style={styles.placeInfo}>
+            <Text style={styles.placeName}>{place.name}</Text>
+            <Text style={styles.placeAddr} numberOfLines={1}>{place.address}</Text>
+          </View>
         </View>
       )}
+
+      {/* Bottom action area */}
+      <View style={[styles.bottomArea, { paddingBottom: Math.max(insets.bottom + 16, 24) }]}>
+        {phase === 'listening' && (
+          <TouchableOpacity
+            style={[styles.micButton, isRecording && styles.micButtonActive]}
+            onPress={handleMicTap}
+            activeOpacity={0.85}
+          >
+            <MaterialCommunityIcons
+              name={isRecording ? 'stop' : 'microphone'}
+              size={32}
+              color={isRecording ? colors.ink : colors.primary}
+            />
+          </TouchableOpacity>
+        )}
+
+        {phase === 'confirming' && (
+          <View style={styles.confirmButtons}>
+            <TouchableOpacity style={styles.btnNo} onPress={handleTapNo}>
+              <Text style={styles.btnNoText}>{lang === 'ml' ? 'വേണ്ട' : 'No, change'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnYes} onPress={handleTapYes}>
+              <MaterialCommunityIcons name="check" size={20} color={colors.ink} />
+              <Text style={styles.btnYesText}>{lang === 'ml' ? 'ആവട്ടെ, ബുക്ക് ചെയ്യൂ' : 'Yes, Book Ride'}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -457,103 +363,82 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: colors.surface,
-    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center',
   },
-  headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 16, fontWeight: '800', color: colors.text },
-  headerSub: { fontSize: 11, color: colors.textSecondary, marginTop: 1 },
+  headerTitle: { flex: 1, ...typography.h4, color: colors.text, textAlign: 'center' },
   searchBtn: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: colors.surface,
-    alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: colors.surface, paddingHorizontal: spacing.sm,
+    paddingVertical: 8, borderRadius: borderRadius.full,
+    borderWidth: 1, borderColor: colors.borderLight,
   },
+  searchBtnText: { ...typography.caption, color: colors.primary, fontWeight: '700' },
 
-  chat: { flex: 1 },
-  chatContent: { padding: spacing.base, gap: spacing.sm, paddingBottom: spacing.lg },
-
-  bubble: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs },
-  botBubble: { alignSelf: 'flex-start', maxWidth: '82%' },
-  userBubble: { alignSelf: 'flex-end', flexDirection: 'row-reverse', maxWidth: '82%' },
-
-  botAvatar: {
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: colors.ink,
-    borderWidth: 1.5, borderColor: colors.primary,
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
+  orbArea: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: spacing.xl, gap: spacing.lg,
   },
-
-  bubbleInner: { borderRadius: 18, padding: spacing.sm + 2 },
-  botBubbleInner: {
-    backgroundColor: colors.ink,
-    borderTopWidth: 2, borderTopColor: colors.primary,
-    borderBottomLeftRadius: 4, overflow: 'hidden',
+  orbRing: {
+    width: 180, height: 180, borderRadius: 90,
+    borderWidth: 2, alignItems: 'center', justifyContent: 'center',
   },
-  userBubbleInner: {
-    backgroundColor: colors.primary,
-    borderBottomRightRadius: 4,
+  orb: {
+    width: 140, height: 140, borderRadius: 70,
+    borderWidth: 2, alignItems: 'center', justifyContent: 'center',
   },
-  bubbleText: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
-  botBubbleText:  { color: colors.primary },
-  userBubbleText: { color: colors.ink, fontWeight: '600' },
+  statusText: {
+    ...typography.h4, color: colors.text, textAlign: 'center',
+    lineHeight: 28, paddingHorizontal: spacing.lg,
+  },
+  hintText: { ...typography.small, color: colors.textSecondary, textAlign: 'center' },
 
   placeCard: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.xl, borderWidth: 1.5, borderColor: colors.primary,
-    padding: spacing.base, marginVertical: spacing.xs,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.base,
+    backgroundColor: colors.white, marginHorizontal: spacing.lg,
+    borderRadius: borderRadius.xl, padding: spacing.base,
+    borderWidth: 1.5, borderColor: colors.primary,
+    elevation: 4, shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8,
+    marginBottom: spacing.base,
   },
-  placeIcon: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center', justifyContent: 'center',
+  placeIconWrap: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center',
   },
   placeInfo: { flex: 1 },
-  placeName: { fontSize: 14, fontWeight: '700', color: colors.text },
-  placeAddr: { fontSize: 11, color: colors.textSecondary, marginTop: 2 },
+  placeName: { ...typography.bodyBold, color: colors.text },
+  placeAddr: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
 
-  confirmRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
-  confirmNo: {
-    flex: 1, padding: spacing.sm + 2, borderRadius: 12,
+  bottomArea: {
+    paddingHorizontal: spacing.lg, paddingTop: spacing.base,
+    alignItems: 'center',
+  },
+  micButton: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: colors.ink,
+    borderWidth: 2.5, borderColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+    elevation: 6, shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 10,
+  },
+  micButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.ink,
+  },
+
+  confirmButtons: { flexDirection: 'row', gap: spacing.sm, width: '100%' },
+  btnNo: {
+    flex: 1, paddingVertical: spacing.base, borderRadius: borderRadius.xl,
     backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border,
     alignItems: 'center',
   },
-  confirmNoText: { fontSize: 13, fontWeight: '700', color: colors.textSecondary },
-  confirmYes: {
-    flex: 2, padding: spacing.sm + 2, borderRadius: 12,
+  btnNoText: { ...typography.bodyBold, color: colors.textSecondary },
+  btnYes: {
+    flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: spacing.xs, paddingVertical: spacing.base, borderRadius: borderRadius.xl,
     backgroundColor: colors.primary,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    boxShadow: '0 4px 14px rgba(249,176,27,0.3)',
-  } as any,
-  confirmYesText: { fontSize: 14, fontWeight: '800', color: colors.ink },
-
-  micArea: {
-    alignItems: 'center', paddingTop: spacing.base,
-    borderTopWidth: 1, borderTopColor: colors.borderLight,
-    gap: spacing.xs,
+    elevation: 4, shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 8,
   },
-  statusHint: { fontSize: 12, color: colors.textSecondary, height: 16 },
-
-  micRing: {
-    width: 88, height: 88, borderRadius: 44,
-    backgroundColor: 'rgba(249,176,27,0.1)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  micRingActive: { backgroundColor: 'rgba(249,176,27,0.2)' },
-
-  micBtn: {
-    width: 68, height: 68, borderRadius: 34,
-    backgroundColor: colors.ink,
-    borderTopWidth: 3, borderTopColor: colors.primary,
-    overflow: 'hidden',
-    alignItems: 'center', justifyContent: 'center',
-    elevation: 6,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3, shadowRadius: 10,
-  },
-  micBtnActive:   { backgroundColor: colors.primary },
-  micBtnDisabled: { opacity: 0.4 },
-  micLabel: { fontSize: 11, color: colors.textSecondary, textAlign: 'center', height: 16 },
+  btnYesText: { ...typography.bodyBold, color: colors.ink },
 });

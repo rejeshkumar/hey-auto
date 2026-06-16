@@ -22,15 +22,15 @@ class SocketService {
     });
 
     this.socket.on('connect', () => {
-      console.log('[Driver Socket] Connected');
+      if (__DEV__) console.log('[Driver Socket] Connected');
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('[Driver Socket] Disconnected:', reason);
+      if (__DEV__) console.log('[Driver Socket] Disconnected:', reason);
     });
 
     this.socket.on('connect_error', (err) => {
-      console.log('[Driver Socket] Error:', err.message);
+      if (__DEV__) console.log('[Driver Socket] Error:', err.message);
     });
   }
 

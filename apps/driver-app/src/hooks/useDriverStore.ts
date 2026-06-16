@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { storage } from '../utils/storage';
 import { driverApi, DriverProfile, EarningsSummary } from '../services/driver';
 import { socketService } from '../services/socket';
+import { stopBackgroundLocation } from '../services/backgroundLocation';
 
 export type DriverPhase =
   | 'offline'
@@ -87,6 +88,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
   goOffline: async () => {
     await driverApi.goOffline();
     socketService.stopLocationUpdates();
+    stopBackgroundLocation().catch(() => {}); // stop OS-level background task too
     storage.set('isOnline', 'false');
     set({ isOnline: false, phase: 'offline' });
   },

@@ -1,8 +1,8 @@
 export function generateOTP(length = 4): string {
-  const digits = '0123456789';
+  const { randomInt } = require('crypto') as typeof import('crypto');
   let otp = '';
   for (let i = 0; i < length; i++) {
-    otp += digits[Math.floor(Math.random() * digits.length)];
+    otp += randomInt(0, 10).toString();
   }
   return otp;
 }

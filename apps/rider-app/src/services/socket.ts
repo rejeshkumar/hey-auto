@@ -21,15 +21,15 @@ class SocketService {
     });
 
     this.socket.on('connect', () => {
-      console.log('[Socket] Connected');
+      if (__DEV__) console.log('[Socket] Connected');
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('[Socket] Disconnected:', reason);
+      if (__DEV__) console.log('[Socket] Disconnected:', reason);
     });
 
     this.socket.on('connect_error', (err) => {
-      console.log('[Socket] Connection error:', err.message);
+      if (__DEV__) console.log('[Socket] Connection error:', err.message);
     });
   }
 

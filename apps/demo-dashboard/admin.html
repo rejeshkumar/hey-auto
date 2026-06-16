@@ -1018,7 +1018,8 @@ async function api(method, path, body) {
 function toast(msg, type = 'info') {
   const el = document.createElement('div');
   el.className = 'toast toast-' + type;
-  el.innerHTML = (type === 'success' ? '✓ ' : type === 'error' ? '✕ ' : 'ℹ ') + msg;
+  const prefix = type === 'success' ? '✓ ' : type === 'error' ? '✕ ' : 'ℹ ';
+  el.textContent = prefix + msg;
   const c = document.getElementById('toastContainer');
   c.appendChild(el);
   setTimeout(() => el.remove(), 3500);
@@ -1028,6 +1029,17 @@ function showErr(id, msg) {
   const el = document.getElementById(id);
   el.textContent = msg; el.style.display = 'block';
   setTimeout(() => el.style.display = 'none', 5000);
+}
+
+// Escape user-controlled data before inserting into innerHTML
+function esc(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
 }
 
 function fmtDate(d) {
@@ -1310,18 +1322,18 @@ async function loadDrivers(page) {
     const verifiedDocs = docs.filter(x => x.status === 'VERIFIED').length;
     const vehicleStr = vehicles[0] ? `${vehicles[0].make || ''} ${vehicles[0].model || ''} · ${vehicles[0].plateNumber || ''}`.trim() : '—';
     return `<tr>
-      <td><div class="user-cell"><div class="avatar">${initials(d.fullName)}</div><div><div class="user-name">${d.fullName || 'Unnamed'}</div><div class="user-phone">${d.phone}</div></div></div></td>
-      <td>${profile.city || '—'}</td>
+      <td><div class="user-cell"><div class="avatar">${esc(initials(d.fullName))}</div><div><div class="user-name">${esc(d.fullName || 'Unnamed')}</div><div class="user-phone">${esc(d.phone)}</div></div></div></td>
+      <td>${esc(profile.city || '—')}</td>
       <td>${statusBadge(profile.verificationStatus || 'PENDING')}</td>
-      <td style="font-size:13px">${vehicleStr}</td>
+      <td style="font-size:13px">${esc(vehicleStr)}</td>
       <td><span class="badge ${verifiedDocs === docs.length && docs.length > 0 ? 'badge-green' : 'badge-yellow'}">${verifiedDocs}/${docs.length} docs</span></td>
       <td style="font-size:13px;color:var(--text2)">${fmtDate(d.createdAt)}</td>
       <td>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-sm btn-outline" onclick="openDriverModal('${d.id}')">View</button>
+          <button class="btn btn-sm btn-outline" onclick="openDriverModal('${esc(d.id)}')">View</button>
           ${profile.verificationStatus === 'PENDING' || profile.verificationStatus === 'IN_REVIEW' ? `
-            <button class="btn btn-sm btn-green" onclick="verifyDriver('${d.id}','verify')">✓</button>
-            <button class="btn btn-sm btn-red" onclick="promptRejectDriver('${d.id}')">✕</button>
+            <button class="btn btn-sm btn-green" onclick="verifyDriver('${esc(d.id)}','verify')">✓</button>
+            <button class="btn btn-sm btn-red" onclick="promptRejectDriver('${esc(d.id)}')">✕</button>
           ` : ''}
         </div>
       </td>
@@ -1358,12 +1370,12 @@ async function loadRiders(page) {
     <tr>
       <td>
         <div class="user-cell">
-          <div class="avatar">${initials(r.fullName)}</div>
-          <div><div class="user-name">${r.fullName}</div><div class="user-phone">${r.phone}</div></div>
+          <div class="avatar">${esc(initials(r.fullName))}</div>
+          <div><div class="user-name">${esc(r.fullName)}</div><div class="user-phone">${esc(r.phone)}</div></div>
         </div>
       </td>
-      <td><span class="badge ${r.status === 'ACTIVE' ? 'badge-green' : r.status === 'SUSPENDED' ? 'badge-red' : 'badge-gray'}">${r.status}</span></td>
-      <td>⭐ ${r.rating.toFixed(1)}</td>
+      <td><span class="badge ${r.status === 'ACTIVE' ? 'badge-green' : r.status === 'SUSPENDED' ? 'badge-red' : 'badge-gray'}">${esc(r.status)}</span></td>
+      <td>⭐ ${r.rating != null ? r.rating.toFixed(1) : '—'}</td>
       <td>${r.totalRides}</td>
       <td>${fmtDate(r.createdAt)}</td>
     </tr>`).join('');
@@ -1384,7 +1396,7 @@ async function openDriverModal(userId) {
 
   const data = await api('GET', '/admin/drivers/' + userId);
   if (!data.success) {
-    document.getElementById('driverModalBody').innerHTML = `<div style="text-align:center;padding:32px;color:var(--red)">${data.error?.message || 'Driver not found'}</div>`;
+    document.getElementById('driverModalBody').innerHTML = `<div style="text-align:center;padding:32px;color:var(--red)">${esc(data.error?.message || 'Driver not found')}</div>`;
     return;
   }
   const driver = data.data;
@@ -1822,7 +1834,7 @@ async function submitSeedDriver() {
 
   if (data.success) {
     const ok = document.getElementById('seedDriverSuccess');
-    ok.innerHTML = `✅ <strong>${data.data.fullName || fullName}</strong> created!<br>Phone: <strong>+91${phone}</strong> · OTP: <strong>123456</strong><br><small>${data.data.note || ''}</small>`;
+    ok.innerHTML = `✅ <strong>${esc(data.data.fullName || fullName)}</strong> created!<br>Phone: <strong>+91${esc(phone)}</strong> · OTP: <strong>123456</strong><br><small>${esc(data.data.note || '')}</small>`;
     ok.style.display = 'block';
     loadDrivers(1);
   } else {
