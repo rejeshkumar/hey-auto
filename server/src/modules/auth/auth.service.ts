@@ -37,8 +37,8 @@ export class AuthService {
     const demoPhones = (env.DEMO_OTP_PHONES || '').split(',').map(p => p.trim()).filter(Boolean);
     const useDemoOtp = noGateway || demoPhones.includes(phone);
 
-    // C2 fix: in production, never fall back to demo OTP — require a real SMS gateway
-    if (env.NODE_ENV === 'production' && noGateway) {
+    // In production with no SMS gateway, only phones in DEMO_OTP_PHONES may proceed
+    if (env.NODE_ENV === 'production' && noGateway && !demoPhones.includes(phone)) {
       throw new BadRequestError('SMS service is not configured. Contact support.', 'SMS_UNAVAILABLE');
     }
 
