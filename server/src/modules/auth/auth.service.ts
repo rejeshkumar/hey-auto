@@ -35,10 +35,12 @@ export class AuthService {
     const smsConfigured = !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN);
     const noGateway = !fast2smsConfigured && !whatsappConfigured && !smsConfigured;
     const demoPhones = (env.DEMO_OTP_PHONES || '').split(',').map(p => p.trim()).filter(Boolean);
-    const useDemoOtp = noGateway || demoPhones.includes(phone);
+    // Load test mode: LOAD_TEST_SECRET set + request carries matching header → any phone gets demo OTP
+    const isLoadTest = !!(env.LOAD_TEST_SECRET && (input as any)._isLoadTest);
+    const useDemoOtp = noGateway || demoPhones.includes(phone) || isLoadTest;
 
-    // In production with no SMS gateway, only phones in DEMO_OTP_PHONES may proceed
-    if (env.NODE_ENV === 'production' && noGateway && !demoPhones.includes(phone)) {
+    // In production with no SMS gateway, only DEMO_OTP_PHONES or load-test phones may proceed
+    if (env.NODE_ENV === 'production' && noGateway && !demoPhones.includes(phone) && !isLoadTest) {
       throw new BadRequestError('SMS service is not configured. Contact support.', 'SMS_UNAVAILABLE');
     }
 

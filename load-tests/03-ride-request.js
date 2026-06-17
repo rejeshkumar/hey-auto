@@ -1,32 +1,32 @@
 /**
  * TEST 3 — Full Ride Request flow
- * Most expensive operation: auth → fare estimate → book ride → cancel
- * Tests the DB write path, Redis pub/sub, and ride matching algorithm.
- * Run with a valid AUTH_TOKEN: k6 run -e AUTH_TOKEN=xxx 03-ride-request.js
+ * 20 VUs, each with their own rider account so there are no "active ride" conflicts.
+ * Tokens refresh automatically on 401.
  */
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter, Trend } from 'k6/metrics';
+import { getOrLogin, authHeaders, refreshIfNeeded } from './auth-helper.js';
 
-const BASE = 'https://hey-auto-server-production.up.railway.app/api/v1';
-const LOAD_TEST_SECRET = __ENV.LOAD_TEST_SECRET || '';
+const BASE   = 'https://hey-auto-server-production.up.railway.app/api/v1';
+const SECRET = __ENV.LOAD_TEST_SECRET || '';
 
-const bookingErrors  = new Counter('booking_errors');
-const cancelErrors   = new Counter('cancel_errors');
-const bookingTime    = new Trend('ride_booking_duration', true);
-const cancelTime     = new Trend('ride_cancel_duration', true);
+const bookingErrors = new Counter('booking_errors');
+const cancelErrors  = new Counter('cancel_errors');
+const bookingTime   = new Trend('ride_booking_duration', true);
+const cancelTime    = new Trend('ride_cancel_duration', true);
 
 export const options = {
   stages: [
-    { duration: '30s', target: 5  },   // gentle ramp — each request hits DB
-    { duration: '60s', target: 20 },   // 20 concurrent ride requests
-    { duration: '60s', target: 20 },   // hold
+    { duration: '30s', target: 5  },
+    { duration: '60s', target: 20 },
+    { duration: '60s', target: 20 },
     { duration: '30s', target: 0  },
   ],
   thresholds: {
-    http_req_duration:    ['p(95)<3000'],
-    http_req_failed:      ['rate<0.05'],
-    ride_booking_duration:['p(95)<2500'],
+    http_req_duration:     ['p(95)<3000'],
+    http_req_failed:       ['rate<0.05'],
+    ride_booking_duration: ['p(95)<2500'],
   },
 };
 
@@ -40,33 +40,9 @@ const DROPOFFS = [
   { lat: 11.9700, lng: 75.4200, address: 'Kannur Town' },
 ];
 
-export function setup() {
-  const phone = '9111111111'; // whitelisted in DEMO_OTP_PHONES
-  const headers = { 'Content-Type': 'application/json', ...(LOAD_TEST_SECRET ? { 'X-Load-Test': LOAD_TEST_SECRET } : {}) };
-
-  http.post(`${BASE}/auth/send-otp`, JSON.stringify({ phone, role: 'RIDER' }), { headers });
-  const res = http.post(`${BASE}/auth/verify-otp`,
-    JSON.stringify({ phone, otp: '123456', role: 'RIDER', deviceId: 'load-test-setup' }),
-    { headers });
-
-  try {
-    const token = JSON.parse(res.body).data.tokens.accessToken;
-    return { token };
-  } catch {
-    console.error('Setup failed — could not get auth token. Is demo OTP active?');
-    return { token: __ENV.AUTH_TOKEN || '' };
-  }
-}
-
-export default function (data) {
-  const token = data.token || __ENV.AUTH_TOKEN;
-  if (!token) { console.error('No auth token — skipping'); return; }
-
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-    ...(LOAD_TEST_SECRET ? { 'X-Load-Test': LOAD_TEST_SECRET } : {}),
-  };
+export default function () {
+  let tokenObj = getOrLogin('RIDER', SECRET);
+  if (!tokenObj) return;
 
   const pickup  = PICKUPS[__VU % PICKUPS.length];
   const dropoff = DROPOFFS[__VU % DROPOFFS.length];
@@ -82,14 +58,13 @@ export default function (data) {
     dropoffAddress: dropoff.address,
     paymentMethod:  'CASH',
     city:           'taliparamba',
-  }), { headers });
+  }), { headers: authHeaders(tokenObj.accessToken, SECRET) });
   bookingTime.add(Date.now() - bookStart);
+  tokenObj = refreshIfNeeded(bookRes, tokenObj, SECRET);
 
   const bookOk = check(bookRes, {
-    'ride request 200 or 201': (r) => r.status === 200 || r.status === 201,
-    'ride has id':             (r) => {
-      try { return !!JSON.parse(r.body).data.id; } catch { return false; }
-    },
+    'ride request 200': (r) => r.status === 200,
+    'ride has id':      (r) => { try { return !!JSON.parse(r.body).data.id; } catch { return false; } },
   });
 
   if (!bookOk) { bookingErrors.add(1); sleep(2); return; }
@@ -97,14 +72,17 @@ export default function (data) {
   const rideId = JSON.parse(bookRes.body).data.id;
   sleep(1);
 
-  // Immediately cancel (we're just testing the booking path, not matching)
+  // Cancel immediately — we're testing booking throughput, not matching
   const cancelStart = Date.now();
-  const cancelRes = http.post(`${BASE}/rides/${rideId}/cancel`, '{}', { headers });
+  const cancelRes = http.post(
+    `${BASE}/rides/${rideId}/cancel`,
+    JSON.stringify({ reason: 'load-test' }),
+    { headers: authHeaders(tokenObj.accessToken, SECRET) },
+  );
   cancelTime.add(Date.now() - cancelStart);
+  tokenObj = refreshIfNeeded(cancelRes, tokenObj, SECRET);
 
-  check(cancelRes, {
-    'cancel 200': (r) => r.status === 200,
-  }) || cancelErrors.add(1);
+  check(cancelRes, { 'cancel 200': (r) => r.status === 200 }) || cancelErrors.add(1);
 
   sleep(3);
 }

@@ -5,7 +5,9 @@ import type { SendOtpInput, VerifyOtpInput, RefreshTokenInput, CompleteProfileIn
 export class AuthController {
   async sendOtp(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await authService.sendOtp(req.body as SendOtpInput);
+      const { env } = await import('../../config/env');
+      const isLoadTest = !!(env.LOAD_TEST_SECRET && req.headers['x-load-test'] === env.LOAD_TEST_SECRET);
+      const result = await authService.sendOtp({ ...req.body, _isLoadTest: isLoadTest } as SendOtpInput);
       res.json({ success: true, data: result });
     } catch (err) {
       next(err);
