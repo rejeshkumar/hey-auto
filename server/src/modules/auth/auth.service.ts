@@ -19,7 +19,7 @@ const OTP_ATTEMPTS_PREFIX = 'otp_attempts:';
 const OTP_COOLDOWN_PREFIX = 'otp_cooldown:';
 
 export class AuthService {
-  async sendOtp(input: SendOtpInput) {
+  async sendOtp(input: SendOtpInput, isLoadTest = false) {
     const { phone, role } = input;
 
     const cooldownKey = `${OTP_COOLDOWN_PREFIX}${phone}`;
@@ -35,8 +35,6 @@ export class AuthService {
     const smsConfigured = !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN);
     const noGateway = !fast2smsConfigured && !whatsappConfigured && !smsConfigured;
     const demoPhones = (env.DEMO_OTP_PHONES || '').split(',').map(p => p.trim()).filter(Boolean);
-    // Load test mode: LOAD_TEST_SECRET set + request carries matching header → any phone gets demo OTP
-    const isLoadTest = !!(env.LOAD_TEST_SECRET && (input as any)._isLoadTest);
     const useDemoOtp = noGateway || demoPhones.includes(phone) || isLoadTest;
 
     // In production with no SMS gateway, only DEMO_OTP_PHONES or load-test phones may proceed

@@ -7,7 +7,9 @@ export class AuthController {
     try {
       const { env } = await import('../../config/env');
       const isLoadTest = !!(env.LOAD_TEST_SECRET && req.headers['x-load-test'] === env.LOAD_TEST_SECRET);
-      const result = await authService.sendOtp({ ...req.body, _isLoadTest: isLoadTest } as SendOtpInput);
+      // Attach via locals so validate() middleware doesn't strip it
+      (req as any)._isLoadTest = isLoadTest;
+      const result = await authService.sendOtp(req.body as SendOtpInput, isLoadTest);
       res.json({ success: true, data: result });
     } catch (err) {
       next(err);
