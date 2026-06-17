@@ -68,11 +68,12 @@ app.use(cors({
 // Trust Railway's reverse proxy so express-rate-limit reads the real client IP
 app.set('trust proxy', 1);
 
-// Rate limiting — global: 300 requests per 15 min per IP
-// Skip if X-Load-Test header matches LOAD_TEST_SECRET (stress testing only)
+// Rate limiting — global per IP
+// GLOBAL_RATE_LIMIT env var overrides the default (useful for load testing)
+const globalRateMax = env.GLOBAL_RATE_LIMIT ?? 300;
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: globalRateMax,
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => !!env.LOAD_TEST_SECRET && req.headers['x-load-test'] === env.LOAD_TEST_SECRET,
