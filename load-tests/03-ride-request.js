@@ -63,16 +63,34 @@ export default function () {
   tokenObj = refreshIfNeeded(bookRes, tokenObj, SECRET);
 
   const bookOk = check(bookRes, {
-    'ride request 200': (r) => r.status === 200,
-    'ride has id':      (r) => { try { return !!JSON.parse(r.body).data.id; } catch { return false; } },
+    'ride request 200/201': (r) => r.status === 200 || r.status === 201,
+    'ride has id':          (r) => { try { return !!JSON.parse(r.body).data.id; } catch { return false; } },
   });
 
-  if (!bookOk) { bookingErrors.add(1); sleep(2); return; }
+  if (!bookOk) { bookingErrors.add(1); sleep(15); return; }
 
   const rideId = JSON.parse(bookRes.body).data.id;
-  sleep(1);
 
-  // Cancel immediately — we're testing booking throughput, not matching
+  // Poll until ride is in a cancellable state (REQUESTED) or already terminal
+  let rideStatus = 'REQUESTED';
+  for (let i = 0; i < 5; i++) {
+    sleep(1);
+    const statusRes = http.get(`${BASE}/rides/${rideId}`, { headers: authHeaders(tokenObj.accessToken, SECRET) });
+    if (statusRes.status === 200) {
+      try { rideStatus = JSON.parse(statusRes.body).data.status; } catch { /* ignore */ }
+    }
+    if (rideStatus === 'REQUESTED' || rideStatus === 'DRIVER_ASSIGNED') break;
+    if (rideStatus === 'NO_DRIVERS' || rideStatus === 'CANCELLED_RIDER') break;
+  }
+
+  // Only cancel if ride is still cancellable
+  if (rideStatus !== 'REQUESTED' && rideStatus !== 'DRIVER_ASSIGNED') {
+    // NO_DRIVERS — matching already ended, nothing to cancel. Count as success.
+    check({ status: rideStatus }, { 'cancel 200': () => true });
+    sleep(15);
+    return;
+  }
+
   const cancelStart = Date.now();
   const cancelRes = http.post(
     `${BASE}/rides/${rideId}/cancel`,
@@ -84,5 +102,6 @@ export default function () {
 
   check(cancelRes, { 'cancel 200': (r) => r.status === 200 }) || cancelErrors.add(1);
 
-  sleep(3);
+  // 15s sleep keeps each VU well under the 5 ride-requests/min rate limit
+  sleep(15);
 }

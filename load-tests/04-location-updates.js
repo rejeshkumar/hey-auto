@@ -7,7 +7,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter, Trend } from 'k6/metrics';
-import { getOrLogin, authHeaders, refreshIfNeeded } from './auth-helper.js';
+import { login, authHeaders } from './auth-helper.js';
 
 const BASE   = 'https://hey-auto-server-production.up.railway.app/api/v1';
 const SECRET = __ENV.LOAD_TEST_SECRET || '';
@@ -30,21 +30,26 @@ export const options = {
   },
 };
 
-export default function () {
-  let tokenObj = getOrLogin('DRIVER', SECRET);
-  if (!tokenObj) return;
+// setup() runs once before all VUs — get ONE driver token and share it
+export function setup() {
+  const tokens = login('8095481555', 'DRIVER', SECRET);
+  if (!tokens) throw new Error('Could not get driver token in setup()');
+  return { token: tokens.accessToken };
+}
+
+export default function (data) {
+  if (!data.token) return;
 
   const lat = 11.9462 + (Math.random() - 0.5) * 0.01;
   const lng = 75.4928 + (Math.random() - 0.5) * 0.01;
 
   const start = Date.now();
-  const res = http.post(
+  const res = http.put(
     `${BASE}/drivers/location`,
     JSON.stringify({ lat, lng }),
-    { headers: authHeaders(tokenObj.accessToken, SECRET) },
+    { headers: authHeaders(data.token, SECRET) },
   );
   locationDuration.add(Date.now() - start);
-  tokenObj = refreshIfNeeded(res, tokenObj, SECRET);
 
   check(res, { 'location update 200': (r) => r.status === 200 }) || locationErrors.add(1);
 

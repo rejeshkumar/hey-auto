@@ -160,6 +160,11 @@ app.get('/simulator', (_req, res) => {
   res.sendFile(path.join(publicDir, 'demo.html'));
 });
 
+// Legal pages (required for Play Store / App Store submission)
+app.get('/legal/privacy', (_req, res) => res.sendFile(path.join(publicDir, 'legal', 'privacy.html')));
+app.get('/legal/terms', (_req, res) => res.sendFile(path.join(publicDir, 'legal', 'terms.html')));
+app.get('/legal', (_req, res) => res.sendFile(path.join(publicDir, 'legal', 'index.html')));
+
 // Root redirect
 app.get('/', (_req, res) => {
   res.redirect('/rider');
