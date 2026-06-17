@@ -126,10 +126,14 @@ export const useDriverStore = create<DriverState>((set, get) => ({
       const { data } = await driverApi.getActiveRide();
       const ride = data.data;
       if (!ride) return;
+      // OTP_VERIFIED means OTP passed but startRide wasn't called — finish it now
+      if (ride.status === 'OTP_VERIFIED') {
+        try { await driverApi.startRide(ride.id); } catch {}
+      }
       const phaseMap: Record<string, DriverPhase> = {
         DRIVER_ASSIGNED: 'heading_to_pickup',
         DRIVER_ARRIVED:  'arrived_at_pickup',
-        OTP_VERIFIED:    'arrived_at_pickup',
+        OTP_VERIFIED:    'on_trip',
         IN_PROGRESS:     'on_trip',
       };
       const restoredPhase = phaseMap[ride.status];

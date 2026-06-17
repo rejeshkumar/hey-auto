@@ -672,6 +672,7 @@ export class RideService {
   async startRide(driverId: string, rideId: string) {
     const ride = await prisma.ride.findUnique({ where: { id: rideId } });
     if (!ride || ride.driverId !== driverId) throw new NotFoundError('Ride not found');
+    if (ride.status === 'IN_PROGRESS') return ride;
     if (ride.status !== 'OTP_VERIFIED') throw new BadRequestError('OTP not verified yet');
 
     const updated = await prisma.ride.update({
@@ -693,6 +694,7 @@ export class RideService {
   async completeRide(driverId: string, rideId: string) {
     const ride = await prisma.ride.findUnique({ where: { id: rideId } });
     if (!ride || ride.driverId !== driverId) throw new NotFoundError('Ride not found');
+    if (ride.status === 'COMPLETED') return ride;
     if (ride.status !== 'IN_PROGRESS') throw new BadRequestError('Ride is not in progress');
 
     const driverProfile = await prisma.driverProfile.findUnique({ where: { userId: driverId } });

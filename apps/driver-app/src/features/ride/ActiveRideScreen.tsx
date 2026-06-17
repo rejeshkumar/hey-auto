@@ -87,16 +87,27 @@ export function ActiveRideScreen({ navigation }: any) {
     setLoading(true);
     try {
       await driverApi.verifyRideOtp(currentRideId, otpInput);
-      await driverApi.startRide(currentRideId);
-      setPhase('on_trip');
-      if (dropoff && currentLat && currentLng) {
-        fetchRoute({ lat: currentLat, lng: currentLng }, dropoff);
-      }
     } catch {
       setOtpError(t('ride.invalidOtp'));
-    } finally {
       setLoading(false);
+      return;
     }
+    try {
+      await driverApi.startRide(currentRideId);
+    } catch (err: any) {
+      // If ride is already IN_PROGRESS (e.g. double-tap or race), proceed anyway
+      const code = err?.response?.data?.error?.code;
+      if (code !== 'ALREADY_IN_PROGRESS') {
+        Alert.alert('Error', err?.response?.data?.error?.message || 'Could not start ride. Please try again.');
+        setLoading(false);
+        return;
+      }
+    }
+    setPhase('on_trip');
+    if (dropoff && currentLat && currentLng) {
+      fetchRoute({ lat: currentLat, lng: currentLng }, dropoff);
+    }
+    setLoading(false);
   };
 
   const handleCompleteRide = async () => {
