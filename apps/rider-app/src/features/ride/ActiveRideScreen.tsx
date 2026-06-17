@@ -21,6 +21,7 @@ export function ActiveRideScreen({ navigation }: any) {
   } = useRideStore();
   const [sharing, setSharing] = useState(false);
   const [searchSecs, setSearchSecs] = useState(0);
+  const searchStartedAt = React.useRef<number | null>(null);
 
   // Poll ride status on mount — catches the case where socket event fired
   // before this screen mounted (common race when driver accepts quickly)
@@ -61,7 +62,14 @@ export function ActiveRideScreen({ navigation }: any) {
           setPhase('ride_completed');
           navigation.replace('RideComplete');
         } else if (ride.status === 'NO_DRIVERS') {
-          setPhase('no_drivers');
+          const MIN_SEARCH_MS = 30_000;
+          const elapsed = searchStartedAt.current ? Date.now() - searchStartedAt.current : MIN_SEARCH_MS;
+          const remaining = Math.max(0, MIN_SEARCH_MS - elapsed);
+          if (remaining > 0) {
+            setTimeout(() => setPhase('no_drivers'), remaining);
+          } else {
+            setPhase('no_drivers');
+          }
         }
       } catch {}
     };
@@ -80,6 +88,7 @@ export function ActiveRideScreen({ navigation }: any) {
   useEffect(() => {
     if (phase !== 'searching_driver') { setSearchSecs(0); return; }
     setSearchSecs(0);
+    searchStartedAt.current = Date.now();
     const t = setInterval(() => setSearchSecs(s => s + 1), 1000);
     return () => clearInterval(t);
   }, [phase]);
@@ -105,7 +114,17 @@ export function ActiveRideScreen({ navigation }: any) {
       resetRide();
       navigation.replace('MainTabs');
     });
-    socketService.on('ride:no_drivers', () => setPhase('no_drivers'));
+    socketService.on('ride:no_drivers', () => {
+      // Ensure the searching screen shows for at least 30s before showing "no drivers"
+      const MIN_SEARCH_MS = 30_000;
+      const elapsed = searchStartedAt.current ? Date.now() - searchStartedAt.current : MIN_SEARCH_MS;
+      const remaining = Math.max(0, MIN_SEARCH_MS - elapsed);
+      if (remaining > 0) {
+        setTimeout(() => setPhase('no_drivers'), remaining);
+      } else {
+        setPhase('no_drivers');
+      }
+    });
 
     return () => {
       ['ride:driver_assigned', 'ride:driver_location', 'ride:driver_arrived', 'ride:started',
