@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "in.heyauto.driver",
-      "buildNumber": "2",
+      "buildNumber": "5",
       "config": {
         "googleMapsApiKey": "AIzaSyBaOw8Yu2FKHSOSqnBbZNfPVBfJcD4J2i8"
       },
