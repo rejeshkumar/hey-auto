@@ -698,6 +698,7 @@ export class RideService {
     if (!driverProfile) throw new NotFoundError('Driver not found');
 
     // Verify driver is near the dropoff — prevents fare inflation via GPS spoofing before completion
+    // 5km tolerance: accounts for GPS drift, stale location updates, and brief traffic stops
     if (driverProfile.currentLat && driverProfile.currentLng) {
       const distToDropoff = haversineDistance(
         driverProfile.currentLat,
@@ -705,7 +706,7 @@ export class RideService {
         ride.dropoffLat,
         ride.dropoffLng,
       );
-      const MAX_COMPLETE_DISTANCE_KM = 1.0; // 1 km tolerance for GPS drift and traffic stops
+      const MAX_COMPLETE_DISTANCE_KM = 5.0;
       if (distToDropoff > MAX_COMPLETE_DISTANCE_KM) {
         throw new BadRequestError(
           `You are ${Math.round(distToDropoff * 1000)}m from the dropoff. Move closer to complete the ride.`,

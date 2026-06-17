@@ -119,8 +119,9 @@ export function ActiveRideScreen({ navigation }: any) {
           [{ text: 'OK' }],
         );
       }
-    } catch (err) {
-      console.error('Complete ride error:', err);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error?.message || 'Could not complete ride. Please try again.';
+      Alert.alert('Error', msg);
     } finally {
       setLoading(false);
     }
