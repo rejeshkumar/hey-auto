@@ -661,20 +661,9 @@ export class RideService {
     // Clear attempt counter on success
     await redis.del(attemptsKey);
 
-    const updated = await prisma.ride.update({
-      where: { id: rideId },
-      data: { status: 'OTP_VERIFIED' },
-    });
-
-    return updated;
-  }
-
-  async startRide(driverId: string, rideId: string) {
-    const ride = await prisma.ride.findUnique({ where: { id: rideId } });
-    if (!ride || ride.driverId !== driverId) throw new NotFoundError('Ride not found');
-    if (ride.status === 'IN_PROGRESS') return ride;
-    if (ride.status !== 'OTP_VERIFIED') throw new BadRequestError('OTP not verified yet');
-
+    // Advance directly to IN_PROGRESS — OTP_VERIFIED is a transient state that
+    // causes silent failures when the app restarts between verify and start.
+    // The /start endpoint still exists for the new app build but is now a no-op if already IN_PROGRESS.
     const updated = await prisma.ride.update({
       where: { id: rideId },
       data: { status: 'IN_PROGRESS', startedAt: new Date() },
@@ -687,8 +676,16 @@ export class RideService {
       driverId,
     }));
 
-    logger.info({ rideId, driverId }, 'Ride started');
+    logger.info({ rideId, driverId }, 'Ride started via OTP verify');
     return updated;
+  }
+
+  async startRide(driverId: string, rideId: string) {
+    const ride = await prisma.ride.findUnique({ where: { id: rideId } });
+    if (!ride || ride.driverId !== driverId) throw new NotFoundError('Ride not found');
+    // Idempotent — OTP verify now sets IN_PROGRESS directly, so this is a safe no-op
+    if (ride.status === 'IN_PROGRESS' || ride.status === 'OTP_VERIFIED') return ride;
+    throw new BadRequestError('OTP not verified yet');
   }
 
   async completeRide(driverId: string, rideId: string) {
@@ -699,24 +696,6 @@ export class RideService {
 
     const driverProfile = await prisma.driverProfile.findUnique({ where: { userId: driverId } });
     if (!driverProfile) throw new NotFoundError('Driver not found');
-
-    // Verify driver is near the dropoff — prevents fare inflation via GPS spoofing before completion
-    // 5km tolerance: accounts for GPS drift, stale location updates, and brief traffic stops
-    if (driverProfile.currentLat && driverProfile.currentLng) {
-      const distToDropoff = haversineDistance(
-        driverProfile.currentLat,
-        driverProfile.currentLng,
-        ride.dropoffLat,
-        ride.dropoffLng,
-      );
-      const MAX_COMPLETE_DISTANCE_KM = 5.0;
-      if (distToDropoff > MAX_COMPLETE_DISTANCE_KM) {
-        throw new BadRequestError(
-          `You are ${Math.round(distToDropoff * 1000)}m from the dropoff. Move closer to complete the ride.`,
-          'TOO_FAR_FROM_DROPOFF',
-        );
-      }
-    }
 
     const actualDistanceKm = haversineDistance(
       ride.pickupLat,
