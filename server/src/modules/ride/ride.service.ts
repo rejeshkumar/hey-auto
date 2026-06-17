@@ -598,6 +598,7 @@ export class RideService {
   async driverArrived(driverId: string, rideId: string) {
     const ride = await prisma.ride.findUnique({ where: { id: rideId } });
     if (!ride || ride.driverId !== driverId) throw new NotFoundError('Ride not found');
+    if (ride.status === 'DRIVER_ARRIVED') return { message: 'Already marked as arrived' };
     if (ride.status !== 'DRIVER_ASSIGNED') throw new BadRequestError('Invalid ride state');
 
     const driverProfile = await prisma.driverProfile.findUnique({ where: { userId: driverId } });
@@ -956,6 +957,21 @@ export class RideService {
     }
 
     return rating;
+  }
+
+  async getActiveRide(userId: string) {
+    const ride = await prisma.ride.findFirst({
+      where: {
+        driverId: userId,
+        status: { in: ['DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'OTP_VERIFIED', 'IN_PROGRESS'] },
+      },
+      include: {
+        rider: { select: { id: true, fullName: true, phone: true, avatarUrl: true } },
+        vehicle: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return ride ?? null;
   }
 
   async getRideDetails(userId: string, rideId: string) {

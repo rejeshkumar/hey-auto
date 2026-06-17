@@ -125,6 +125,9 @@ export const driverApi = {
   getPendingRideRequest: () =>
     api.get<ApiResponse<any>>('/driver/ride-request'),
 
+  getActiveRide: () =>
+    api.get<ApiResponse<any>>('/rides/active'),
+
   getRideHistory: (page = 1) =>
     api.get(`/driver/rides/history?page=${page}&limit=20`),
 

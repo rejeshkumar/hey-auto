@@ -119,6 +119,40 @@ export const useDriverStore = create<DriverState>((set, get) => ({
         set({ isOnline: false, phase: 'offline' });
       }
     } catch {}
+
+    // Restore active ride if app was killed mid-trip
+    if (get().currentRideId) return; // already have a ride in memory
+    try {
+      const { data } = await driverApi.getActiveRide();
+      const ride = data.data;
+      if (!ride) return;
+      const phaseMap: Record<string, DriverPhase> = {
+        DRIVER_ASSIGNED: 'heading_to_pickup',
+        DRIVER_ARRIVED:  'arrived_at_pickup',
+        OTP_VERIFIED:    'arrived_at_pickup',
+        IN_PROGRESS:     'on_trip',
+      };
+      const restoredPhase = phaseMap[ride.status];
+      if (!restoredPhase) return;
+      set({
+        currentRideId: ride.id,
+        phase: restoredPhase,
+        incomingRequest: {
+          rideId: ride.id,
+          riderName: ride.rider?.fullName ?? 'Rider',
+          riderPhone: ride.rider?.phone,
+          pickupAddress: ride.pickupAddress,
+          dropoffAddress: ride.dropoffAddress,
+          pickupLat: ride.pickupLat,
+          pickupLng: ride.pickupLng,
+          dropoffLat: ride.dropoffLat,
+          dropoffLng: ride.dropoffLng,
+          estimatedFare: ride.estimatedFare ?? 0,
+          estimatedDistanceKm: ride.estimatedDistanceKm,
+        },
+        rideOtp: ride.rideOtp ?? null,
+      });
+    } catch {}
   },
 
   loadEarnings: async () => {

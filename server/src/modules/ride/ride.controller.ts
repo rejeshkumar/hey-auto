@@ -32,6 +32,15 @@ export class RideController {
     }
   }
 
+  async getActiveRide(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ride = await rideService.getActiveRide(req.user!.userId);
+      res.json({ success: true, data: ride });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getRideDetails(req: Request, res: Response, next: NextFunction) {
     try {
       const ride = await rideService.getRideDetails(req.user!.userId, paramId(req));

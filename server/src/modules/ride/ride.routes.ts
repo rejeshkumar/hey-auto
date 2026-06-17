@@ -30,6 +30,7 @@ router.post('/:id/rate', authorize('RIDER', 'DRIVER'), validate(rateRideSchema),
 router.post('/:id/share', authorize('RIDER'), rideController.createShareToken);
 
 // Driver endpoints
+router.get('/active', authorize('DRIVER'), rideController.getActiveRide);
 router.post('/:id/accept', authorize('DRIVER'), rideController.acceptRide);
 router.post('/:id/decline', authorize('DRIVER'), rideController.declineRide);
 router.post('/:id/arrived', authorize('DRIVER'), rideController.driverArrived);

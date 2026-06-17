@@ -62,7 +62,7 @@ const envSchema = z.object({
   ),
   RIDE_REQUEST_TIMEOUT_SEC: z.coerce.number().default(8), // kept for stand-queue path
   // Scoring weights (relative integers — normalized internally)
-  ARRIVAL_PROXIMITY_THRESHOLD_KM: z.coerce.number().default(0.35),
+  ARRIVAL_PROXIMITY_THRESHOLD_KM: z.coerce.number().default(1.0),
   SCORE_W_PROXIMITY:       z.coerce.number().int().default(35),
   SCORE_W_RATING:          z.coerce.number().int().default(20),
   SCORE_W_ACCEPTANCE:      z.coerce.number().int().default(15),
