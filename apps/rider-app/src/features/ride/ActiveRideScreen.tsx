@@ -353,12 +353,23 @@ export function ActiveRideScreen({ navigation }: any) {
               )}
             </View>
 
-            {dropoff && (
-              <View style={styles.destCard}>
-                <View style={styles.destIconWrap}>
-                  <MaterialCommunityIcons name="map-marker" size={18} color={colors.error} />
+            {pickup && dropoff && (
+              <View style={styles.routeSummaryCard}>
+                <View style={styles.routeSummaryIconCol}>
+                  <View style={[styles.routeSummaryDot, { backgroundColor: colors.secondary }]} />
+                  <View style={styles.routeSummaryLine} />
+                  <View style={[styles.routeSummaryDot, { backgroundColor: colors.error }]} />
                 </View>
-                <Text style={styles.destText} numberOfLines={2}>{dropoff.address}</Text>
+                <View style={styles.routeSummaryAddresses}>
+                  <View style={styles.routeSummaryStop}>
+                    <Text style={styles.routeSummaryLabel}>FROM</Text>
+                    <Text style={styles.routeSummaryAddr} numberOfLines={1}>{pickup.address}</Text>
+                  </View>
+                  <View style={styles.routeSummaryStop}>
+                    <Text style={styles.routeSummaryLabel}>TO</Text>
+                    <Text style={styles.routeSummaryAddr} numberOfLines={1}>{dropoff.address}</Text>
+                  </View>
+                </View>
               </View>
             )}
 
@@ -368,7 +379,7 @@ export function ActiveRideScreen({ navigation }: any) {
                 <MaterialCommunityIcons name="google-maps" size={22} color="#4285F4" />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.mapsRowTitle}>Navigate in Google Maps</Text>
-                  <Text style={styles.mapsRowSub} numberOfLines={1}>{dropoff.address}</Text>
+                  <Text style={styles.mapsRowSub} numberOfLines={1}>Directions to {dropoff.address}</Text>
                 </View>
                 <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
@@ -546,17 +557,19 @@ const styles = StyleSheet.create({
   onRideText: { ...typography.bodyBold, color: colors.white, flex: 1 },
   onRideFare: { fontSize: 18, fontWeight: '800', color: colors.white },
 
-  destCard: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm,
+  routeSummaryCard: {
+    flexDirection: 'row', gap: spacing.sm,
     backgroundColor: colors.surface, borderRadius: borderRadius.xl,
     padding: spacing.base, marginBottom: spacing.sm,
     borderWidth: 1, borderColor: colors.border,
   },
-  destIconWrap: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: '#FFE9E9', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
-  destText: { ...typography.body, color: colors.text, flex: 1, paddingTop: 6 },
+  routeSummaryIconCol: { alignItems: 'center', paddingTop: 14 },
+  routeSummaryDot: { width: 9, height: 9, borderRadius: 4.5 },
+  routeSummaryLine: { width: 2, flex: 1, backgroundColor: colors.border, marginVertical: 3, minHeight: 18 },
+  routeSummaryAddresses: { flex: 1, gap: spacing.xs },
+  routeSummaryStop: { paddingVertical: spacing.xs },
+  routeSummaryLabel: { ...typography.captionBold, color: colors.textSecondary, letterSpacing: 0.5 },
+  routeSummaryAddr: { ...typography.smallBold, color: colors.text, marginTop: 1 },
 
   callRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
