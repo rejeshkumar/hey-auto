@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Vibration, Alert, ScrollView, AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import * as Speech from 'expo-speech';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +17,8 @@ import { RideRequestCard } from './RideRequestCard';
 import { StaticMapView } from '../../components';
 import { LiveMapView } from '../../components/LiveMapView';
 import { driverApi } from '../../services/driver';
+import { HotspotAlertBanner } from './HotspotAlertBanner';
+import { useHotspotStore } from '../../hooks/useHotspotStore';
 
 const TALIPARAMBA_CENTER = { latitude: 12.9716, longitude: 77.5946 };
 
@@ -32,6 +35,7 @@ export function HomeScreen({ navigation }: any) {
   const [queueStatus, setQueueStatus] = useState<{ standName: string; position: number } | null>(null);
   const locationSubscription = React.useRef<Location.LocationSubscription | null>(null);
   const appState = useRef(AppState.currentState);
+  const { hotspots, setHotspots, dismiss: dismissHotspot } = useHotspotStore();
 
   useEffect(() => {
     requestLocationPermission();
@@ -55,6 +59,14 @@ export function HomeScreen({ navigation }: any) {
     const appStateSub = AppState.addEventListener('change', (nextState) => {
       if (appState.current.match(/inactive|background/) && nextState === 'active') {
         if (!socketService.isConnected()) socketService.connect();
+        // Poll hotspots when app returns to foreground (covers backgrounded app AC-11)
+        const store = useDriverStore.getState();
+        const locStore = useLocationStore.getState();
+        if (store.isOnline && !store.currentRideId && locStore.currentLat && locStore.currentLng) {
+          driverApi.getHotspots(locStore.currentLat, locStore.currentLng)
+            .then((res) => { if (res.data.data?.length) setHotspots(res.data.data); })
+            .catch(() => {});
+        }
       }
       appState.current = nextState;
     });
@@ -65,6 +77,13 @@ export function HomeScreen({ navigation }: any) {
   useEffect(() => {
     socketService.on<IncomingRideRequest>('ride:new_request', (data) => {
       Vibration.vibrate([0, 500, 200, 500, 200, 500]);
+      // Stop any previous speech before speaking
+      Speech.stop();
+      Speech.speak('Hey Auto! New ride request.', {
+        language: 'en-IN',
+        pitch: 1.0,
+        rate: 0.95,
+      });
       setIncomingRequest(data);
       setPhase('ride_request');
       // Fire local notification so driver sees alert on lock screen
@@ -80,12 +99,21 @@ export function HomeScreen({ navigation }: any) {
       }).catch(() => {});
     });
     socketService.on('ride:request_expired', () => {
+      Speech.stop();
       setIncomingRequest(null);
       if (useDriverStore.getState().phase === 'ride_request') setPhase('online_idle');
+    });
+    socketService.on<{ hotspots: any[]; distanceKm: number }>('hotspot:alert', (data) => {
+      if (data?.hotspots?.length > 0) setHotspots(data.hotspots);
+    });
+    socketService.on('hotspot:clear', () => {
+      dismissHotspot();
     });
     return () => {
       socketService.off('ride:new_request');
       socketService.off('ride:request_expired');
+      socketService.off('hotspot:alert');
+      socketService.off('hotspot:clear');
     };
   }, []);
 
@@ -203,6 +231,7 @@ export function HomeScreen({ navigation }: any) {
         homeLat={homeLocation?.lat}
         homeLng={homeLocation?.lng}
         isGoHomeMode={goHomeMode}
+        hotspots={hotspots}
         style={styles.map}
       />
 
@@ -223,6 +252,9 @@ export function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Hotspot alert banner — shown when driver is idle and demand nearby */}
+      {phase !== 'ride_request' && <HotspotAlertBanner />}
 
       {/* Ride request overlay */}
       {phase === 'ride_request' && incomingRequest && (

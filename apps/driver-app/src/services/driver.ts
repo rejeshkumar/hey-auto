@@ -31,6 +31,17 @@ export interface HeatmapCell {
   count: number;
 }
 
+export interface HotspotResult {
+  id: string;
+  lat: number;
+  lng: number;
+  pendingCount: number;
+  nearbyDriverCount: number;
+  label: string;
+  detectedAt: string;
+  distanceKm: number;
+}
+
 export interface DailyEarning {
   date: string;
   totalEarnings: number;
@@ -198,4 +209,7 @@ export const driverApi = {
 
   getLeaderboard: () =>
     api.get<ApiResponse<LeaderboardEntry[]>>('/driver/leaderboard'),
+
+  getHotspots: (lat: number, lng: number) =>
+    api.get<ApiResponse<HotspotResult[]>>(`/driver/hotspots?lat=${lat}&lng=${lng}`),
 };

@@ -7,6 +7,7 @@ import '../i18n';
 import i18n from '../i18n';
 import { Navigation } from './Navigation';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useRideStore } from '../hooks/useRideStore';
 import { preloadStorage } from '../utils/storage';
 import { colors } from '../theme';
 

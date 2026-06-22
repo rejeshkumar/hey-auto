@@ -3,6 +3,7 @@ import { redis } from '../../config/redis';
 import { env } from '../../config/env';
 import { NotFoundError, BadRequestError } from '../../utils/errors';
 import { haversineDistance } from '../../utils/helpers';
+import { checkAndAlertDriver } from '../hotspot/hotspot.service';
 import type {
   UpdateDriverProfileInput,
   VehicleInput,
@@ -213,6 +214,10 @@ export class DriverService {
 
     // Trigger initial stand queue sync
     this.syncStandQueue(userId, profile.currentLat, profile.currentLng).catch(() => {});
+
+    // Check for nearby hotspots (fire-and-forget)
+    checkAndAlertDriver(userId, profile.currentLat, profile.currentLng, prisma, redis)
+      .catch(() => {});
 
     return { isOnline: true };
   }

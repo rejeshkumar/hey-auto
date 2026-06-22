@@ -10,21 +10,18 @@ import { rideApi, RideWithDriver } from '../../services/ride';
 import { riderApi } from '../../services/rider';
 import { socketService } from '../../services/socket';
 
-const TALIPARAMBA = { lat: 12.9716, lng: 77.5946 };
-
 export function ActiveRideScreen({ navigation }: any) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const {
     phase, currentRide, driverInfo, driverLocation, rideOtp, pickup, dropoff,
+    fareEstimate,
     setPhase, setDriverInfo, setDriverLocation, setRideOtp, setCompletedRideData, resetRide,
   } = useRideStore();
   const [sharing, setSharing] = useState(false);
   const [searchSecs, setSearchSecs] = useState(0);
   const searchStartedAt = React.useRef<number | null>(null);
 
-  // Poll ride status on mount — catches the case where socket event fired
-  // before this screen mounted (common race when driver accepts quickly)
   useEffect(() => {
     const pollRideStatus = async () => {
       if (!currentRide?.id) return;
@@ -74,17 +71,13 @@ export function ActiveRideScreen({ navigation }: any) {
       } catch {}
     };
     pollRideStatus();
-    // Poll every 5s until ride completes — covers missed socket events
     const interval = setInterval(() => {
       const p = useRideStore.getState().phase;
-      if (p !== 'ride_completed' && p !== 'no_drivers') {
-        pollRideStatus();
-      }
+      if (p !== 'ride_completed' && p !== 'no_drivers') pollRideStatus();
     }, 5000);
     return () => clearInterval(interval);
   }, [currentRide?.id]);
 
-  // Elapsed timer while searching — resets when driver is found
   useEffect(() => {
     if (phase !== 'searching_driver') { setSearchSecs(0); return; }
     setSearchSecs(0);
@@ -115,7 +108,6 @@ export function ActiveRideScreen({ navigation }: any) {
       navigation.replace('MainTabs');
     });
     socketService.on('ride:no_drivers', () => {
-      // Ensure the searching screen shows for at least 30s before showing "no drivers"
       const MIN_SEARCH_MS = 30_000;
       const elapsed = searchStartedAt.current ? Date.now() - searchStartedAt.current : MIN_SEARCH_MS;
       const remaining = Math.max(0, MIN_SEARCH_MS - elapsed);
@@ -139,7 +131,6 @@ export function ActiveRideScreen({ navigation }: any) {
   };
 
   const handleCancel = async () => {
-    // Check if a cancellation charge applies before confirming
     let chargeMsg = '';
     if (currentRide) {
       try {
@@ -182,7 +173,7 @@ export function ActiveRideScreen({ navigation }: any) {
     try {
       const { data } = await rideApi.createShareToken(currentRide.id);
       await Share.share({
-        message: `Track my Hey Auto ride live 🛺\n${data.data.url}`,
+        message: `Track my Aye Auto ride live 🛺\n${data.data.url}`,
         url: data.data.url,
       });
     } catch {
@@ -192,18 +183,37 @@ export function ActiveRideScreen({ navigation }: any) {
     }
   };
 
-  // Map: center on driver if known, else pickup, else default
-  const liveDriverLoc = driverLocation
-    || (driverInfo ? { lat: driverInfo.driverLat, lng: driverInfo.driverLng } : null);
+  const handleOpenMaps = () => {
+    if (!dropoff) return;
+    // Open Google Maps in navigation/driving mode — shows turn-by-turn to destination
+    const nativeUrl = Platform.OS === 'ios'
+      ? `comgooglemaps://?daddr=${dropoff.lat},${dropoff.lng}&directionsmode=driving`
+      : `google.navigation:q=${dropoff.lat},${dropoff.lng}&mode=d`;
+    const webFallback = `https://www.google.com/maps/dir/?api=1&destination=${dropoff.lat},${dropoff.lng}&travelmode=driving`;
+    Linking.openURL(nativeUrl).catch(() => Linking.openURL(webFallback));
+  };
 
-  const showLiveMap = phase !== 'searching_driver' && phase !== 'no_drivers' && liveDriverLoc != null;
+  // Treat 0,0 as no location (default when server hasn't sent driver GPS yet)
+  const validDriverLoc = driverLocation
+    || (driverInfo && (driverInfo.driverLat !== 0 || driverInfo.driverLng !== 0)
+      ? { lat: driverInfo.driverLat, lng: driverInfo.driverLng }
+      : null);
+
+  // Show live map for all phases except searching/no_drivers
+  // Falls back to pickup-centered map if driver location not yet received
+  const showLiveMap = phase !== 'searching_driver' && phase !== 'no_drivers'
+    && (validDriverLoc != null || pickup != null);
+
+  const liveDriverLoc = validDriverLoc;
+
+  const estimatedFare = Math.round(currentRide?.estimatedFare || fareEstimate?.totalFare || 0);
 
   return (
     <View style={styles.container}>
       {showLiveMap ? (
         <RiderLiveMapView
-          driverLat={liveDriverLoc!.lat}
-          driverLng={liveDriverLoc!.lng}
+          driverLat={liveDriverLoc?.lat}
+          driverLng={liveDriverLoc?.lng}
           pickupLat={pickup?.lat}
           pickupLng={pickup?.lng}
           dropoffLat={dropoff?.lat}
@@ -215,21 +225,14 @@ export function ActiveRideScreen({ navigation }: any) {
         <View style={styles.map} />
       )}
 
-      {/* SOS button */}
+      {/* SOS */}
       <TouchableOpacity style={styles.sosBtn} onPress={handleSOS}>
         <MaterialCommunityIcons name="alert" size={16} color={colors.white} />
         <Text style={styles.sosText}>SOS</Text>
       </TouchableOpacity>
 
-      {/* Share trip button — visible once driver is assigned */}
-      {(phase === 'driver_assigned' || phase === 'driver_arriving' || phase === 'driver_arrived' || phase === 'on_ride') && (
-        <TouchableOpacity style={styles.shareBtn} onPress={handleShareTrip} disabled={sharing}>
-          <MaterialCommunityIcons name="share-variant" size={16} color={colors.primary} />
-          <Text style={styles.shareText}>{sharing ? 'Sharing…' : 'Share trip'}</Text>
-        </TouchableOpacity>
-      )}
-
       <View style={[styles.bottomSheet, { paddingBottom: Math.max(insets.bottom + 16, spacing.xl) }]}>
+
         {/* Searching */}
         {phase === 'searching_driver' && (
           <View style={styles.center}>
@@ -263,38 +266,50 @@ export function ActiveRideScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* Driver assigned / arriving */}
+        {/* Driver assigned / arriving — Namma Yatri style */}
         {(phase === 'driver_assigned' || phase === 'driver_arriving') && driverInfo && (
           <>
-            <View style={styles.acceptedBanner}>
-              <MaterialCommunityIcons name="check-circle" size={22} color={colors.secondary} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.acceptedTitle}>Driver accepted your ride!</Text>
-                <Text style={styles.acceptedSub}>Your Sarathi is on the way to pick you up 🛺</Text>
+            <Text style={styles.onYourWayTitle}>Driver is on the way 🛺</Text>
+
+            {/* Driver card */}
+            <View style={styles.driverCardNY}>
+              <View style={styles.avatarCircle}>
+                <Text style={{ fontSize: 28 }}>👤</Text>
               </View>
-            </View>
-            <View style={styles.driverCard}>
-              <View style={styles.driverAvatar}>
-                <Text style={{ fontSize: 26 }}>👤</Text>
-              </View>
-              <View style={styles.driverDetails}>
-                <Text style={styles.driverName}>{driverInfo.driverName}</Text>
-                <View style={styles.vehicleRow}>
-                  <Text style={styles.vehicleNo}>{driverInfo.vehicleRegistrationNo}</Text>
-                  {driverInfo.vehicleColor && <Text style={styles.vehicleColor}> · {driverInfo.vehicleColor}</Text>}
+              <View style={styles.driverMid}>
+                <Text style={styles.driverNameNY}>{driverInfo.driverName.toUpperCase()}</Text>
+                <Text style={styles.driverTypeLabel}>AUTO RICKSHAW</Text>
+                <View style={styles.driverMetaRow}>
+                  <MaterialCommunityIcons name="star" size={12} color={colors.rating} />
+                  <Text style={styles.ratingNY}>{driverInfo.driverRating.toFixed(1)}</Text>
+                  <View style={styles.metaDot} />
+                  <MaterialCommunityIcons name="shield-check" size={12} color={colors.secondary} />
+                  <Text style={styles.verifiedText}>Verified</Text>
                 </View>
-                {driverInfo.driverRating != null && (
-                  <View style={styles.ratingRow}>
-                    <MaterialCommunityIcons name="star" size={13} color={colors.rating} />
-                    <Text style={styles.ratingText}>{driverInfo.driverRating.toFixed(1)}</Text>
-                  </View>
-                )}
               </View>
-              <TouchableOpacity style={styles.callBtn} onPress={handleCallDriver}>
-                <MaterialCommunityIcons name="phone" size={20} color={colors.secondary} />
+              <TouchableOpacity onPress={handleCallDriver} style={styles.plateBadgeWrap}>
+                <View style={styles.plateBadge}>
+                  <Text style={styles.plateText}>{driverInfo.vehicleRegistrationNo}</Text>
+                </View>
+                <View style={styles.callBadge}>
+                  <MaterialCommunityIcons name="phone" size={14} color={colors.secondary} />
+                  <Text style={styles.callBadgeText}>Call</Text>
+                </View>
               </TouchableOpacity>
             </View>
-            <Button title={t('ride.cancelRide')} variant="outline" onPress={handleCancel} size="md" />
+
+            {/* Fare row */}
+            {estimatedFare > 0 && (
+              <View style={styles.fareEstRow}>
+                <View>
+                  <Text style={styles.fareEstLabel}>Fare estimate</Text>
+                  <Text style={styles.fareEstSub}>Pay via cash</Text>
+                </View>
+                <Text style={styles.fareEstAmt}>₹{estimatedFare}</Text>
+              </View>
+            )}
+
+            <Button title={t('ride.cancelRide')} variant="outline" onPress={handleCancel} size="md" style={{ marginTop: spacing.xs }} />
           </>
         )}
 
@@ -303,23 +318,23 @@ export function ActiveRideScreen({ navigation }: any) {
           <>
             <View style={styles.arrivedBanner}>
               <MaterialCommunityIcons name="map-marker-check" size={20} color={colors.secondary} />
-              <Text style={styles.arrivedText}>{t('ride.driverArrived')}</Text>
+              <Text style={styles.arrivedText}>Driver has arrived at your location!</Text>
             </View>
             <View style={styles.otpCard}>
               <Text style={styles.otpLabel}>{t('ride.shareOtp')}</Text>
               <Text style={styles.otpCode}>{rideOtp}</Text>
-              <Text style={styles.otpHint}>Share this with your Sarathi to start the ride</Text>
+              <Text style={styles.otpHint}>Tell this number to your driver to start the ride</Text>
             </View>
             {driverInfo && (
-              <View style={styles.driverCard}>
-                <View style={styles.driverAvatar}>
-                  <Text style={{ fontSize: 26 }}>👤</Text>
+              <View style={styles.driverCardCompact}>
+                <View style={styles.avatarSmall}>
+                  <Text style={{ fontSize: 22 }}>👤</Text>
                 </View>
-                <View style={styles.driverDetails}>
-                  <Text style={styles.driverName}>{driverInfo.driverName}</Text>
-                  <Text style={styles.vehicleNo}>{driverInfo.vehicleRegistrationNo}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.driverNameNY}>{driverInfo.driverName}</Text>
+                  <Text style={styles.plateTextSmall}>{driverInfo.vehicleRegistrationNo}</Text>
                 </View>
-                <TouchableOpacity style={styles.callBtn} onPress={handleCallDriver}>
+                <TouchableOpacity style={styles.callCircle} onPress={handleCallDriver}>
                   <MaterialCommunityIcons name="phone" size={20} color={colors.secondary} />
                 </TouchableOpacity>
               </View>
@@ -332,18 +347,54 @@ export function ActiveRideScreen({ navigation }: any) {
           <>
             <View style={styles.onRideBanner}>
               <MaterialCommunityIcons name="car-connected" size={18} color={colors.white} />
-              <Text style={styles.onRideText}>{t('ride.rideStarted')}</Text>
+              <Text style={styles.onRideText}>You're on your way! 🛺</Text>
+              {estimatedFare > 0 && (
+                <Text style={styles.onRideFare}>₹{estimatedFare}</Text>
+              )}
             </View>
+
             {dropoff && (
               <View style={styles.destCard}>
-                <MaterialCommunityIcons name="map-marker" size={20} color={colors.error} />
+                <View style={styles.destIconWrap}>
+                  <MaterialCommunityIcons name="map-marker" size={18} color={colors.error} />
+                </View>
                 <Text style={styles.destText} numberOfLines={2}>{dropoff.address}</Text>
               </View>
             )}
-            <TouchableOpacity style={styles.callRow} onPress={handleCallDriver}>
-              <MaterialCommunityIcons name="phone" size={18} color={colors.secondary} />
-              <Text style={styles.callRowText}>{t('ride.callDriver')}</Text>
+
+            {/* Open Google Maps in navigation mode */}
+            {dropoff && (
+              <TouchableOpacity style={styles.mapsRow} onPress={handleOpenMaps} activeOpacity={0.75}>
+                <MaterialCommunityIcons name="google-maps" size={22} color="#4285F4" />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.mapsRowTitle}>Navigate in Google Maps</Text>
+                  <Text style={styles.mapsRowSub} numberOfLines={1}>{dropoff.address}</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+
+            {/* Share trip */}
+            <TouchableOpacity style={styles.shareRowCard} onPress={handleShareTrip} disabled={sharing} activeOpacity={0.8}>
+              <View style={styles.shareRowLeft}>
+                <MaterialCommunityIcons name="share-variant-outline" size={20} color={colors.text} />
+                <View>
+                  <Text style={styles.shareRowTitle}>Share Your Trip</Text>
+                  <Text style={styles.shareRowSub}>Send a live tracking link to anyone</Text>
+                </View>
+              </View>
+              <View style={styles.shareBtn}>
+                <Text style={styles.shareBtnText}>{sharing ? 'Sharing…' : 'Share'}</Text>
+                <MaterialCommunityIcons name="share" size={13} color={colors.ink} />
+              </View>
             </TouchableOpacity>
+
+            {driverInfo && (
+              <TouchableOpacity style={styles.callRow} onPress={handleCallDriver}>
+                <MaterialCommunityIcons name="phone" size={18} color={colors.secondary} />
+                <Text style={styles.callRowText}>{t('ride.callDriver')} · {driverInfo.driverName}</Text>
+              </TouchableOpacity>
+            )}
           </>
         )}
       </View>
@@ -362,14 +413,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full, elevation: 6,
   },
   sosText: { ...typography.captionBold, color: colors.white, letterSpacing: 1 },
-  shareBtn: {
-    position: 'absolute', top: Platform.OS === 'ios' ? 56 : 40, left: spacing.base,
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: colors.white, paddingVertical: 8, paddingHorizontal: spacing.base,
-    borderRadius: borderRadius.full, elevation: 6,
-    borderWidth: 1.5, borderColor: colors.primary,
-  },
-  shareText: { ...typography.captionBold, color: colors.primary },
 
   bottomSheet: {
     backgroundColor: colors.white,
@@ -383,8 +426,7 @@ const styles = StyleSheet.create({
   searchingRing: {
     width: 110, height: 110, borderRadius: 55,
     backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center',
-    marginBottom: spacing.lg,
-    borderWidth: 3, borderColor: colors.primary,
+    marginBottom: spacing.lg, borderWidth: 3, borderColor: colors.primary,
   },
   searchingInner: {
     width: 76, height: 76, borderRadius: 38,
@@ -394,72 +436,127 @@ const styles = StyleSheet.create({
   phaseSub: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
   searchTimer: { ...typography.small, color: colors.textLight, textAlign: 'center', marginTop: spacing.sm },
 
-  acceptedBanner: {
+  // Driver assigned — Namma Yatri style
+  onYourWayTitle: { ...typography.h3, color: colors.text, marginBottom: spacing.base },
+
+  driverCardNY: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    backgroundColor: '#F0FFF4', borderRadius: borderRadius.xl,
-    padding: spacing.base, marginBottom: spacing.base,
-    borderWidth: 1.5, borderColor: colors.secondary,
-  },
-  acceptedTitle: { ...typography.bodyBold, color: colors.text },
-  acceptedSub: { ...typography.small, color: colors.textSecondary, marginTop: 2 },
-
-  statusBadge: { ...typography.smallBold, color: colors.secondary, marginBottom: spacing.base },
-
-  driverCard: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     backgroundColor: colors.surface, borderRadius: borderRadius.xl,
-    padding: spacing.base, marginVertical: spacing.base,
+    padding: spacing.base, marginBottom: spacing.sm,
     borderWidth: 1, borderColor: colors.border,
   },
-  driverAvatar: {
-    width: 50, height: 50, borderRadius: 25,
+  avatarCircle: {
+    width: 52, height: 52, borderRadius: 26,
     backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
   },
-  driverDetails: { flex: 1 },
-  driverName: { ...typography.bodyBold, color: colors.text },
-  vehicleRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  vehicleNo: { ...typography.smallBold, color: colors.primary },
-  vehicleColor: { ...typography.caption, color: colors.textSecondary },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
-  ratingText: { ...typography.caption, color: colors.text },
-  callBtn: {
-    width: 42, height: 42, borderRadius: 21,
-    backgroundColor: colors.secondaryLight, alignItems: 'center', justifyContent: 'center',
-  },
+  driverMid: { flex: 1 },
+  driverNameNY: { fontSize: 15, fontWeight: '800', color: colors.text, letterSpacing: 0.3 },
+  driverTypeLabel: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 1 },
+  driverMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  ratingNY: { ...typography.captionBold, color: colors.text },
+  metaDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: colors.border },
+  verifiedText: { ...typography.caption, color: colors.secondary, fontWeight: '600' },
 
+  plateBadgeWrap: { alignItems: 'center', gap: 4 },
+  plateBadge: {
+    backgroundColor: colors.primary, borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm, paddingVertical: 4,
+  },
+  plateText: { fontSize: 12, fontWeight: '800', color: colors.ink, letterSpacing: 0.5 },
+  callBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: colors.secondaryLight, borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm, paddingVertical: 3,
+  },
+  callBadgeText: { fontSize: 11, fontWeight: '700', color: colors.secondary },
+
+  fareEstRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: colors.surface, borderRadius: borderRadius.xl,
+    padding: spacing.base, marginBottom: spacing.sm,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  fareEstLabel: { ...typography.bodyBold, color: colors.text },
+  fareEstSub: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  fareEstAmt: { fontSize: 26, fontWeight: '800', color: colors.primary },
+
+  mapsRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    backgroundColor: '#EEF4FF', borderRadius: borderRadius.xl,
+    padding: spacing.base, marginBottom: spacing.sm,
+    borderWidth: 1, borderColor: '#C7D9FF',
+  },
+  mapsRowTitle: { fontSize: 13, fontWeight: '700', color: '#1A56DB' },
+  mapsRowSub: { fontSize: 11, color: colors.textSecondary, marginTop: 1 },
+
+  shareRowCard: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: colors.ink, borderRadius: borderRadius.xl,
+    overflow: 'hidden', padding: spacing.base, marginBottom: spacing.sm,
+    borderTopWidth: 2, borderTopColor: colors.primary,
+  },
+  shareRowLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },
+  shareRowTitle: { fontSize: 13, fontWeight: '700', color: colors.primary },
+  shareRowSub: { fontSize: 11, color: colors.primary, opacity: 0.6, marginTop: 1 },
+  shareBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: colors.primary, borderRadius: borderRadius.lg,
+    paddingVertical: spacing.sm, paddingHorizontal: spacing.base,
+  },
+  shareBtnText: { fontSize: 12, fontWeight: '800', color: colors.ink },
+
+  // Driver arrived
   arrivedBanner: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    backgroundColor: colors.ink, borderRadius: borderRadius.xl,
-    overflow: 'hidden',
+    backgroundColor: colors.ink, borderRadius: borderRadius.xl, overflow: 'hidden',
     padding: spacing.base, marginBottom: spacing.base,
     borderTopWidth: 2, borderTopColor: colors.secondary,
   },
   arrivedText: { ...typography.bodyBold, color: colors.primary, fontWeight: '600' },
-
   otpCard: {
-    backgroundColor: colors.ink, borderRadius: borderRadius.xl,
-    overflow: 'hidden',
+    backgroundColor: colors.ink, borderRadius: borderRadius.xl, overflow: 'hidden',
     padding: spacing.lg, alignItems: 'center', marginBottom: spacing.base,
     borderTopWidth: 2, borderTopColor: colors.primary,
   },
   otpLabel: { ...typography.smallBold, color: colors.primary, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 },
   otpCode: { fontSize: 60, fontWeight: '900', color: colors.primary, letterSpacing: 16, marginTop: spacing.sm },
   otpHint: { ...typography.caption, color: colors.primary, fontWeight: '600', marginTop: spacing.sm, textAlign: 'center' },
+  driverCardCompact: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    backgroundColor: colors.surface, borderRadius: borderRadius.xl,
+    padding: spacing.base, borderWidth: 1, borderColor: colors.border,
+  },
+  avatarSmall: {
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center',
+  },
+  plateTextSmall: { ...typography.captionBold, color: colors.primary, marginTop: 2 },
+  callCircle: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: colors.secondaryLight, alignItems: 'center', justifyContent: 'center',
+  },
 
+  // On ride
   onRideBanner: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     backgroundColor: colors.secondary, borderRadius: borderRadius.xl,
     padding: spacing.base, marginBottom: spacing.base,
   },
-  onRideText: { ...typography.bodyBold, color: colors.white },
+  onRideText: { ...typography.bodyBold, color: colors.white, flex: 1 },
+  onRideFare: { fontSize: 18, fontWeight: '800', color: colors.white },
 
   destCard: {
     flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm,
     backgroundColor: colors.surface, borderRadius: borderRadius.xl,
-    padding: spacing.base, marginBottom: spacing.base,
+    padding: spacing.base, marginBottom: spacing.sm,
     borderWidth: 1, borderColor: colors.border,
   },
-  destText: { ...typography.body, color: colors.text, flex: 1 },
+  destIconWrap: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: '#FFE9E9', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  destText: { ...typography.body, color: colors.text, flex: 1, paddingTop: 6 },
 
   callRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

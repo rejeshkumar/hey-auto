@@ -83,4 +83,7 @@ export const rideApi = {
 
   getCancelPreview: (rideId: string) =>
     api.get<ApiResponse<{ chargeApplies: boolean; amount: number; waitedMin: number; gracePeriodMin: number }>>(`/rides/${rideId}/cancel-preview`),
+
+  getActiveRide: () =>
+    api.get<ApiResponse<RideWithDriver | null>>('/rides/active-rider'),
 };

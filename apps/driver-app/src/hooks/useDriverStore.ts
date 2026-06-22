@@ -25,10 +25,13 @@ export interface IncomingRideRequest {
   dropoffLat?: number;
   dropoffLng?: number;
   estimatedFare: number;
+  perKmRate?: number;
   estimatedDistanceKm?: number;
-  distance?: number;
   estimatedDurationMin?: number;
+  coinsToEarn?: number;
+  distance?: number;
   expiresAt?: number;
+  timeoutSec?: number;
   rideType?: 'PASSENGER' | 'PARCEL';
   parcelDescription?: string;
   recipientName?: string;

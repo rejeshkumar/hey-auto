@@ -29,6 +29,9 @@ router.post('/:id/cancel', authorize('RIDER', 'DRIVER'), validate(cancelRideSche
 router.post('/:id/rate', authorize('RIDER', 'DRIVER'), validate(rateRideSchema), rideController.rateRide);
 router.post('/:id/share', authorize('RIDER'), rideController.createShareToken);
 
+// Rider active ride restore (on login / app open)
+router.get('/active-rider', authorize('RIDER'), rideController.getRiderActiveRide);
+
 // Driver endpoints
 router.get('/active', authorize('DRIVER'), rideController.getActiveRide);
 router.post('/:id/accept', authorize('DRIVER'), rideController.acceptRide);

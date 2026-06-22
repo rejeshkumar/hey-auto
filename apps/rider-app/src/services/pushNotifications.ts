@@ -27,7 +27,7 @@ export async function registerPushToken(): Promise<void> {
         name: 'Ride Updates',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#F5C800',
+        lightColor: '#ffbe0b',
         sound: 'default',
       });
     }

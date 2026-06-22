@@ -54,6 +54,9 @@ api.interceptors.response.use(
         storage.delete('user');
         const { useAuthStore } = await import('../hooks/useAuthStore');
         useAuthStore.getState().logout();
+        // Show alert so user knows why they were logged out
+        const { Alert } = await import('react-native');
+        Alert.alert('Session expired', 'Please log in again to continue.');
       }
     }
 

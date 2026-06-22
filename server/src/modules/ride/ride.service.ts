@@ -8,6 +8,7 @@ import { haversineDistance, isNightTime, roundToRupee, generateRideOTP } from '.
 import { driverService } from '../driver/driver.service';
 import { mapsService } from '../../services/maps';
 import { notificationService } from '../notification/notification.service';
+import { checkAndAlertDriver } from '../hotspot/hotspot.service';
 import type { FareEstimateInput, RequestRideInput, CancelRideInput, RateRideInput } from './ride.schema';
 import {
   ACTIVE_RIDE_PREFIX,
@@ -159,7 +160,7 @@ export class RideService {
     await redis.setex(`${ACTIVE_RIDE_PREFIX}${riderId}`, 3600, ride.id);
 
     this.findDriver(ride.id, input.pickupLat, input.pickupLng, input.dropoffLat, input.dropoffLng, input.city, input.rideType ?? 'PASSENGER').catch(async (err) => {
-      logger.error({ err, rideId: ride.id }, 'findDriver crashed — reverting to NO_DRIVERS');
+      logger.error({ err, errMsg: err?.message, errStack: err?.stack, rideId: ride.id }, 'findDriver crashed — reverting to NO_DRIVERS');
       try {
         await prisma.ride.update({ where: { id: ride.id }, data: { status: 'NO_DRIVERS' } });
         await redis.del(`${ACTIVE_RIDE_PREFIX}${riderId}`);
@@ -332,7 +333,17 @@ export class RideService {
 
     const riderId = ride.riderId;
 
-    const tiers: { radiusKm: number; batchSize: number; timeoutSec: number }[] = JSON.parse(env.TIER_CONFIG);
+    let tiers: { radiusKm: number; batchSize: number; timeoutSec: number }[];
+    try {
+      tiers = JSON.parse(env.TIER_CONFIG);
+    } catch {
+      logger.error({ tierConfig: env.TIER_CONFIG }, 'TIER_CONFIG JSON parse failed — using fallback');
+      tiers = [
+        { radiusKm: 1, batchSize: 3, timeoutSec: 30 },
+        { radiusKm: 2, batchSize: 5, timeoutSec: 30 },
+        { radiusKm: 5, batchSize: 8, timeoutSec: 30 },
+      ];
+    }
 
     const riderUser = await prisma.user.findUnique({
       where: { id: riderId },
@@ -381,6 +392,10 @@ export class RideService {
             pickupAddress: ride.pickupAddress,
             dropoffAddress: ride.dropoffAddress,
             estimatedFare: ride.estimatedFare,
+            perKmRate: ride.perKmRate ?? 15,
+            estimatedDistanceKm: ride.estimatedDistanceKm,
+            estimatedDurationMin: ride.estimatedDurationMin,
+            coinsToEarn: Math.floor((ride.estimatedFare ?? 0) / 10),
             distance: distM / 1000,
             riderName: riderUser?.fullName,
             riderPhone: riderUser?.phone,
@@ -446,6 +461,10 @@ export class RideService {
           pickupAddress: ride.pickupAddress,
           dropoffAddress: ride.dropoffAddress,
           estimatedFare: ride.estimatedFare,
+          perKmRate: ride.perKmRate ?? 15,
+          estimatedDistanceKm: ride.estimatedDistanceKm,
+          estimatedDurationMin: ride.estimatedDurationMin,
+          coinsToEarn: Math.floor((ride.estimatedFare ?? 0) / 10),
           distance: driver.distance,
           riderName: riderUser?.fullName,
           riderPhone: riderUser?.phone,
@@ -738,6 +757,7 @@ export class RideService {
         isGoHomeMode: false,
         totalRides: { increment: 1 },
         totalEarnings: { increment: totalAmount },
+        lastRideCompletedAt: new Date(),
       },
     });
 
@@ -786,6 +806,15 @@ export class RideService {
     ).catch((err: unknown) => logger.warn({ err }, 'Push notification failed'));
 
     logger.info({ rideId, driverId, totalAmount }, 'Ride completed');
+
+    // Check for nearby hotspots now that driver is idle (fire-and-forget)
+    const freshProfile = await prisma.driverProfile.findUnique({
+      where: { userId: driverId },
+      select: { currentLat: true, currentLng: true },
+    });
+    checkAndAlertDriver(driverId, freshProfile?.currentLat, freshProfile?.currentLng, prisma, redis)
+      .catch((err: unknown) => logger.warn({ err }, 'Hotspot check after ride completion failed'));
+
     return updated;
   }
 
@@ -948,6 +977,21 @@ export class RideService {
       },
       include: {
         rider: { select: { id: true, fullName: true, phone: true, avatarUrl: true } },
+        vehicle: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return ride ?? null;
+  }
+
+  async getRiderActiveRide(riderId: string) {
+    const ride = await prisma.ride.findFirst({
+      where: {
+        riderId,
+        status: { in: ['REQUESTED', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'OTP_VERIFIED', 'IN_PROGRESS'] },
+      },
+      include: {
+        driver: { select: { id: true, fullName: true, phone: true, avatarUrl: true } },
         vehicle: true,
       },
       orderBy: { createdAt: 'desc' },

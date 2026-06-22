@@ -26,44 +26,50 @@ export function SearchScreen({ navigation }: any) {
   const { setDropoff, setPickup, setPhase } = useRideStore();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pickupDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     riderApi.getSavedPlaces()
       .then(({ data }) => setSavedPlaces(data.data || []))
       .catch(() => {});
+    return () => {
+      abortRef.current?.abort();
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (pickupDebounceRef.current) clearTimeout(pickupDebounceRef.current);
+    };
+  }, []);
+
+  const doSearch = useCallback(async (text: string) => {
+    // Cancel any in-flight request
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    setLoading(true);
+    setError(null);
+    try {
+      const { data } = await mapsApi.searchPlaces(text, SESSION_TOKEN);
+      if (data.success) setResults(data.data);
+      else setError(data.error?.message || 'Search failed');
+    } catch (err: any) {
+      if (err?.code === 'ERR_CANCELED' || err?.name === 'AbortError') return;
+      setError(err?.response?.data?.error?.message || 'Network error');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const handleSearch = useCallback((text: string) => {
     setQuery(text);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (text.length < 2) { setResults([]); return; }
-    debounceRef.current = setTimeout(async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data } = await mapsApi.searchPlaces(text, SESSION_TOKEN);
-        if (data.success) setResults(data.data);
-        else setError(data.error?.message || 'Search failed');
-      } catch (err: any) {
-        setError(err?.response?.data?.error?.message || 'Network error');
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
-  }, []);
+    debounceRef.current = setTimeout(() => doSearch(text), 500);
+  }, [doSearch]);
 
   const handlePickupSearch = useCallback((text: string) => {
     setPickupQuery(text);
     if (pickupDebounceRef.current) clearTimeout(pickupDebounceRef.current);
     if (text.length < 2) { setResults([]); return; }
-    pickupDebounceRef.current = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const { data } = await mapsApi.searchPlaces(text, SESSION_TOKEN);
-        if (data.success) setResults(data.data);
-      } catch {} finally { setLoading(false); }
-    }, 300);
-  }, []);
+    pickupDebounceRef.current = setTimeout(() => doSearch(text), 500);
+  }, [doSearch]);
 
   const handleSelectPlace = async (place: PlacePrediction, isPickup = false) => {
     try {

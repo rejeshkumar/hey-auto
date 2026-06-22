@@ -1,8 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { driverApi, HeatmapCell } from '../services/driver';
 import { colors } from '../theme';
+import type { Hotspot } from '../hooks/useHotspotStore';
+
+const ORANGE_STROKE = '#F97316';
+const ORANGE_FILL_OUTER = 'rgba(249,115,22,0.15)';
+const ORANGE_FILL_INNER = 'rgba(249,115,22,0.28)';
 
 interface Props {
   lat: number;
@@ -11,6 +16,7 @@ interface Props {
   homeLat?: number;
   homeLng?: number;
   isGoHomeMode?: boolean;
+  hotspots?: Hotspot[];
   style?: object;
 }
 
@@ -22,7 +28,7 @@ function heatmapColor(count: number): string {
   return 'rgba(34,197,94,0.30)';                    // green — low
 }
 
-export function LiveMapView({ lat, lng, isOnline, homeLat, homeLng, isGoHomeMode, style }: Props) {
+export function LiveMapView({ lat, lng, isOnline, homeLat, homeLng, isGoHomeMode, hotspots, style }: Props) {
   const mapRef = useRef<MapView>(null);
   const [heatmap, setHeatmap] = useState<HeatmapCell[]>([]);
 
@@ -82,6 +88,33 @@ export function LiveMapView({ lat, lng, isOnline, homeLat, homeLng, isGoHomeMode
             strokeColor="transparent"
           />
         ))}
+
+        {/* Hotspot circles — orange glow at demand clusters */}
+        {(hotspots ?? []).map((h) => {
+          const strokeWidth = Math.min(2 + h.pendingCount * 0.5, 5);
+          return (
+            <React.Fragment key={h.id}>
+              <Circle
+                center={{ latitude: h.lat, longitude: h.lng }}
+                radius={1500}
+                strokeColor={ORANGE_STROKE}
+                strokeWidth={strokeWidth}
+                fillColor={ORANGE_FILL_OUTER}
+              />
+              <Circle
+                center={{ latitude: h.lat, longitude: h.lng }}
+                radius={500}
+                strokeColor="transparent"
+                fillColor={ORANGE_FILL_INNER}
+              />
+              <Marker coordinate={{ latitude: h.lat, longitude: h.lng }} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false}>
+                <View style={styles.hotspotMarker}>
+                  <Text style={styles.hotspotMarkerText}>🔥{h.pendingCount}</Text>
+                </View>
+              </Marker>
+            </React.Fragment>
+          );
+        })}
       </MapView>
     </View>
   );
@@ -93,5 +126,18 @@ const styles = StyleSheet.create({
     width: 18, height: 18, borderRadius: 9,
     backgroundColor: colors.primary,
     borderWidth: 3, borderColor: colors.ink,
+  },
+  hotspotMarker: {
+    backgroundColor: 'rgba(249,115,22,0.90)',
+    borderRadius: 12,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    borderWidth: 1.5,
+    borderColor: '#fff',
+  },
+  hotspotMarkerText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
   },
 });

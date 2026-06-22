@@ -90,10 +90,19 @@ export function setupSocketHandlers(io: Server) {
             pickupAddress: event.pickupAddress,
             dropoffAddress: event.dropoffAddress,
             estimatedFare: event.estimatedFare,
+            perKmRate: event.perKmRate,
+            estimatedDistanceKm: event.estimatedDistanceKm,
+            estimatedDurationMin: event.estimatedDurationMin,
+            coinsToEarn: event.coinsToEarn,
             distance: event.distance,
             riderName: event.riderName,
             riderPhone: event.riderPhone,
             timeoutSec: event.timeoutSec ?? 15,
+            rideType: event.rideType,
+            parcelDescription: event.parcelDescription,
+            recipientName: event.recipientName,
+            queuePosition: event.queuePosition,
+            standName: event.standName,
           });
           break;
 

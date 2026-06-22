@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aye Auto — Union Pitch Deck</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+Malayalam:wght@400;600;700&display=swap');
+
+  :root {
+    --yellow: #F5C800;
+    --navy: #1A1A2E;
+    --navy2: #16213E;
+    --navy3: #0F3460;
+    --white: #FFFFFF;
+    --gray: #94A3B8;
+    --green: #22C55E;
+    --red: #EF4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', 'Noto Sans Malayalam', sans-serif;
+    background: #0a0a14;
+    color: var(--white);
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* ── Navigation ── */
+  #nav {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 50px;
+    padding: 10px 24px;
+    z-index: 1000;
+  }
+
+  #nav button {
+    background: none;
+    border: none;
+    color: var(--white);
+    font-size: 18px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    padding: 4px 8px;
+  }
+  #nav button:hover { opacity: 1; }
+
+  #slide-counter {
+    font-size: 13px;
+    color: var(--gray);
+    min-width: 60px;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  #progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: var(--yellow);
+    transition: width 0.4s ease;
+    z-index: 1001;
+  }
+
+  /* ── Slides Container ── */
+  #slides {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 80px;
+    opacity: 0;
+    transform: translateX(60px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+    pointer-events: none;
+  }
+  .slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+  .slide.exit {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+
+  /* ── Slide 1: Cover ── */
+  .slide-cover {
+    background: radial-gradient(ellipse at 60% 40%, #1a2a50 0%, var(--navy) 60%);
+    text-align: center;
+  }
+  .slide-cover .logo-ring {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: var(--yellow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px;
+    margin: 0 auto 28px;
+    box-shadow: 0 0 60px rgba(245,200,0,0.4);
+  }
+  .slide-cover h1 {
+    font-size: 72px;
+    font-weight: 900;
+    color: var(--yellow);
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+  .slide-cover .subtitle {
+    font-size: 22px;
+    color: rgba(255,255,255,0.7);
+    max-width: 600px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+  .slide-cover .ml-sub {
+    font-size: 18px;
+    color: var(--yellow);
+    opacity: 0.7;
+  }
+  .slide-cover .presenter-tag {
+    margin-top: 36px;
+    padding: 8px 24px;
+    border: 1px solid rgba(245,200,0,0.3);
+    border-radius: 50px;
+    font-size: 14px;
+    color: var(--gray);
+  }
+
+  /* ── Common Slide Styles ── */
+  .slide-content {
+    background: var(--navy);
+  }
+  .slide-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--yellow);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .slide h2 {
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 40px;
+    max-width: 900px;
+    text-align: center;
+  }
+  .slide h2 span { color: var(--yellow); }
+
+  /* ── Two-col layout ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    width: 100%;
+    max-width: 1000px;
+  }
+  .card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 28px;
+  }
+  .card.yellow-border { border-color: rgba(245,200,0,0.4); }
+  .card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--yellow);
+  }
+  .card p, .card li {
+    font-size: 15px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.7;
+  }
+  .card ul { padding-left: 16px; }
+
+  /* ── Comparison Table ── */
+  table {
+    width: 100%;
+    max-width: 860px;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  thead th {
+    padding: 14px 20px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gray);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  tbody td {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.8);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  .td-bad { color: var(--red); font-weight: 600; }
+  .td-good { color: var(--green); font-weight: 700; }
+  .td-label { color: var(--white); font-weight: 600; }
+
+  /* ── Money Calc ── */
+  .money-box {
+    background: rgba(245,200,0,0.08);
+    border: 1px solid rgba(245,200,0,0.3);
+    border-radius: 16px;
+    padding: 36px 48px;
+    width: 100%;
+    max-width: 780px;
+  }
+  .money-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    font-size: 16px;
+  }
+  .money-row:last-child { border-bottom: none; }
+  .money-label { color: rgba(255,255,255,0.65); }
+  .money-value { font-weight: 700; font-size: 18px; }
+  .money-value.bad { color: var(--red); }
+  .money-value.good { color: var(--green); }
+  .money-value.highlight { color: var(--yellow); font-size: 26px; }
+  .money-divider {
+    height: 1px;
+    background: rgba(245,200,0,0.3);
+    margin: 8px 0;
+  }
+
+  /* ── Flow Steps ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    max-width: 900px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .flow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+    min-width: 130px;
+  }
+  .flow-icon {
+    width: 56px; height: 56px;
+    background: rgba(245,200,0,0.15);
+    border: 2px solid var(--yellow);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+  .flow-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+    line-height: 1.4;
+  }
+  .flow-arrow {
+    font-size: 24px;
+    color: var(--yellow);
+    opacity: 0.5;
+    margin: 0 4px;
+    margin-bottom: 20px;
+  }
+
+  /* ── Ask List ── */
+  .ask-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 760px;
+  }
+  .ask-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 20px 24px;
+  }
+  .ask-num {
+    width: 40px; height: 40px;
+    background: var(--yellow);
+    color: var(--navy);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .ask-text h4 {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .ask-text p {
+    font-size: 14px;
+    color: var(--gray);
+    line-height: 1.5;
+  }
+
+  /* ── Fare Shield ── */
+  .fare-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    width: 100%;
+    max-width: 800px;
+  }
+  .fare-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .fare-icon { font-size: 30px; }
+  .fare-card h4 { font-size: 18px; font-weight: 800; color: var(--yellow); }
+  .fare-card p { font-size: 13px; color: var(--gray); margin-top: 2px; }
+
+  /* ── Pilot Box ── */
+  .pilot-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    width: 100%;
+    max-width: 900px;
+  }
+  .pilot-side h3 {
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+  .pilot-side.ask h3 { color: var(--yellow); }
+  .pilot-side.give h3 { color: var(--green); }
+  .pilot-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 15px;
+    color: rgba(255,255,255,0.8);
+    line-height: 1.5;
+  }
+  .pilot-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+  .pilot-side.ask .pilot-dot { background: var(--yellow); }
+  .pilot-side.give .pilot-dot { background: var(--green); }
+
+  /* ── CTA ── */
+  .slide-cta {
+    background: radial-gradient(ellipse at 40% 60%, #1a2a50 0%, var(--navy) 60%);
+    text-align: center;
+  }
+  .cta-badge {
+    background: rgba(245,200,0,0.15);
+    border: 1px solid rgba(245,200,0,0.4);
+    border-radius: 50px;
+    padding: 8px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--yellow);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+    display: inline-block;
+  }
+  .cta-title {
+    font-size: 52px;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .cta-title span { color: var(--yellow); }
+  .cta-sub {
+    font-size: 20px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 40px;
+    max-width: 600px;
+  }
+  .cta-contact {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .cta-pill {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50px;
+    padding: 12px 28px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .cta-pill.primary {
+    background: var(--yellow);
+    color: var(--navy);
+    border-color: var(--yellow);
+    font-weight: 800;
+  }
+
+  /* ── Union Gets ── */
+  .union-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    width: 100%;
+    max-width: 960px;
+  }
+  .union-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 14px;
+    padding: 22px 20px;
+    text-align: center;
+  }
+  .union-card .u-icon { font-size: 32px; margin-bottom: 10px; }
+  .union-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--yellow); }
+  .union-card p { font-size: 13px; color: var(--gray); line-height: 1.5; }
+
+  /* Keyboard hint */
+  .key-hint {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+  }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+<div class="key-hint">← → arrow keys to navigate</div>
+
+<div id="slides">
+
+  <!-- SLIDE 1: Cover -->
+  <div class="slide slide-cover active" id="s1">
+    <div class="logo-ring">🛺</div>
+    <h1>Aye Auto</h1>
+    <p class="subtitle">Auto-rickshaw booking for Taliparamba — built for drivers, not against them</p>
+    <p class="ml-sub">തലിപ്പറമ്പയ്ക്കായി — ഡ്രൈവർക്ക് വേണ്ടി</p>
+    <div class="presenter-tag">Union Meeting · Taliparamba · 2026</div>
+  </div>
+
+  <!-- SLIDE 2: Problem -->
+  <div class="slide slide-content" id="s2">
+    <div class="slide-label">The Problem</div>
+    <h2>Riders can't find autos.<br><span>Drivers miss rides they never knew existed.</span></h2>
+    <div class="two-col">
+      <div class="card">
+        <h3>🧍 Rider at 9pm</h3>
+        <ul>
+          <li>Needs an auto urgently</li>
+          <li>Calls 3 numbers — no answer</li>
+          <li>Waits 20 minutes on the road</li>
+          <li>Sometimes goes without a ride</li>
+        </ul>
+      </div>
+      <div class="card yellow-border">
+        <h3>🛺 Driver at 9pm</h3>
+        <ul>
+          <li>Sitting idle near the bypass</li>
+          <li>Doesn't know that rider existed</li>
+          <li>Loses ₹80 in potential earnings</li>
+          <li>Both lose. Every single time.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: Comparison -->
+  <div class="slide slide-content" id="s3">
+    <div class="slide-label">We Are Different</div>
+    <h2>We are the <span>opposite</span> of Ola and Uber.</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>What</th>
+          <th>Ola / Uber</th>
+          <th>Aye Auto</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="td-label">Commission per ride</td>
+          <td class="td-bad">20–30% taken forever</td>
+          <td class="td-good">₹0 — Zero. Always.</td>
+        </tr>
+        <tr>
+          <td class="td-label">Fare rules</td>
+          <td class="td-bad">Surge pricing, company decides</td>
+          <td class="td-good">Kerala Gazette only</td>
+        </tr>
+        <tr>
+          <td class="td-label">Who controls drivers</td>
+          <td class="td-bad">Algorithm in Bangalore</td>
+          <td class="td-good">Union + drivers locally</td>
+        </tr>
+        <tr>
+          <td class="td-label">Town coverage</td>
+          <td class="td-bad">Cities only — not Taliparamba</td>
+          <td class="td-good">Built for Taliparamba</td>
+        </tr>
+        <tr>
+          <td class="td-label">Our income model</td>
+          <td class="td-bad">Extract from every ride</td>
+          <td class="td-good">Optional ₹25/day subscription</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SLIDE 4: Money -->
+  <div class="slide slide-content" id="s4">
+    <div class="slide-label">Real Money</div>
+    <h2>A driver doing 8 rides/day keeps<br><span>₹4,150 more every month.</span></h2>
+    <div class="money-box">
+      <div class="money-row">
+        <span class="money-label">Average fare per ride</span>
+        <span class="money-value">₹80</span>
+      </div>
+      <div class="money-row">
+        <span class="money-label">Daily rides</span>
+        <span class="money-value">8 rides</span>
+      </div>
+      <div class="money-row">
+        <span class="money-label">Working days/month</span>
+        <span class="money-value">26 days</span>
+      </div>
+      <div class="money-divider"></div>
+      <div class="money-row">
+        <span class="money-label">Ola/Uber commission (25%): lost per month</span>
+        <span class="money-value bad">−₹4,800</span>
+      </div>
+      <div class="money-row">
+        <span class="money-label">Aye Auto commission</span>
+        <span class="money-value good">₹0</span>
+      </div>
+      <div class="money-row">
+        <span class="money-label">Aye Auto subscription (optional)</span>
+        <span class="money-value bad">−₹650/month</span>
+      </div>
+      <div class="money-divider"></div>
+      <div class="money-row">
+        <span class="money-label" style="font-weight:700;color:#fff">Net extra earnings per month</span>
+        <span class="money-value highlight">+₹4,150</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: How It Works -->
+  <div class="slide slide-content" id="s5">
+    <div class="slide-label">How It Works</div>
+    <h2>Three steps for the rider.<br><span>One tap for the driver.</span></h2>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-icon">📱</div>
+        <div class="flow-label">Rider enters<br>destination<br>+ sees fare</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">🔔</div>
+        <div class="flow-label">Nearest driver<br>gets notified<br>(one at a time)</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">✅</div>
+        <div class="flow-label">Driver taps<br>Accept<br>(or declines)</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">🗺️</div>
+        <div class="flow-label">Rider tracks<br>driver on<br>live map</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">🏁</div>
+        <div class="flow-label">Ride completes.<br>Driver keeps<br>100% of fare.</div>
+      </div>
+    </div>
+    <p style="margin-top:32px;color:var(--gray);font-size:14px;text-align:center;">
+      Driver is never in a bidding war. No penalty for declining a ride. Full control stays with the driver.
+    </p>
+  </div>
+
+  <!-- SLIDE 6: What We Need From Union -->
+  <div class="slide slide-content" id="s6">
+    <div class="slide-label">Our Ask</div>
+    <h2>We need <span>three things</span> from the union.<br>Nothing else.</h2>
+    <div class="ask-list">
+      <div class="ask-item">
+        <div class="ask-num">1</div>
+        <div class="ask-text">
+          <h4>Endorsement</h4>
+          <p>Union officially recommends drivers try the app. When you say it's safe, drivers trust it. Without your word, even the best app fails in Taliparamba.</p>
+        </div>
+      </div>
+      <div class="ask-item">
+        <div class="ask-num">2</div>
+        <div class="ask-text">
+          <h4>15 Drivers for a 30-Day Pilot</h4>
+          <p>You choose who. We test for 30 days, track earnings, review together on Day 30. No pressure beyond that.</p>
+        </div>
+      </div>
+      <div class="ask-item">
+        <div class="ask-num">3</div>
+        <div class="ask-text">
+          <h4>A Monthly Feedback Call</h4>
+          <p>One union rep, one call per month. Any complaint, any issue — we fix it. You have direct access to us, not a 1800 number.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: What Union Gets -->
+  <div class="slide slide-content" id="s7">
+    <div class="slide-label">What The Union Gets</div>
+    <h2>This <span>strengthens</span> the union.<br>It does not replace it.</h2>
+    <div class="union-grid">
+      <div class="union-card">
+        <div class="u-icon">🏛️</div>
+        <h4>Union Stays in Charge</h4>
+        <p>Disputes, fare revisions, driver welfare — all still through the union. We handle the technology. You handle the people.</p>
+      </div>
+      <div class="union-card">
+        <div class="u-icon">💰</div>
+        <h4>Drivers Earn More</h4>
+        <p>Drivers who earn more renew union membership. Higher earnings → stronger union. We grow together.</p>
+      </div>
+      <div class="union-card">
+        <div class="u-icon">🔒</div>
+        <h4>Fares Can't Be Changed</h4>
+        <p>Kerala Gazette fares are hardcoded. No algorithm can override union rules or government-set rates.</p>
+      </div>
+      <div class="union-card">
+        <div class="u-icon">👁️</div>
+        <h4>Admin Access for Union Rep</h4>
+        <p>See all rides, all fares, all complaints. Full transparency — no hidden numbers.</p>
+      </div>
+      <div class="union-card">
+        <div class="u-icon">🤝</div>
+        <h4>Revenue Share Option</h4>
+        <p>When subscription pool grows, union gets a portion for the driver welfare fund. <em>(Negotiable from Day 1.)</em></p>
+      </div>
+      <div class="union-card">
+        <div class="u-icon">📞</div>
+        <h4>Direct Line to Us</h4>
+        <p>Not a helpline. My personal number. If a driver is wronged, you call me — not a chatbot in Bangalore.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Fare Protection -->
+  <div class="slide slide-content" id="s8">
+    <div class="slide-label">Fare Protection</div>
+    <h2>No surge pricing. <span>Ever.</span><br>Kerala Gazette — written into law.</h2>
+    <div class="fare-grid">
+      <div class="fare-card">
+        <div class="fare-icon">🚦</div>
+        <div>
+          <h4>₹30</h4>
+          <p>Base fare for first 1.5 km</p>
+        </div>
+      </div>
+      <div class="fare-card">
+        <div class="fare-icon">📏</div>
+        <div>
+          <h4>₹15 / km</h4>
+          <p>Per km beyond 1.5 km</p>
+        </div>
+      </div>
+      <div class="fare-card">
+        <div class="fare-icon">🌙</div>
+        <div>
+          <h4>+50% Night</h4>
+          <p>Surcharge 10pm – 5am (IST)</p>
+        </div>
+      </div>
+      <div class="fare-card">
+        <div class="fare-icon">🛡️</div>
+        <div>
+          <h4>Minimum ₹30</h4>
+          <p>No ride below gazette minimum</p>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:28px;background:rgba(245,200,0,0.08);border:1px solid rgba(245,200,0,0.3);border-radius:12px;padding:16px 24px;max-width:780px;text-align:center;">
+      <p style="font-size:14px;color:rgba(255,255,255,0.7);">
+        Source: <strong style="color:var(--yellow)">G.O.(P)No.14/2022/TRANS</strong> — These fares are hardcoded in the app's source code.
+        We cannot change them without a new government gazette order.
+        If we violate this, the Transport Department can shut us down.
+      </p>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: 30-Day Pilot -->
+  <div class="slide slide-content" id="s9">
+    <div class="slide-label">The Proposal</div>
+    <h2>30 days. 15 drivers. <span>Free.</span><br>You decide if it continues.</h2>
+    <div class="pilot-grid">
+      <div class="card pilot-side ask">
+        <h3>What We Ask</h3>
+        <div class="pilot-item"><div class="pilot-dot"></div>15 drivers nominated by the union</div>
+        <div class="pilot-item"><div class="pilot-dot"></div>30-day trial period</div>
+        <div class="pilot-item"><div class="pilot-dot"></div>Share app link in driver WhatsApp group</div>
+        <div class="pilot-item"><div class="pilot-dot"></div>Honest feedback — what works, what doesn't</div>
+      </div>
+      <div class="card pilot-side give">
+        <h3>What We Give</h3>
+        <div class="pilot-item"><div class="pilot-dot"></div>No subscription fee during pilot (completely free)</div>
+        <div class="pilot-item"><div class="pilot-dot"></div>Direct phone line for any issue — resolved same day</div>
+        <div class="pilot-item"><div class="pilot-dot"></div>Earnings report per driver on Day 30</div>
+        <div class="pilot-item"><div class="pilot-dot"></div>If 10 of 15 say "not useful" — we accept and leave</div>
+      </div>
+    </div>
+    <p style="margin-top:28px;color:var(--gray);font-size:15px;text-align:center;max-width:700px;">
+      The risk is <strong style="color:#fff">30 days of time.</strong> The upside is
+      <strong style="color:var(--yellow)">₹4,150 more per month — permanently.</strong>
+    </p>
+  </div>
+
+  <!-- SLIDE 10: CTA -->
+  <div class="slide slide-cta" id="s10">
+    <div class="cta-badge">Let's Begin</div>
+    <h2 class="cta-title">Taliparamba's autos.<br><span>Taliparamba's rules.</span></h2>
+    <p class="cta-sub">Ola is not coming here. Uber is not coming here.<br>This is our window — and only we can use it.</p>
+    <div class="cta-contact">
+      <div class="cta-pill primary">Download Aye Auto</div>
+      <div class="cta-pill">📞 [Your Phone]</div>
+      <div class="cta-pill">💬 WhatsApp [Your Number]</div>
+    </div>
+    <p style="margin-top:48px;color:rgba(255,255,255,0.35);font-size:13px;">
+      Nominate 15 drivers · Review Day 30 · Free pilot · Zero risk
+    </p>
+  </div>
+
+</div>
+
+<!-- Navigation -->
+<div id="nav">
+  <button id="btn-prev" onclick="go(-1)">←</button>
+  <span id="slide-counter">1 / 10</span>
+  <button id="btn-next" onclick="go(1)">→</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  function go(dir) {
+    const next = current + dir;
+    if (next < 0 || next >= total) return;
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    setTimeout(() => slides[current - dir].classList.remove('exit'), 500);
+    current = next;
+    slides[current].classList.add('active');
+    document.getElementById('slide-counter').textContent = `${current + 1} / ${total}`;
+    document.getElementById('progress').style.width = `${((current + 1) / total) * 100}%`;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') go(1);
+    if (e.key === 'ArrowLeft') go(-1);
+  });
+
+  // Init progress
+  document.getElementById('progress').style.width = `${(1 / total) * 100}%`;
+</script>
+</body>
+</html>

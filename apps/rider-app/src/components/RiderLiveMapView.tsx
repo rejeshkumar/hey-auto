@@ -3,8 +3,8 @@ import { StyleSheet } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
 interface Props {
-  driverLat?: number;
-  driverLng?: number;
+  driverLat?: number | null;
+  driverLng?: number | null;
   pickupLat?: number;
   pickupLng?: number;
   dropoffLat?: number;
@@ -12,6 +12,8 @@ interface Props {
   showDropoff?: boolean;
   style?: object;
 }
+
+const TALIPARAMBA = { lat: 12.0370, lng: 75.3618 };
 
 export function RiderLiveMapView({
   driverLat, driverLng,
@@ -21,18 +23,20 @@ export function RiderLiveMapView({
   style,
 }: Props) {
   const mapRef = useRef<MapView>(null);
+  const hasDriverLoc = driverLat != null && driverLng != null && (driverLat !== 0 || driverLng !== 0);
 
   // Re-center on driver whenever their location updates
   useEffect(() => {
-    if (!driverLat || !driverLng) return;
+    if (!hasDriverLoc) return;
     mapRef.current?.animateToRegion(
-      { latitude: driverLat, longitude: driverLng, latitudeDelta: 0.015, longitudeDelta: 0.015 },
+      { latitude: driverLat!, longitude: driverLng!, latitudeDelta: 0.015, longitudeDelta: 0.015 },
       500,
     );
   }, [driverLat, driverLng]);
 
-  const centerLat = driverLat ?? pickupLat ?? 12.9716;
-  const centerLng = driverLng ?? pickupLng ?? 77.5946;
+  // Initial center: driver > pickup > Taliparamba
+  const centerLat = hasDriverLoc ? driverLat! : (pickupLat ?? TALIPARAMBA.lat);
+  const centerLng = hasDriverLoc ? driverLng! : (pickupLng ?? TALIPARAMBA.lng);
 
   return (
     <MapView
@@ -49,15 +53,13 @@ export function RiderLiveMapView({
       showsMyLocationButton={false}
       toolbarEnabled={false}
     >
-      {/* Driver pin */}
-      {driverLat != null && driverLng != null && (
+      {/* Driver pin — only when valid GPS received */}
+      {hasDriverLoc && (
         <Marker
-          coordinate={{ latitude: driverLat, longitude: driverLng }}
+          coordinate={{ latitude: driverLat!, longitude: driverLng! }}
           anchor={{ x: 0.5, y: 0.5 }}
           title="Your Sarathi"
-        >
-          {/* Using default pin styled via title — custom image can be added later */}
-        </Marker>
+        />
       )}
 
       {/* Pickup pin */}
@@ -79,13 +81,13 @@ export function RiderLiveMapView({
       )}
 
       {/* Straight line driver → pickup while approaching */}
-      {!showDropoff && driverLat != null && driverLng != null && pickupLat != null && pickupLng != null && (
+      {!showDropoff && hasDriverLoc && pickupLat != null && pickupLng != null && (
         <Polyline
           coordinates={[
-            { latitude: driverLat, longitude: driverLng },
+            { latitude: driverLat!, longitude: driverLng! },
             { latitude: pickupLat, longitude: pickupLng },
           ]}
-          strokeColor="#F5C800"
+          strokeColor="#ffbe0b"
           strokeWidth={3}
           lineDashPattern={[8, 4]}
         />

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -20,13 +21,21 @@ const FAVE_SLOTS = [
 ];
 
 export function HomeScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
-  const { setPickup, setPhase, rideType, setRideType } = useRideStore();
+  const { setPickup, setPhase, rideType, setRideType, restoreActiveRide } = useRideStore();
   const { currentLat, currentLng, setCurrentLocation, setPermission } = useLocationStore();
   const [favourites, setFavourites] = useState<SavedPlace[]>([]);
 
   useEffect(() => { requestLocation(); loadFavourites(); }, []);
+
+  // On mount: check if rider has an active ride on the server (covers logout + re-login)
+  useEffect(() => {
+    restoreActiveRide().then((ride) => {
+      if (ride) navigation.replace('ActiveRide');
+    });
+  }, []);
 
   const loadFavourites = () => {
     riderApi.getSavedPlaces()
@@ -130,7 +139,7 @@ export function HomeScreen({ navigation }: any) {
       </View>
 
       {/* Bottom sheet */}
-      <View style={styles.bottomSheet}>
+      <View style={[styles.bottomSheet, { paddingBottom: Math.max(insets.bottom + 12, spacing.xl) }]}>
         {/* Booking type selector */}
         <View style={styles.typeSelector}>
           <TouchableOpacity
@@ -254,7 +263,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: borderRadius.xxl,
     borderTopRightRadius: borderRadius.xxl,
     padding: spacing.lg,
-    paddingBottom: Platform.OS === 'ios' ? 36 : spacing.xl,
     elevation: 12,
     shadowColor: colors.black,
     shadowOffset: { width: 0, height: -4 },

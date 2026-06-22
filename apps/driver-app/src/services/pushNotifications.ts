@@ -49,7 +49,7 @@ export async function registerPushToken(silent = false): Promise<void> {
         name: 'Ride Requests',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#F5C800',
+        lightColor: '#ffbe0b',
         sound: 'default',
       });
     }

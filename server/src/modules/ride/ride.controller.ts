@@ -41,6 +41,15 @@ export class RideController {
     }
   }
 
+  async getRiderActiveRide(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ride = await rideService.getRiderActiveRide(req.user!.userId);
+      res.json({ success: true, data: ride });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getRideDetails(req: Request, res: Response, next: NextFunction) {
     try {
       const ride = await rideService.getRideDetails(req.user!.userId, paramId(req));
@@ -182,7 +191,7 @@ export class RideController {
       // Re-use existing token if still valid
       const existing = await redis.get(`${SHARE_RIDE_PREFIX}${rideId}`);
       if (existing) {
-        const baseUrl = req.protocol + '://' + req.get('host');
+        const baseUrl = 'https://' + req.get('host');
         res.json({ success: true, data: { url: `${baseUrl}/track/${existing}` } });
         return;
       }
@@ -191,11 +200,11 @@ export class RideController {
       await redis.setex(`${SHARE_TOKEN_PREFIX}${token}`, SHARE_TTL_SEC, rideId);
       await redis.setex(`${SHARE_RIDE_PREFIX}${rideId}`, SHARE_TTL_SEC, token);
 
-      const baseUrl = req.protocol + '://' + req.get('host');
+      const baseUrl = 'https://' + req.get('host');
       const trackUrl = `${baseUrl}/track/${token}`;
 
       // Notify emergency contacts via SMS (fire-and-forget)
-      this.notifyEmergencyContacts(req.user!.userId, trackUrl).catch(() => {});
+      notifyEmergencyContacts(req.user!.userId, trackUrl).catch(() => {});
 
       res.json({ success: true, data: { url: trackUrl } });
     } catch (err) {
@@ -255,28 +264,29 @@ export class RideController {
     }
   }
 
-  private async notifyEmergencyContacts(riderId: string, trackUrl: string): Promise<void> {
-    if (!env.FAST2SMS_API_KEY) return; // skip in demo mode
-    const { prisma } = await import('../../config/database');
-    const contacts = await prisma.emergencyContact.findMany({ where: { userId: riderId } });
-    if (contacts.length === 0) return;
-    for (const contact of contacts) {
-      const digits = contact.phone.replace(/^\+91/, '').replace(/\D/g, '');
-      if (digits.length !== 10) continue;
-      try {
-        await fetch('https://www.fast2sms.com/dev/bulkV2', {
-          method: 'POST',
-          headers: { authorization: env.FAST2SMS_API_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            route: 'q',
-            message: `Aye Auto: Your contact has shared a live trip with you. Track here: ${trackUrl}`,
-            numbers: digits,
-          }),
-        });
-        logger.info({ digits: digits.slice(-4) }, 'FollowRide SMS sent to emergency contact');
-      } catch (err) {
-        logger.warn({ err, digits: digits.slice(-4) }, 'FollowRide SMS failed');
-      }
+}
+
+async function notifyEmergencyContacts(riderId: string, trackUrl: string): Promise<void> {
+  if (!env.FAST2SMS_API_KEY) return;
+  const { prisma } = await import('../../config/database');
+  const contacts = await prisma.emergencyContact.findMany({ where: { userId: riderId } });
+  if (contacts.length === 0) return;
+  for (const contact of contacts) {
+    const digits = contact.phone.replace(/^\+91/, '').replace(/\D/g, '');
+    if (digits.length !== 10) continue;
+    try {
+      await fetch('https://www.fast2sms.com/dev/bulkV2', {
+        method: 'POST',
+        headers: { authorization: env.FAST2SMS_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          route: 'q',
+          message: `Aye Auto: Your contact has shared a live trip with you. Track here: ${trackUrl}`,
+          numbers: digits,
+        }),
+      });
+      logger.info({ digits: digits.slice(-4) }, 'FollowRide SMS sent to emergency contact');
+    } catch (err) {
+      logger.warn({ err, digits: digits.slice(-4) }, 'FollowRide SMS failed');
     }
   }
 }

@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform, Linking } from 'react-native';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useDriverStore, IncomingRideRequest } from '../../hooks/useDriverStore';
-
-const TIMEOUT = 60;
 
 interface Props {
   request: IncomingRideRequest;
@@ -13,13 +12,14 @@ interface Props {
 
 export function RideRequestCard({ request, navigation }: Props) {
   const { acceptRide, setIncomingRequest, setPhase } = useDriverStore();
-  const [countdown, setCountdown] = useState(TIMEOUT);
+  const timeout = request.timeoutSec ?? 30;
+  const [countdown, setCountdown] = useState(timeout);
   const [accepting, setAccepting] = useState(false);
   const progressAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.timing(progressAnim, {
-      toValue: 0, duration: TIMEOUT * 1000, useNativeDriver: false,
+      toValue: 0, duration: timeout * 1000, useNativeDriver: false,
     }).start();
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -41,6 +41,7 @@ export function RideRequestCard({ request, navigation }: Props) {
   };
 
   const handleAccept = async () => {
+    Speech.stop();
     setAccepting(true);
     try {
       await acceptRide(request.rideId);
@@ -51,6 +52,7 @@ export function RideRequestCard({ request, navigation }: Props) {
   };
 
   const handleDecline = () => {
+    Speech.stop();
     setIncomingRequest(null);
     setPhase('online_idle');
   };
@@ -98,11 +100,20 @@ export function RideRequestCard({ request, navigation }: Props) {
 
         {/* White body */}
         <View style={styles.body}>
+          {/* Fare + per-km rate */}
           <View style={styles.fareRow}>
-            <Text style={styles.fareLabel}>Fare</Text>
-            <Text style={styles.fareAmount}>₹{Math.round(request.estimatedFare ?? 0)}</Text>
+            <View style={styles.fareLeft}>
+              <Text style={styles.fareLabel}>Fare</Text>
+              <Text style={styles.fareAmount}>₹{Math.round(request.estimatedFare ?? 0)}</Text>
+            </View>
+            {request.perKmRate != null && (
+              <View style={styles.rateChip}>
+                <Text style={styles.rateChipText}>₹{request.perKmRate}/km</Text>
+              </View>
+            )}
           </View>
 
+          {/* Route card with inline distance/duration */}
           <View style={styles.routeCard}>
             <View style={styles.routeIconCol}>
               <View style={[styles.routeDot, { backgroundColor: colors.secondary }]} />
@@ -110,29 +121,31 @@ export function RideRequestCard({ request, navigation }: Props) {
               <View style={[styles.routeDot, { backgroundColor: colors.error }]} />
             </View>
             <View style={styles.routeAddresses}>
+              {/* Pickup */}
               <View style={styles.routeStop}>
+                {request.distance != null && (
+                  <Text style={styles.routeDistanceHint}>{request.distance.toFixed(1)} km away</Text>
+                )}
                 <Text style={styles.routeStopLabel}>PICKUP</Text>
                 <Text style={styles.routeStopAddr} numberOfLines={1}>{request.pickupAddress}</Text>
               </View>
+              {/* Ride distance + duration between stops */}
+              {(request.estimatedDistanceKm != null || request.estimatedDurationMin != null) && (
+                <View style={styles.routeMidRow}>
+                  <View style={styles.routeMidLine} />
+                  <Text style={styles.routeMidText}>
+                    {request.estimatedDistanceKm != null ? `${request.estimatedDistanceKm.toFixed(1)} km` : ''}
+                    {request.estimatedDistanceKm != null && request.estimatedDurationMin != null ? '  ·  ' : ''}
+                    {request.estimatedDurationMin != null ? `${request.estimatedDurationMin} min` : ''}
+                  </Text>
+                  <View style={styles.routeMidLine} />
+                </View>
+              )}
+              {/* Drop */}
               <View style={styles.routeStop}>
                 <Text style={styles.routeStopLabel}>DROP</Text>
                 <Text style={styles.routeStopAddr} numberOfLines={1}>{request.dropoffAddress}</Text>
               </View>
-            </View>
-          </View>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statVal}>{((request.estimatedDistanceKm ?? request.distance) ?? 0).toFixed(1)} km</Text>
-              <Text style={styles.statLabel}>Distance</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statVal}>{request.estimatedDurationMin ?? '—'} min</Text>
-              <Text style={styles.statLabel}>Ride time</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statVal}>{(request.distance ?? 0).toFixed(1)} km</Text>
-              <Text style={styles.statLabel}>To pickup</Text>
             </View>
           </View>
 
@@ -145,7 +158,12 @@ export function RideRequestCard({ request, navigation }: Props) {
               onPress={handleAccept} disabled={accepting}
             >
               <Icon name={accepting ? 'loading' : 'check-circle'} size={20} color={colors.ink} />
-              <Text style={styles.acceptText}>{accepting ? 'Accepting...' : 'Accept Ride'}</Text>
+              <View>
+                <Text style={styles.acceptText}>{accepting ? 'Accepting...' : 'Accept Ride'}</Text>
+                {!accepting && (request.coinsToEarn ?? 0) > 0 && (
+                  <Text style={styles.coinsHint}>+{request.coinsToEarn} 🪙 coins</Text>
+                )}
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -178,25 +196,35 @@ const styles = StyleSheet.create({
   timerNum: { fontSize: 36, fontWeight: '900', color: colors.primary, lineHeight: 40 },
   timerSec: { fontSize: 9, color: 'rgba(255,255,255,0.3)', fontWeight: '600' },
   body: { backgroundColor: colors.white, padding: spacing.lg, paddingTop: spacing.base },
-  fareRow: { marginBottom: spacing.base },
+
+  // Fare row
+  fareRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: spacing.base },
+  fareLeft: {},
   fareLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 2 },
   fareAmount: { fontSize: 40, fontWeight: '900', color: colors.primary, letterSpacing: -1.5, lineHeight: 44 },
-  routeCard: { flexDirection: 'row', gap: spacing.md, backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.base, marginBottom: spacing.base },
-  routeIconCol: { alignItems: 'center', paddingTop: 14 },
+  rateChip: { backgroundColor: colors.surface, borderRadius: borderRadius.full, paddingVertical: 5, paddingHorizontal: 10, borderWidth: 1, borderColor: colors.borderLight, marginBottom: 6 },
+  rateChipText: { fontSize: 12, fontWeight: '700', color: colors.textSecondary },
+
+  // Route card
+  routeCard: { flexDirection: 'row', gap: spacing.md, backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.base, marginBottom: spacing.lg },
+  routeIconCol: { alignItems: 'center', paddingTop: 18 },
   routeDot: { width: 9, height: 9, borderRadius: 5 },
-  routeLine: { width: 2, flex: 1, backgroundColor: colors.border, marginVertical: 3, minHeight: 16 },
-  routeAddresses: { flex: 1, gap: spacing.sm },
-  routeStop: {},
+  routeLine: { width: 2, flex: 1, backgroundColor: colors.border, marginVertical: 3, minHeight: 12 },
+  routeAddresses: { flex: 1 },
+  routeStop: { marginVertical: 2 },
+  routeDistanceHint: { fontSize: 10, fontWeight: '600', color: colors.secondary, marginBottom: 1 },
   routeStopLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 0.8, color: colors.textSecondary, textTransform: 'uppercase' },
   routeStopAddr: { ...typography.smallBold, color: colors.text, marginTop: 1 },
-  statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
-  statBox: { flex: 1, backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.sm, alignItems: 'center' },
-  statVal: { fontSize: 15, fontWeight: '800', color: colors.text },
-  statLabel: { fontSize: 9, fontWeight: '600', color: colors.textSecondary, marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
+  routeMidRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginVertical: 6 },
+  routeMidLine: { flex: 1, height: 1, backgroundColor: colors.borderLight },
+  routeMidText: { fontSize: 11, fontWeight: '700', color: colors.textSecondary },
+
+  // Actions
   actions: { flexDirection: 'row', gap: spacing.md, paddingBottom: Platform.OS === 'ios' ? 20 : 8 },
   declineBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.base, borderRadius: borderRadius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   declineText: { ...typography.button, color: colors.textSecondary },
   acceptBtn: { flex: 2.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.base, borderRadius: borderRadius.xl, backgroundColor: colors.primary, elevation: 4, shadowColor: colors.primary, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 8 },
   acceptBtnDisabled: { opacity: 0.6 },
   acceptText: { ...typography.button, color: colors.ink },
+  coinsHint: { fontSize: 10, fontWeight: '600', color: colors.ink, opacity: 0.65, textAlign: 'center', marginTop: 1 },
 });

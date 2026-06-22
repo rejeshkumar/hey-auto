@@ -105,8 +105,10 @@ model DriverProfile {
   coinsBalance       Int                @default(0)     @map("coins_balance")
   coinsEarned        Int                @default(0)     @map("coins_earned")
   coinsRedeemed      Int                @default(0)     @map("coins_redeemed")
-  acceptsParcels     Boolean            @default(false) @map("accepts_parcels")
-  createdAt          DateTime           @default(now()) @map("created_at")
+  acceptsParcels       Boolean            @default(false) @map("accepts_parcels")
+  lastRideCompletedAt  DateTime?          @map("last_ride_completed_at")
+  lastHotspotAlertAt   DateTime?          @map("last_hotspot_alert_at")
+  createdAt            DateTime           @default(now()) @map("created_at")
 
   user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   vehicles         Vehicle[]

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="UTF-8">
+<title>Aye Auto — Driver Handout</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+Malayalam:wght@400;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', 'Noto Sans Malayalam', sans-serif;
+    background: white;
+    color: #111;
+    padding: 0;
+  }
+
+  @media print {
+    body { margin: 0; }
+    .page { page-break-after: always; }
+    .no-print { display: none; }
+    @page { margin: 0; size: A4; }
+  }
+
+  .no-print {
+    background: #1a1a2e;
+    color: white;
+    text-align: center;
+    padding: 16px;
+    font-size: 14px;
+  }
+  .no-print button {
+    background: #F5C800;
+    color: #111;
+    border: none;
+    padding: 10px 28px;
+    font-weight: 800;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-left: 16px;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background: white;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: #1A1A2E;
+    padding: 28px 32px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .logo-circle {
+    width: 64px; height: 64px;
+    background: #F5C800;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+  .header-text h1 {
+    font-size: 36px;
+    font-weight: 900;
+    color: #F5C800;
+    letter-spacing: -1px;
+  }
+  .header-text p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 3px;
+  }
+  .header-ml {
+    margin-left: auto;
+    text-align: right;
+  }
+  .header-ml h2 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #F5C800;
+    font-family: 'Noto Sans Malayalam', sans-serif;
+  }
+  .header-ml p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    font-family: 'Noto Sans Malayalam', sans-serif;
+  }
+
+  /* ── HERO STRIP ── */
+  .hero-strip {
+    background: #F5C800;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .hero-strip .hero-left h2 {
+    font-size: 24px;
+    font-weight: 900;
+    color: #1A1A2E;
+    line-height: 1.2;
+  }
+  .hero-strip .hero-left p {
+    font-size: 13px;
+    color: rgba(0,0,0,0.6);
+    margin-top: 2px;
+    font-family: 'Noto Sans Malayalam', sans-serif;
+  }
+  .hero-strip .zero-badge {
+    background: #1A1A2E;
+    color: #F5C800;
+    font-size: 28px;
+    font-weight: 900;
+    padding: 8px 24px;
+    border-radius: 8px;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .hero-strip .zero-badge small {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(245,200,0,0.7);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ── BODY ── */
+  .body-content {
+    padding: 24px 32px;
+    flex: 1;
+  }
+
+  /* Earnings comparison */
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #888;
+    margin-bottom: 12px;
+  }
+  .section-title-ml {
+    font-size: 12px;
+    font-family: 'Noto Sans Malayalam', sans-serif;
+    color: #999;
+    font-weight: 600;
+    margin-top: 2px;
+    margin-bottom: 12px;
+  }
+
+  .earnings-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  .earnings-table thead th {
+    background: #f5f5f5;
+    padding: 8px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 12px;
+    color: #555;
+    border-bottom: 2px solid #e0e0e0;
+  }
+  .earnings-table tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .earnings-table .label { color: #333; font-weight: 600; }
+  .earnings-table .bad { color: #EF4444; font-weight: 700; }
+  .earnings-table .good { color: #16A34A; font-weight: 700; }
+  .earnings-table .highlight {
+    font-size: 18px;
+    font-weight: 900;
+    color: #D97706;
+  }
+  .earnings-table tr.total-row td {
+    background: #FFFBEB;
+    border-top: 2px solid #F5C800;
+    border-bottom: 2px solid #F5C800;
+  }
+
+  /* Two column */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .box {
+    border-radius: 10px;
+    padding: 16px 18px;
+    border: 1.5px solid #e5e5e5;
+  }
+  .box.yellow { border-color: #F5C800; background: #FFFBEB; }
+  .box.green { border-color: #22C55E; background: #F0FDF4; }
+  .box.dark { background: #1A1A2E; border-color: #1A1A2E; color: white; }
+
+  .box h3 {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .box.yellow h3 { color: #92400E; }
+  .box.green h3 { color: #14532D; }
+  .box.dark h3 { color: #F5C800; }
+
+  .box ul { padding-left: 16px; }
+  .box li {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #333;
+  }
+  .box.dark li { color: rgba(255,255,255,0.8); }
+
+  .box .ml-text {
+    font-family: 'Noto Sans Malayalam', sans-serif;
+    font-size: 12px;
+    color: #666;
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+  .box.dark .ml-text { color: rgba(255,255,255,0.5); }
+
+  /* Fare strip */
+  .fare-strip {
+    background: #1A1A2E;
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .fare-item {
+    text-align: center;
+  }
+  .fare-item .f-val {
+    font-size: 20px;
+    font-weight: 900;
+    color: #F5C800;
+  }
+  .fare-item .f-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+  .fare-item .f-ml {
+    font-family: 'Noto Sans Malayalam', sans-serif;
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+    margin-top: 2px;
+  }
+
+  /* Pilot section */
+  .pilot-box {
+    background: #FFFBEB;
+    border: 2px solid #F5C800;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 20px;
+  }
+  .pilot-box h3 {
+    font-size: 14px;
+    font-weight: 800;
+    color: #92400E;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .pilot-box .ml-sub {
+    font-family: 'Noto Sans Malayalam', sans-serif;
+    font-size: 12px;
+    color: #B45309;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .pilot-items {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .pilot-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #333;
+  }
+  .pilot-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #F5C800;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: #1A1A2E;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer-left h4 {
+    font-size: 16px;
+    font-weight: 800;
+    color: #F5C800;
+  }
+  .footer-left p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+    font-family: 'Noto Sans Malayalam', sans-serif;
+  }
+  .footer-contact {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .footer-contact p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.8);
+    font-weight: 600;
+  }
+  .footer-contact .ml { font-family: 'Noto Sans Malayalam', sans-serif; font-size: 12px; color: rgba(255,255,255,0.4); }
+
+  .divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 16px 0;
+  }
+
+  .union-note {
+    font-size: 12px;
+    color: #888;
+    text-align: center;
+    margin-top: 12px;
+    padding: 0 20px;
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .union-note .ml { font-family: 'Noto Sans Malayalam', sans-serif; }
+
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <span>📄 Printable A4 Driver Handout — Aye Auto Union Meeting</span>
+  <button onclick="window.print()">🖨️ Print / Save PDF</button>
+</div>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-circle">🛺</div>
+    <div class="header-text">
+      <h1>Aye Auto</h1>
+      <p>Auto-rickshaw booking · Taliparamba, Kannur</p>
+    </div>
+    <div class="header-ml">
+      <h2>Aye Auto</h2>
+      <p>തലിപ്പറമ്പ ഓട്ടോ ബുക്കിംഗ്</p>
+    </div>
+  </div>
+
+  <!-- HERO STRIP -->
+  <div class="hero-strip">
+    <div class="hero-left">
+      <h2>Zero Commission. Drivers Keep 100%.</h2>
+      <p>കമ്മീഷൻ ഇല്ല. ഓരോ ഓട്ടത്തിന്റെ 100% ഡ്രൈവർക്ക്.</p>
+    </div>
+    <div class="zero-badge">
+      ₹0
+      <small>Commission</small>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body-content">
+
+    <!-- Earnings -->
+    <div class="section-title">Earnings Comparison — 8 rides/day, ₹80 average fare</div>
+    <div class="section-title-ml">സമ്പാദ്യ താരതമ്യം — ദിവസം 8 ഓട്ടം, ശരാശരി ₹80</div>
+
+    <table class="earnings-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Ola / Uber</th>
+          <th>Aye Auto</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label">Commission per ride</td>
+          <td class="bad">₹20 taken (25%)</td>
+          <td class="good">₹0 — Zero</td>
+        </tr>
+        <tr>
+          <td class="label">Daily earnings (8 rides)</td>
+          <td class="bad">₹1,440 kept</td>
+          <td class="good">₹1,920 kept</td>
+        </tr>
+        <tr>
+          <td class="label">Monthly subscription cost</td>
+          <td>—</td>
+          <td style="color:#888">₹650 (optional)</td>
+        </tr>
+        <tr class="total-row">
+          <td class="label" style="font-weight:900">EXTRA EARNINGS / MONTH</td>
+          <td>—</td>
+          <td class="highlight">+₹4,150</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="divider"></div>
+
+    <!-- Two columns -->
+    <div class="two-col">
+      <div class="box yellow">
+        <h3>How It Works · എങ്ങനെ പ്രവർത്തിക്കുന്നു</h3>
+        <ul>
+          <li>Rider enters destination in app</li>
+          <li>Nearest driver gets notified</li>
+          <li>Driver accepts or declines — no pressure</li>
+          <li>Rider sees driver on live map</li>
+          <li>Ride completes. Driver keeps full fare.</li>
+        </ul>
+        <p class="ml-text">ഡ്രൈവർക്ക് ഓട്ടം നിരസിക്കാൻ പൂർണ്ണ സ്വാതന്ത്ര്യം. ഒരു ശിക്ഷയുമില്ല.</p>
+      </div>
+
+      <div class="box green">
+        <h3>Union Partnership · യൂണിയൻ പങ്കാളിത്തം</h3>
+        <ul>
+          <li>Union endorsement = driver trust</li>
+          <li>Admin access for union rep</li>
+          <li>Revenue share for welfare fund</li>
+          <li>Your direct phone — not a helpline</li>
+          <li>Union stays in charge of disputes</li>
+        </ul>
+        <p class="ml-text">യൂണിയൻ ഭരണം ഇപ്പോഴും നിങ്ങളുടേതാണ്. ഞങ്ങൾ സാങ്കേതിക വിദ്യ മാത്രം.</p>
+      </div>
+    </div>
+
+    <!-- Fare strip -->
+    <div class="fare-strip">
+      <div class="fare-item">
+        <div class="f-val">₹30</div>
+        <div class="f-label">Base fare<br>First 1.5 km</div>
+        <div class="f-ml">ആദ്യ 1.5 കി.മി</div>
+      </div>
+      <div class="fare-item">
+        <div class="f-val">₹15/km</div>
+        <div class="f-label">Per km<br>beyond 1.5 km</div>
+        <div class="f-ml">1.5 കി.മി-ക്ക് ശേഷം</div>
+      </div>
+      <div class="fare-item">
+        <div class="f-val">+50%</div>
+        <div class="f-label">Night surcharge<br>10pm – 5am</div>
+        <div class="f-ml">രാത്രി അധിക ഫീ</div>
+      </div>
+      <div class="fare-item">
+        <div class="f-val">🔒 Fixed</div>
+        <div class="f-label">Kerala Gazette<br>G.O.(P)No.14/2022</div>
+        <div class="f-ml">കേരള ഗസറ്റ് നിരക്ക്</div>
+      </div>
+    </div>
+
+    <!-- Pilot box -->
+    <div class="pilot-box">
+      <h3>30-Day Free Pilot — No Risk, No Cost</h3>
+      <p class="ml-sub">30 ദിവസം സൗജന്യ പരീക്ഷണം — ഒരു ചെലവും ഇല്ല</p>
+      <div class="pilot-items">
+        <div class="pilot-item">
+          <div class="pilot-dot"></div>
+          <span>15 drivers nominated by union</span>
+        </div>
+        <div class="pilot-item">
+          <div class="pilot-dot"></div>
+          <span>Zero subscription fee for 30 days</span>
+        </div>
+        <div class="pilot-item">
+          <div class="pilot-dot"></div>
+          <span>Earnings report on Day 30</span>
+        </div>
+        <div class="pilot-item">
+          <div class="pilot-dot"></div>
+          <span>Union reviews — decides to continue or stop</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="union-note">
+      If 10 of 15 pilot drivers say "not useful" — we accept the result and leave Taliparamba with no hard feelings.<br>
+      <span class="ml">15-ൽ 10 ഡ്രൈവർ "ഉപകാരമില്ല" പറഞ്ഞാൽ, ഞങ്ങൾ വേദനയില്ലാതെ പോകും.</span>
+    </p>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      <h4>Aye Auto — Taliparamba</h4>
+      <p>ഡ്രൈവർക്ക് വേണ്ടി നിർമ്മിച്ചത്</p>
+    </div>
+    <div class="footer-contact">
+      <p>📞 [Your Name] — [Phone Number]</p>
+      <p>💬 WhatsApp: [Your Number]</p>
+      <p style="color:#F5C800;font-weight:800">App: Aye Auto</p>
+      <p class="ml">ഡൗൺലോഡ്: [Link / QR Code]</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

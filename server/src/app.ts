@@ -14,6 +14,8 @@ import { redis } from './config/redis';
 import { logger } from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { setupSocketHandlers } from './socket/handler';
+import { setIo } from './socket/io';
+import { hotspotRoutes, startHotspotCron } from './modules/hotspot';
 
 // Route imports
 import { authRoutes } from './modules/auth';
@@ -126,6 +128,7 @@ app.use(`${apiPrefix}/rides/track`, trackLimiter);
 app.use(`${apiPrefix}/auth`, authRoutes);
 app.use(`${apiPrefix}/rider`, riderRoutes);
 app.use(`${apiPrefix}/driver`, driverRoutes);
+app.use(`${apiPrefix}/driver/hotspots`, hotspotRoutes);
 app.use(`${apiPrefix}/rides`, rideRoutes);
 app.use(`${apiPrefix}/payments`, paymentRoutes);
 app.use(`${apiPrefix}/subscription`, subscriptionRoutes);
@@ -182,7 +185,9 @@ app.use((_req, res) => {
 app.use(errorHandler);
 
 // Socket.io handlers
+setIo(io);
 setupSocketHandlers(io);
+startHotspotCron(prisma, redis);
 
 // WhatsApp ride-event listener (separate Redis subscriber)
 whatsappService.setupRideEventListener();

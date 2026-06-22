@@ -71,7 +71,7 @@
       [
         "expo-notifications",
         {
-          "color": "#F5C800",
+          "color": "#ffbe0b",
           "defaultChannel": "rides"
         }
       ]

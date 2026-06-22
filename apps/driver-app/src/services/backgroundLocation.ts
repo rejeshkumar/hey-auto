@@ -40,7 +40,7 @@ export async function startBackgroundLocation() {
       foregroundService: {
         notificationTitle: 'Aye Auto',
         notificationBody: 'Tracking your location for ride requests',
-        notificationColor: '#F5C800',
+        notificationColor: '#ffbe0b',
       },
     });
   }
