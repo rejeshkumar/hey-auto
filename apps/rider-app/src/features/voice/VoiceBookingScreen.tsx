@@ -170,8 +170,10 @@ export function VoiceBookingScreen({ navigation }: any) {
 
     if (voiceCtxRef.current === 'confirming') {
       // User replied yes/no to confirmation
-      const confirmed = data.intent === 'confirm_yes' || (data.transcript && /^(yes|yeah|ok|ആകട്ടെ|ശരി|ഉണ്ട്|അതെ)/i.test(data.transcript));
-      const denied    = data.intent === 'confirm_no'  || (data.transcript && /^(no|nope|വേണ്ട|അല്ല|change|മാറ്റ)/i.test(data.transcript));
+      const confirmed = data.confirmationAnswer === 'yes' || data.intent === 'confirm_yes'
+        || (data.transcript && /^(yes|yeah|ok|ആകട്ടെ|ശരി|ഉണ്ട്|അതെ)/i.test(data.transcript));
+      const denied    = data.confirmationAnswer === 'no'  || data.intent === 'confirm_no'
+        || (data.transcript && /^(no|nope|വേണ്ട|അല്ല|change|മാറ്റ)/i.test(data.transcript));
 
       if (confirmed && pendingPlace.current) {
         await bookRide(pendingPlace.current);

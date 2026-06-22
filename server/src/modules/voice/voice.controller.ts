@@ -63,11 +63,17 @@ export const voiceController = {
         }
       }
 
+      // Normalise intent to confirm_yes / confirm_no so the client can match directly
+      let intent = result.intent.intent;
+      if (intent === 'confirm') {
+        intent = result.intent.confirmationAnswer === 'yes' ? 'confirm_yes' : 'confirm_no';
+      }
+
       return res.json({
         success: true,
         data: {
           transcript:          result.transcript,
-          intent:              result.intent.intent,
+          intent,
           destination:         result.intent.destination,
           resolvedPlace,
           replyText:           result.intent.replyText,
