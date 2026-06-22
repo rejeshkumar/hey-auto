@@ -78,7 +78,7 @@ export function VoiceBookingScreen({ navigation }: any) {
 
   const speak = async (text: string) => {
     try {
-      const { data: res } = await api.post('/voice/tts', { text, language: lang });
+      const { data: res } = await api.post('/voice/tts', { text, language: lang }, { timeout: 30000 });
       if (!res.success || !res.data?.audio) return;
       const uri = `${FileSystem.cacheDirectory}tts_${Date.now()}.wav`;
       await FileSystem.writeAsStringAsync(uri, res.data.audio, { encoding: FileSystem.EncodingType.Base64 });
@@ -172,6 +172,7 @@ export function VoiceBookingScreen({ navigation }: any) {
 
       const { data: res } = await api.post('/voice/process', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 40000,
       });
       if (!res.success) throw new Error('Server error');
       await handleServerResponse(res.data);
