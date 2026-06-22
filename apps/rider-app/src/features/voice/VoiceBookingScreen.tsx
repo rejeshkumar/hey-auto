@@ -120,7 +120,27 @@ export function VoiceBookingScreen({ navigation }: any) {
         recordingRef.current = null;
       }
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true, staysActiveInBackground: false });
-      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      const { recording } = await Audio.Recording.createAsync({
+        android: {
+          extension: '.wav',
+          outputFormat: Audio.AndroidOutputFormat.DEFAULT,
+          audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 256000,
+        },
+        ios: {
+          extension: '.wav',
+          audioQuality: Audio.IOSAudioQuality.HIGH,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 256000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {},
+      });
       recordingRef.current = recording;
       setPhase('listening');
       setIsRecording(true);
@@ -146,7 +166,7 @@ export function VoiceBookingScreen({ navigation }: any) {
       if (!uri) throw new Error('No audio');
 
       const formData = new FormData();
-      formData.append('audio', { uri, name: 'voice.m4a', type: 'audio/m4a' } as any);
+      formData.append('audio', { uri, name: 'voice.wav', type: 'audio/wav' } as any);
       formData.append('language', lang);
       formData.append('context', voiceCtxRef.current);
 

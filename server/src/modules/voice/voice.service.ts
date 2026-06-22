@@ -11,8 +11,9 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 async function sarvamSTT(audioBuffer: Buffer, mimeType: string): Promise<string> {
   if (!env.SARVAM_API_KEY) throw new Error('SARVAM_API_KEY not configured');
 
+  const ext = mimeType.includes('wav') ? 'wav' : mimeType.includes('mp4') || mimeType.includes('m4a') ? 'm4a' : 'wav';
   const form = new FormData();
-  form.append('file', audioBuffer, { filename: 'audio.wav', contentType: mimeType });
+  form.append('file', audioBuffer, { filename: `audio.${ext}`, contentType: mimeType });
   form.append('model', 'saarika:v2');       // Sarvam's best Malayalam model
   form.append('language_code', 'ml-IN');
   form.append('with_timestamps', 'false');
