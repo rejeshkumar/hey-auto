@@ -28,7 +28,11 @@ router.put('/read', async (req: Request, res: Response, next: NextFunction) => {
 
 router.put('/fcm-token', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await notificationService.updateFcmToken(req.user!.userId, req.body.fcmToken);
+    const token = req.body.fcmToken;
+    if (typeof token !== 'string' || token.length < 100 || token.length > 512) {
+      return res.status(400).json({ success: false, error: { message: 'Invalid FCM token' } });
+    }
+    await notificationService.updateFcmToken(req.user!.userId, token);
     res.json({ success: true, data: { message: 'FCM token updated' } });
   } catch (err) {
     next(err);

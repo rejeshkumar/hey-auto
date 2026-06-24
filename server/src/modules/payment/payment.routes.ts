@@ -46,8 +46,8 @@ router.post('/wallet/topup', async (req: Request, res: Response, next: NextFunct
 
 router.get('/wallet/transactions', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const result = await paymentService.getWalletTransactions(req.user!.userId, page, limit);
     res.json({ success: true, ...result });
   } catch (err) {

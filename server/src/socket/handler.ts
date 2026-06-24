@@ -6,6 +6,24 @@ import { logger } from '../utils/logger';
 
 const userSockets = new Map<string, Socket>();
 
+// Lightweight per-user event throttle — stores last-allowed timestamp per (userId, event)
+const lastEventTime = new Map<string, number>();
+function isThrottled(userId: string, event: string, minIntervalMs: number): boolean {
+  const key = `${userId}:${event}`;
+  const now = Date.now();
+  const last = lastEventTime.get(key) ?? 0;
+  if (now - last < minIntervalMs) return true;
+  lastEventTime.set(key, now);
+  return false;
+}
+
+function isValidCoord(lat: unknown, lng: unknown): boolean {
+  return (
+    typeof lat === 'number' && typeof lng === 'number' &&
+    lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
+  );
+}
+
 export function setupSocketHandlers(io: Server) {
   io.use(async (socket, next) => {
     const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
@@ -36,6 +54,8 @@ export function setupSocketHandlers(io: Server) {
     // Driver location updates (every 3 seconds)
     socket.on('driver:location_update', async (data: { lat: number; lng: number }) => {
       if (user.role !== 'DRIVER') return;
+      if (isThrottled(user.userId, 'location_update', 1000)) return;
+      if (!isValidCoord(data?.lat, data?.lng)) return;
       try {
         await driverService.updateLocation(user.userId, data);
         const activeRide = await getActiveRideForDriver(user.userId);
@@ -54,6 +74,8 @@ export function setupSocketHandlers(io: Server) {
     // Rider requests nearby drivers for map display
     socket.on('rider:nearby_drivers', async (data: { lat: number; lng: number }) => {
       if (user.role !== 'RIDER') return;
+      if (isThrottled(user.userId, 'nearby_drivers', 3000)) return;
+      if (!isValidCoord(data?.lat, data?.lng)) return;
       try {
         const drivers = await driverService.getNearbyDrivers(data.lat, data.lng, 3);
         socket.emit('nearby_drivers', drivers.map((d) => ({ lat: d.lat, lng: d.lng, distance: d.distance })));

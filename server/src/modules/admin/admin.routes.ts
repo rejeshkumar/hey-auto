@@ -204,6 +204,9 @@ router.post('/seed-test-driver', async (req: Request, res: Response, next: NextF
     } = req.body as { phone: string; fullName?: string; city?: string; lat?: number; lng?: number };
 
     if (!phone) throw new Error('phone is required');
+    if (!/^\+?91[6-9]\d{9}$/.test(phone.replace(/\s/g, ''))) {
+      throw new Error('phone must be a valid Indian mobile number (10 digits starting with 6-9)');
+    }
     const normalised = phone.startsWith('+91') ? phone : `+91${phone}`;
 
     // Validate coordinate bounds
