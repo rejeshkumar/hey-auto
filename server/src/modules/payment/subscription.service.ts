@@ -222,8 +222,13 @@ export class SubscriptionService {
       .update(signedPayload)
       .digest('base64');
 
-    if (expected !== signature) {
-      logger.warn({ expected, signature }, 'Cashfree webhook signature mismatch');
+    const expectedBuf = Buffer.from(expected);
+    const signatureBuf = Buffer.from(signature);
+    const signaturesMatch =
+      expectedBuf.length === signatureBuf.length &&
+      crypto.timingSafeEqual(expectedBuf, signatureBuf);
+    if (!signaturesMatch) {
+      logger.warn('Cashfree webhook signature mismatch');
       throw new BadRequestError('Invalid webhook signature');
     }
 

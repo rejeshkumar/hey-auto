@@ -14,8 +14,8 @@ router.get('/', async (req, res) => {
   const lat = parseFloat(req.query.lat as string);
   const lng = parseFloat(req.query.lng as string);
 
-  if (isNaN(lat) || isNaN(lng)) {
-    return res.status(400).json({ success: false, error: { message: 'lat and lng required' } });
+  if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return res.status(400).json({ success: false, error: { message: 'Valid lat (-90 to 90) and lng (-180 to 180) required' } });
   }
 
   const hotspots = await computeHotspots(prisma, redis);

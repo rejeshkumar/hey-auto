@@ -1,8 +1,10 @@
+import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import { whatsappService, devInboxPop } from './whatsapp.service';
 import { metaWebhookSchema, twilioWhatsAppSchema, webhookVerifyQuerySchema } from './whatsapp.schema';
 import { BadRequestError } from '../../utils/errors';
 import { logger } from '../../utils/logger';
+import { env } from '../../config/env';
 
 export class WhatsAppController {
   /**
@@ -57,6 +59,31 @@ export class WhatsAppController {
         );
       } else {
         // ── Twilio WhatsApp ─────────────────────────────────────────────────
+        // Verify Twilio request signature when auth token is configured
+        if (env.TWILIO_AUTH_TOKEN) {
+          const twilioSig = req.headers['x-twilio-signature'] as string | undefined;
+          if (!twilioSig) {
+            throw new BadRequestError('Missing Twilio signature');
+          }
+          const url = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+          const params = req.body as Record<string, string>;
+          const sortedKeys = Object.keys(params).sort();
+          const valueString = sortedKeys.reduce((acc, k) => acc + k + params[k], url);
+          const expected = crypto
+            .createHmac('sha1', env.TWILIO_AUTH_TOKEN)
+            .update(valueString)
+            .digest('base64');
+          const expectedBuf = Buffer.from(expected);
+          const sigBuf = Buffer.from(twilioSig);
+          const valid =
+            expectedBuf.length === sigBuf.length &&
+            crypto.timingSafeEqual(expectedBuf, sigBuf);
+          if (!valid) {
+            logger.warn('Twilio webhook signature mismatch');
+            throw new BadRequestError('Invalid Twilio signature');
+          }
+        }
+
         const parsed = twilioWhatsAppSchema.safeParse(req.body);
         if (!parsed.success) {
           throw new BadRequestError('Invalid Twilio webhook payload');

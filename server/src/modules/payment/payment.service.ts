@@ -70,7 +70,12 @@ export class PaymentService {
       .update(`${data.razorpayOrderId}|${data.razorpayPaymentId}`)
       .digest('hex');
 
-    if (expectedSignature !== data.razorpaySignature) {
+    const expectedBuf = Buffer.from(expectedSignature);
+    const actualBuf = Buffer.from(data.razorpaySignature);
+    const signaturesMatch =
+      expectedBuf.length === actualBuf.length &&
+      crypto.timingSafeEqual(expectedBuf, actualBuf);
+    if (!signaturesMatch) {
       throw new BadRequestError('Invalid payment signature');
     }
 

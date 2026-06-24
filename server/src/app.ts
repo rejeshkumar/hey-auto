@@ -36,10 +36,16 @@ const app = express();
 app.set('trust proxy', 1);
 const server = http.createServer(app);
 
+const allowedOrigins = [
+  'https://hey-auto-server-production.up.railway.app',
+  'http://localhost:3000',
+  'http://localhost:8081',
+];
+
 // Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: true,
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -52,11 +58,6 @@ const io = new Server(server, {
 
 // Security
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
-const allowedOrigins = [
-  'https://hey-auto-server-production.up.railway.app',
-  'http://localhost:3000',
-  'http://localhost:8081',
-];
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, Postman, server-to-server)
@@ -66,9 +67,6 @@ app.use(cors({
   },
   credentials: true,
 }));
-
-// Trust Railway's reverse proxy so express-rate-limit reads the real client IP
-app.set('trust proxy', 1);
 
 // Rate limiting — global per IP
 // GLOBAL_RATE_LIMIT env var overrides the default (useful for load testing)
