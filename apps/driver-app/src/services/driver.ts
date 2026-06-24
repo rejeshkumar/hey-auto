@@ -212,4 +212,7 @@ export const driverApi = {
 
   getHotspots: (lat: number, lng: number) =>
     api.get<ApiResponse<HotspotResult[]>>(`/driver/hotspots?lat=${lat}&lng=${lng}`),
+
+  deleteAccount: () =>
+    api.delete('/auth/account'),
 };

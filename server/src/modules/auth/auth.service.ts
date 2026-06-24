@@ -274,6 +274,26 @@ export class AuthService {
     };
   }
 
+  async deleteAccount(userId: string) {
+    // Soft-delete: anonymise PII and mark DEACTIVATED — keeps ride history for accounting/legal purposes
+    const anon = `deleted_${userId.slice(0, 8)}`;
+    await prisma.$transaction([
+      prisma.refreshToken.deleteMany({ where: { userId } }),
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          phone: `+00000000000_${userId.slice(0, 8)}`,
+          fullName: 'Deleted User',
+          email: null,
+          status: 'DEACTIVATED',
+        },
+      }),
+    ]);
+    // Clear any Redis OTP/session keys
+    await redis.del(`otp:${anon}`).catch(() => {});
+    logger.info({ userId }, 'Account deleted (DPDP request)');
+  }
+
   private async generateTokens(userId: string, role: UserRole, deviceId?: string) {
     const accessToken = jwt.sign({ userId, role }, env.JWT_ACCESS_SECRET, {
       algorithm: 'HS256',

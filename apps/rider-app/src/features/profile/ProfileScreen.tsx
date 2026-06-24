@@ -3,9 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Linking } from 'react-native';
 import { ScreenWrapper } from '../../components';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { useAuthStore } from '../../hooks/useAuthStore';
+import { riderApi } from '../../services/rider';
 
 interface MenuItemProps {
   icon: string;
@@ -36,6 +38,35 @@ export function ProfileScreen({ navigation }: any) {
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('profile.logout'), style: 'destructive', onPress: () => logout() },
     ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and all personal data (name, phone, ride history). This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete My Account', style: 'destructive',
+          onPress: () => {
+            Alert.alert('Are you sure?', 'Your account will be permanently deleted under the Digital Personal Data Protection Act 2023.', [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Yes, Delete', style: 'destructive',
+                onPress: async () => {
+                  try {
+                    await riderApi.deleteAccount();
+                    logout();
+                  } catch {
+                    Alert.alert('Error', 'Could not delete account. Please contact privacy@heyauto.in');
+                  }
+                },
+              },
+            ]);
+          },
+        },
+      ],
+    );
   };
 
   const handleLanguageToggle = () => {
@@ -78,12 +109,23 @@ export function ProfileScreen({ navigation }: any) {
             <Text style={styles.menuLabel}>{t('profile.language')}</Text>
             <Text style={styles.langValue}>{i18n.language === 'ml' ? 'മലയാളം' : 'English'}</Text>
           </TouchableOpacity>
-          <MenuItem icon="help-circle" label={t('profile.help')} onPress={() => {}} />
+          <MenuItem icon="help-circle" label={t('profile.help')} onPress={() => Linking.openURL('mailto:support@heyauto.in')} />
+          <MenuItem icon="shield-lock-outline" label="Privacy Policy" onPress={() => Linking.openURL('https://hey-auto-server-production.up.railway.app/legal/privacy')} />
           <MenuItem icon="information" label={t('profile.about')} onPress={() => {}} />
         </View>
 
         <View style={styles.menuSection}>
           <MenuItem icon="logout" label={t('profile.logout')} onPress={handleLogout} color={colors.error} />
+          <MenuItem icon="delete-forever" label="Delete Account" onPress={handleDeleteAccount} color={colors.error} />
+        </View>
+
+        <View style={styles.grievanceCard}>
+          <Text style={styles.grievanceTitle}>Grievance Officer · DPDP Act 2023</Text>
+          <Text style={styles.grievanceText}>For data privacy concerns or deletion requests:</Text>
+          <TouchableOpacity onPress={() => Linking.openURL('mailto:privacy@heyauto.in')}>
+            <Text style={styles.grievanceEmail}>privacy@heyauto.in</Text>
+          </TouchableOpacity>
+          <Text style={styles.grievanceText}>Navam Works LLP · Taliparamba, Kannur, Kerala</Text>
         </View>
 
         <Text style={styles.version}>{t('profile.version', { version: '1.0.0' })}</Text>
@@ -150,5 +192,13 @@ const styles = StyleSheet.create({
   },
   menuLabel: { ...typography.body, color: colors.text, flex: 1 },
   langValue: { ...typography.smallBold, color: colors.primary, marginRight: spacing.sm },
+  grievanceCard: {
+    backgroundColor: colors.surface, borderRadius: borderRadius.xl,
+    padding: spacing.base, marginBottom: spacing.base,
+    borderWidth: 1, borderColor: colors.borderLight, gap: 4,
+  },
+  grievanceTitle: { ...typography.smallBold, color: colors.text },
+  grievanceText: { ...typography.caption, color: colors.textSecondary },
+  grievanceEmail: { ...typography.smallBold, color: colors.primary },
   version: { ...typography.caption, color: colors.textLight, textAlign: 'center', marginVertical: spacing.xl },
 });

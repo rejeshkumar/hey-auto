@@ -59,4 +59,7 @@ export const riderApi = {
 
   triggerSOS: (rideId?: string) =>
     api.post('/rider/sos', { rideId }),
+
+  deleteAccount: () =>
+    api.delete('/auth/account'),
 };

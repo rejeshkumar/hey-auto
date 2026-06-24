@@ -16,5 +16,6 @@ router.post('/verify-otp', validate(verifyOtpSchema), authController.verifyOtp);
 router.post('/refresh-token', validate(refreshTokenSchema), authController.refreshToken);
 router.post('/logout', authenticate, authController.logout);
 router.put('/complete-profile', authenticate, validate(completeProfileSchema), authController.completeProfile);
+router.delete('/account', authenticate, authController.deleteAccount);
 
 export { router as authRoutes };
