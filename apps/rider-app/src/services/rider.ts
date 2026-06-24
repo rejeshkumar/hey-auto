@@ -62,4 +62,7 @@ export const riderApi = {
 
   deleteAccount: () =>
     api.delete('/auth/account'),
+
+  downloadMyData: () =>
+    api.get('/auth/my-data'),
 };

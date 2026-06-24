@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Switch, Platform, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Switch, Platform, TextInput, Modal, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { Linking } from 'react-native';
@@ -53,6 +53,16 @@ export function ProfileScreen({ navigation }: any) {
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('profile.logout'), style: 'destructive', onPress: () => logout() },
     ]);
+  };
+
+  const handleDownloadMyData = async () => {
+    try {
+      const res = await driverApi.downloadMyData();
+      const json = JSON.stringify(res.data, null, 2);
+      await Share.share({ title: 'My Aye Auto Data', message: json });
+    } catch {
+      Alert.alert('Error', 'Could not download your data. Please try again or contact privacy@heyauto.in');
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -211,6 +221,7 @@ export function ProfileScreen({ navigation }: any) {
           </TouchableOpacity>
           <MenuItem icon="help-circle" label={t('profile.help')} onPress={() => Linking.openURL('mailto:support@heyauto.in')} />
           <MenuItem icon="shield-lock-outline" label="Privacy Policy" onPress={() => Linking.openURL('https://hey-auto-server-production.up.railway.app/legal/privacy')} />
+          <MenuItem icon="download-outline" label="Download My Data" onPress={handleDownloadMyData} />
           <MenuItem icon="information" label={t('profile.about')} onPress={() => {}} />
         </View>
 

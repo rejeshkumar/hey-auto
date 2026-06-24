@@ -215,4 +215,7 @@ export const driverApi = {
 
   deleteAccount: () =>
     api.delete('/auth/account'),
+
+  downloadMyData: () =>
+    api.get('/auth/my-data'),
 };

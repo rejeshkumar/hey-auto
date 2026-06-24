@@ -18,10 +18,11 @@ export function RegistrationScreen() {
   const [vehicleColor, setVehicleColor] = useState('');
   const [loading, setLoading] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const completeProfile = useAuthStore((s) => s.completeProfile);
 
   const handleSubmit = async () => {
-    if (name.trim().length < 2 || vehicleNo.trim().length < 4 || !consentGiven) return;
+    if (name.trim().length < 2 || vehicleNo.trim().length < 4 || !consentGiven || !ageConfirmed) return;
     setLoading(true);
     try {
       await completeProfile({ fullName: name.trim(), email: email.trim() || undefined, language: 'ml' });
@@ -72,13 +73,19 @@ export function RegistrationScreen() {
             </View>
             <Text style={styles.checkLabel}>I agree to the collection and use of my data as described above</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.checkRow} onPress={() => setAgeConfirmed(v => !v)} activeOpacity={0.7}>
+            <View style={[styles.checkbox, ageConfirmed && styles.checkboxChecked]}>
+              {ageConfirmed && <Icon name="check" size={14} color={colors.white} />}
+            </View>
+            <Text style={styles.checkLabel}>I confirm that I am 18 years of age or older (required under DPDP Act 2023)</Text>
+          </TouchableOpacity>
         </View>
 
         <Button
           title={t('auth.register')}
           onPress={handleSubmit}
           loading={loading}
-          disabled={name.trim().length < 2 || vehicleNo.trim().length < 4 || !consentGiven}
+          disabled={name.trim().length < 2 || vehicleNo.trim().length < 4 || !consentGiven || !ageConfirmed}
           style={{ marginTop: spacing.lg }}
         />
       </ScrollView>

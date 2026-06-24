@@ -57,6 +57,17 @@ export class AuthController {
     }
   }
 
+  async downloadMyData(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await authService.downloadMyData(req.user!.userId);
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename="my-data.json"');
+      res.json(data);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async deleteAccount(req: Request, res: Response, next: NextFunction) {
     try {
       await authService.deleteAccount(req.user!.userId);

@@ -274,6 +274,47 @@ export class AuthService {
     };
   }
 
+  async downloadMyData(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true, phone: true, fullName: true, email: true,
+        role: true, status: true, language: true, createdAt: true,
+      },
+    });
+    if (!user) throw new BadRequestError('User not found');
+
+    const rides = await prisma.ride.findMany({
+      where: { riderId: userId },
+      select: {
+        id: true, status: true, pickupAddress: true, dropoffAddress: true,
+        estimatedFare: true, totalAmount: true, requestedAt: true, completedAt: true,
+      },
+      orderBy: { requestedAt: 'desc' },
+      take: 500,
+    });
+
+    const savedPlaces = await prisma.savedPlace.findMany({
+      where: { userId },
+      select: { label: true, address: true },
+    }).catch(() => []);
+
+    const emergencyContacts = await prisma.emergencyContact.findMany({
+      where: { userId },
+      select: { name: true, phone: true, relationship: true },
+    }).catch(() => []);
+
+    logger.info({ userId }, 'DPDP: data download requested');
+
+    return {
+      exportedAt: new Date().toISOString(),
+      account: user,
+      rides,
+      savedPlaces,
+      emergencyContacts,
+    };
+  }
+
   async deleteAccount(userId: string) {
     // Soft-delete: anonymise PII and mark DEACTIVATED — keeps ride history for accounting/legal purposes
     const anon = `deleted_${userId.slice(0, 8)}`;

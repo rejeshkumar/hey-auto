@@ -16,6 +16,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { setupSocketHandlers } from './socket/handler';
 import { setIo } from './socket/io';
 import { hotspotRoutes, startHotspotCron } from './modules/hotspot';
+import { startRetentionCron } from './modules/auth/retention.cron';
 
 // Route imports
 import { authRoutes } from './modules/auth';
@@ -186,6 +187,7 @@ app.use(errorHandler);
 setIo(io);
 setupSocketHandlers(io);
 startHotspotCron(prisma, redis);
+startRetentionCron(prisma);
 
 // WhatsApp ride-event listener (separate Redis subscriber)
 whatsappService.setupRideEventListener();
