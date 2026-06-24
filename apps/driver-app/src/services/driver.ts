@@ -218,4 +218,13 @@ export const driverApi = {
 
   downloadMyData: () =>
     api.get('/auth/my-data'),
+
+  getNominee: () =>
+    api.get('/auth/nominee'),
+
+  upsertNominee: (data: { name: string; phone: string; relationship?: string }) =>
+    api.put('/auth/nominee', data),
+
+  removeNominee: () =>
+    api.delete('/auth/nominee'),
 };

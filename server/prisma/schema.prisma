@@ -34,6 +34,7 @@ model User {
   ratingsReceived   Rating[]           @relation("RatedRatings")
   savedPlaces       SavedPlace[]
   emergencyContacts EmergencyContact[]
+  dataNominee       DataNominee?
   notifications     Notification[]
   wallet            Wallet?
   refreshTokens     RefreshToken[]
@@ -390,6 +391,23 @@ model EmergencyContact {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("emergency_contacts")
+}
+
+// DPDP Act 2023 §14 — Right to Nomination
+// A nominee can exercise the data principal's rights (access, correction, erasure)
+// on their behalf in the event of death or incapacity.
+model DataNominee {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @unique @map("user_id") @db.Uuid
+  name         String   @db.VarChar(100)
+  phone        String   @db.VarChar(15)
+  relationship String?  @db.VarChar(50)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("data_nominees")
 }
 
 // ──────────────────────────────────────────

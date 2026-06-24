@@ -39,12 +39,21 @@ export function ProfileScreen({ navigation }: any) {
   const [cityModalVisible, setCityModalVisible] = useState(false);
   const [cityInput, setCityInput] = useState('');
   const [savingCity, setSavingCity] = useState(false);
+  const [nomineeModalVisible, setNomineeModalVisible] = useState(false);
+  const [nomineeName, setNomineeName] = useState('');
+  const [nomineePhone, setNomineePhone] = useState('');
+  const [nomineeRelation, setNomineeRelation] = useState('');
+  const [savingNominee, setSavingNominee] = useState(false);
+  const [existingNominee, setExistingNominee] = useState<{ name: string; phone: string } | null>(null);
 
   useEffect(() => {
     loadProfile();
     driverApi.getProfile().then((r) => {
       setAcceptsParcels(!!r.data.data?.acceptsParcels);
       setCity(r.data.data?.city || '');
+    }).catch(() => {});
+    driverApi.getNominee().then((r: any) => {
+      if (r.data?.data) setExistingNominee(r.data.data);
     }).catch(() => {});
   }, []);
 
@@ -53,6 +62,27 @@ export function ProfileScreen({ navigation }: any) {
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('profile.logout'), style: 'destructive', onPress: () => logout() },
     ]);
+  };
+
+  const handleOpenNomineeModal = () => {
+    setNomineeName(existingNominee?.name || '');
+    setNomineePhone(existingNominee?.phone?.replace('+91', '') || '');
+    setNomineeRelation('');
+    setNomineeModalVisible(true);
+  };
+
+  const handleSaveNominee = async () => {
+    if (nomineeName.trim().length < 2 || nomineePhone.trim().length < 10) return;
+    setSavingNominee(true);
+    try {
+      await driverApi.upsertNominee({ name: nomineeName.trim(), phone: nomineePhone.trim(), relationship: nomineeRelation.trim() || undefined });
+      setExistingNominee({ name: nomineeName.trim(), phone: nomineePhone.trim() });
+      setNomineeModalVisible(false);
+    } catch {
+      Alert.alert('Error', 'Could not save nominee. Please try again.');
+    } finally {
+      setSavingNominee(false);
+    }
   };
 
   const handleDownloadMyData = async () => {
@@ -120,6 +150,30 @@ export function ProfileScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper>
+      <Modal visible={nomineeModalVisible} transparent animationType="fade" onRequestClose={() => setNomineeModalVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setNomineeModalVisible(false)}>
+          <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
+            <Text style={styles.modalTitle}>Data Nominee</Text>
+            <Text style={styles.modalSub}>Under DPDP Act 2023 §14, your nominee can exercise your data rights on your behalf in case of death or incapacity.</Text>
+            <TextInput style={styles.cityInput} value={nomineeName} onChangeText={setNomineeName} placeholder="Full name" placeholderTextColor={colors.textLight} autoCapitalize="words" />
+            <TextInput style={styles.cityInput} value={nomineePhone} onChangeText={setNomineePhone} placeholder="Phone (10 digits)" placeholderTextColor={colors.textLight} keyboardType="phone-pad" maxLength={10} />
+            <TextInput style={styles.cityInput} value={nomineeRelation} onChangeText={setNomineeRelation} placeholder="Relationship (e.g. Spouse, Parent)" placeholderTextColor={colors.textLight} autoCapitalize="words" />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setNomineeModalVisible(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalSaveBtn, (savingNominee || nomineeName.trim().length < 2 || nomineePhone.trim().length < 10) && { opacity: 0.5 }]}
+                onPress={handleSaveNominee}
+                disabled={savingNominee || nomineeName.trim().length < 2 || nomineePhone.trim().length < 10}
+              >
+                <Text style={styles.modalSaveText}>{savingNominee ? 'Saving…' : 'Save'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <Modal visible={cityModalVisible} transparent animationType="fade" onRequestClose={() => setCityModalVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setCityModalVisible(false)}>
           <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
@@ -222,6 +276,7 @@ export function ProfileScreen({ navigation }: any) {
           <MenuItem icon="help-circle" label={t('profile.help')} onPress={() => Linking.openURL('mailto:support@heyauto.in')} />
           <MenuItem icon="shield-lock-outline" label="Privacy Policy" onPress={() => Linking.openURL('https://hey-auto-server-production.up.railway.app/legal/privacy')} />
           <MenuItem icon="download-outline" label="Download My Data" onPress={handleDownloadMyData} />
+          <MenuItem icon="account-arrow-right-outline" label="Data Nominee" onPress={handleOpenNomineeModal} rightText={existingNominee?.name || 'Not set'} />
           <MenuItem icon="information" label={t('profile.about')} onPress={() => {}} />
         </View>
 

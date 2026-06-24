@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput, Modal } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,15 +14,17 @@ interface MenuItemProps {
   label: string;
   onPress: () => void;
   color?: string;
+  rightText?: string;
 }
 
-function MenuItem({ icon, label, onPress, color }: MenuItemProps) {
+function MenuItem({ icon, label, onPress, color, rightText }: MenuItemProps) {
   return (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
       <View style={[styles.menuIcon, color ? { backgroundColor: color + '20' } : {}]}>
         <Icon name={icon} size={22} color={color || colors.primary} />
       </View>
       <Text style={styles.menuLabel}>{label}</Text>
+      {rightText && <Text style={styles.rightText}>{rightText}</Text>}
       <Icon name="chevron-right" size={22} color={colors.textLight} />
     </TouchableOpacity>
   );
@@ -32,6 +34,40 @@ export function ProfileScreen({ navigation }: any) {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuthStore();
   const insets = useSafeAreaInsets();
+
+  const [nomineeModalVisible, setNomineeModalVisible] = useState(false);
+  const [nomineeName, setNomineeName] = useState('');
+  const [nomineePhone, setNomineePhone] = useState('');
+  const [nomineeRelation, setNomineeRelation] = useState('');
+  const [savingNominee, setSavingNominee] = useState(false);
+  const [existingNominee, setExistingNominee] = useState<{ name: string; phone: string } | null>(null);
+
+  useEffect(() => {
+    riderApi.getNominee().then((r: any) => {
+      if (r.data?.data) setExistingNominee(r.data.data);
+    }).catch(() => {});
+  }, []);
+
+  const handleOpenNomineeModal = () => {
+    setNomineeName(existingNominee?.name || '');
+    setNomineePhone(existingNominee?.phone?.replace('+91', '') || '');
+    setNomineeRelation('');
+    setNomineeModalVisible(true);
+  };
+
+  const handleSaveNominee = async () => {
+    if (nomineeName.trim().length < 2 || nomineePhone.trim().length < 10) return;
+    setSavingNominee(true);
+    try {
+      await riderApi.upsertNominee({ name: nomineeName.trim(), phone: nomineePhone.trim(), relationship: nomineeRelation.trim() || undefined });
+      setExistingNominee({ name: nomineeName.trim(), phone: nomineePhone.trim() });
+      setNomineeModalVisible(false);
+    } catch {
+      Alert.alert('Error', 'Could not save nominee. Please try again.');
+    } finally {
+      setSavingNominee(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(t('profile.logout'), t('profile.logoutConfirm'), [
@@ -88,6 +124,30 @@ export function ProfileScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper>
+      <Modal visible={nomineeModalVisible} transparent animationType="fade" onRequestClose={() => setNomineeModalVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setNomineeModalVisible(false)}>
+          <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
+            <Text style={styles.modalTitle}>Data Nominee</Text>
+            <Text style={styles.modalSub}>Under DPDP Act 2023 §14, your nominee can exercise your data rights (access, correction, deletion) on your behalf in case of death or incapacity.</Text>
+            <TextInput style={styles.input} value={nomineeName} onChangeText={setNomineeName} placeholder="Full name" placeholderTextColor={colors.textLight} autoCapitalize="words" />
+            <TextInput style={styles.input} value={nomineePhone} onChangeText={setNomineePhone} placeholder="Phone number (10 digits)" placeholderTextColor={colors.textLight} keyboardType="phone-pad" maxLength={10} />
+            <TextInput style={styles.input} value={nomineeRelation} onChangeText={setNomineeRelation} placeholder="Relationship (e.g. Spouse, Parent)" placeholderTextColor={colors.textLight} autoCapitalize="words" />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setNomineeModalVisible(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalSaveBtn, (savingNominee || nomineeName.trim().length < 2 || nomineePhone.trim().length < 10) && { opacity: 0.5 }]}
+                onPress={handleSaveNominee}
+                disabled={savingNominee || nomineeName.trim().length < 2 || nomineePhone.trim().length < 10}
+              >
+                <Text style={styles.modalSaveText}>{savingNominee ? 'Saving…' : 'Save'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
         <Text style={styles.screenTitle}>{t('profile.title')}</Text>
 
@@ -122,6 +182,7 @@ export function ProfileScreen({ navigation }: any) {
           <MenuItem icon="help-circle" label={t('profile.help')} onPress={() => Linking.openURL('mailto:support@heyauto.in')} />
           <MenuItem icon="shield-lock-outline" label="Privacy Policy" onPress={() => Linking.openURL('https://hey-auto-server-production.up.railway.app/legal/privacy')} />
           <MenuItem icon="download-outline" label="Download My Data" onPress={handleDownloadMyData} />
+          <MenuItem icon="account-arrow-right-outline" label="Data Nominee" onPress={handleOpenNomineeModal} rightText={existingNominee?.name || 'Not set'} />
           <MenuItem icon="information" label={t('profile.about')} onPress={() => {}} />
         </View>
 
@@ -148,61 +209,29 @@ export function ProfileScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   screenTitle: { ...typography.h2, color: colors.text, marginTop: spacing.lg, marginBottom: spacing.lg },
   profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    gap: spacing.base,
-    elevation: 2,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.white,
+    borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.lg,
+    gap: spacing.base, elevation: 2,
+    shadowColor: colors.black, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4,
   },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   avatarText: { ...typography.h2, color: colors.white },
   profileInfo: { flex: 1 },
   profileName: { ...typography.h4, color: colors.text },
   profilePhone: { ...typography.small, color: colors.textSecondary, marginTop: 2 },
   menuSection: {
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.xl,
-    marginBottom: spacing.base,
-    overflow: 'hidden',
-    elevation: 1,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    backgroundColor: colors.white, borderRadius: borderRadius.xl, marginBottom: spacing.base, overflow: 'hidden',
+    elevation: 1, shadowColor: colors.black, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3,
   },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.base,
-    paddingHorizontal: spacing.base,
-    gap: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: spacing.base, paddingHorizontal: spacing.base,
+    gap: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.borderLight,
   },
-  menuIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  menuIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
   menuLabel: { ...typography.body, color: colors.text, flex: 1 },
   langValue: { ...typography.smallBold, color: colors.primary, marginRight: spacing.sm },
+  rightText: { ...typography.smallBold, color: colors.textSecondary, marginRight: spacing.sm },
   grievanceCard: {
     backgroundColor: colors.surface, borderRadius: borderRadius.xl,
     padding: spacing.base, marginBottom: spacing.base,
@@ -212,4 +241,18 @@ const styles = StyleSheet.create({
   grievanceText: { ...typography.caption, color: colors.textSecondary },
   grievanceEmail: { ...typography.smallBold, color: colors.primary },
   version: { ...typography.caption, color: colors.textLight, textAlign: 'center', marginVertical: spacing.xl },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
+  modalCard: { backgroundColor: colors.white, borderRadius: borderRadius.xl, padding: spacing.xl, width: '100%', gap: spacing.sm },
+  modalTitle: { ...typography.h4, color: colors.text },
+  modalSub: { ...typography.caption, color: colors.textSecondary, lineHeight: 18 },
+  input: {
+    borderWidth: 1.5, borderColor: colors.border, borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
+    fontSize: 16, color: colors.text,
+  },
+  modalActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xs },
+  modalCancelBtn: { flex: 1, paddingVertical: spacing.sm, alignItems: 'center', borderRadius: borderRadius.lg, backgroundColor: colors.surface },
+  modalCancelText: { ...typography.button, color: colors.textSecondary },
+  modalSaveBtn: { flex: 1, paddingVertical: spacing.sm, alignItems: 'center', borderRadius: borderRadius.lg, backgroundColor: colors.primary },
+  modalSaveText: { ...typography.button, color: colors.ink },
 });

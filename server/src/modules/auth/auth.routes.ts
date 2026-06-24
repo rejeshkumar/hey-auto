@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authController } from './auth.controller';
+import { nomineeController } from './nominee.controller';
 import { authenticate } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
 import {
@@ -18,5 +19,10 @@ router.post('/logout', authenticate, authController.logout);
 router.put('/complete-profile', authenticate, validate(completeProfileSchema), authController.completeProfile);
 router.get('/my-data', authenticate, authController.downloadMyData);
 router.delete('/account', authenticate, authController.deleteAccount);
+
+// DPDP §14 — Right to Nomination
+router.get('/nominee', authenticate, nomineeController.get);
+router.put('/nominee', authenticate, nomineeController.upsert);
+router.delete('/nominee', authenticate, nomineeController.remove);
 
 export { router as authRoutes };

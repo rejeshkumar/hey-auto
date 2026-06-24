@@ -118,6 +118,9 @@ export class RiderService {
     return { triggered: true, contactsNotified: contacts.length };
   }
 
+  // DPDP §5 purpose limitation: ride history may only be used for user-facing history display,
+  // fare calculations, ratings, and safety. Must NOT be used for marketing, profiling, or
+  // third-party analytics without fresh explicit consent from the user.
   async getRideHistory(userId: string, page = 1, limit = 20) {
     const skip = (page - 1) * limit;
     const [rides, total] = await Promise.all([
