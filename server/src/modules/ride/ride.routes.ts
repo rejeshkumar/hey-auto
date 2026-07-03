@@ -15,8 +15,9 @@ const rideRequestLimiter = rateLimit({
 
 const router = Router();
 
-// Public track endpoint (no auth)
+// Public track endpoints (no auth)
 router.get('/track/:token', rideController.getTrackData);
+router.get('/track/:token/map', rideController.getTrackMap);
 
 router.use(authenticate);
 

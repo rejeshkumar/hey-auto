@@ -264,6 +264,77 @@ export class RideController {
     }
   }
 
+  // GET /api/v1/rides/track/:token/map  — proxies the Google Static Map image (public, no auth)
+  // The Maps key stays server-side and is never sent to the browser. Coordinates are looked up
+  // fresh on each request so the driver marker tracks the live position.
+  async getTrackMap(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!env.GOOGLE_MAPS_API_KEY) {
+        // No key configured — let the page fall back to its placeholder
+        res.status(404).end();
+        return;
+      }
+
+      const token = req.params.token as string;
+      const rideId = await redis.get(`${SHARE_TOKEN_PREFIX}${token}`);
+      if (!rideId) {
+        res.status(404).end();
+        return;
+      }
+
+      const { prisma } = await import('../../config/database');
+      const ride = await prisma.ride.findUnique({
+        where: { id: rideId },
+        select: {
+          pickupLat: true, pickupLng: true,
+          dropoffLat: true, dropoffLng: true,
+          driver: { select: { driverProfile: { select: { currentLat: true, currentLng: true } } } },
+        },
+      });
+      if (!ride) {
+        res.status(404).end();
+        return;
+      }
+
+      const driverLat = ride.driver?.driverProfile?.currentLat ?? null;
+      const driverLng = ride.driver?.driverProfile?.currentLng ?? null;
+      const hasDriver = driverLat != null && driverLng != null;
+      const center = hasDriver
+        ? `${driverLat},${driverLng}`
+        : `${ride.pickupLat},${ride.pickupLng}`;
+
+      // Build manually — encoding | as %7C breaks Google Static Maps
+      const parts = [
+        `center=${center}`,
+        'zoom=15',
+        'size=640x400',
+        'scale=2',
+        'maptype=roadmap',
+        `key=${env.GOOGLE_MAPS_API_KEY}`,
+      ];
+      if (hasDriver) parts.push(`markers=color:0xF5C800|label:D|${driverLat},${driverLng}`);
+      parts.push(`markers=color:0x00C853|label:P|${ride.pickupLat},${ride.pickupLng}`);
+      parts.push(`markers=color:0xFF3B30|label:X|${ride.dropoffLat},${ride.dropoffLng}`);
+
+      const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?${parts.join('&')}`;
+
+      const upstream = await globalThis.fetch(mapUrl);
+      if (!upstream.ok) {
+        logger.warn({ status: upstream.status }, 'Static map upstream error');
+        res.status(502).end();
+        return;
+      }
+
+      const contentType = upstream.headers.get('content-type') ?? 'image/png';
+      const buf = Buffer.from(await upstream.arrayBuffer());
+      res.set('Content-Type', contentType);
+      res.set('Cache-Control', 'private, max-age=4'); // matches ~5s client poll; avoids hammering Google
+      res.send(buf);
+    } catch (err) {
+      next(err);
+    }
+  }
+
 }
 
 async function notifyEmergencyContacts(riderId: string, trackUrl: string): Promise<void> {

@@ -89,10 +89,12 @@ const otpLimiter = rateLimit({
   message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many OTP requests. Please wait a minute.' } },
 });
 
-// Share-token tracking rate limit — prevents brute-force enumeration of live ride tokens
+// Share-token tracking rate limit — prevents brute-force enumeration of live ride tokens.
+// A legitimate viewer polls two endpoints every ~5s (ride data + map image) ≈ 24 req/min,
+// so the cap sits above that while still blocking rapid enumeration (tokens are 128-bit random).
 const trackLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 20,
+  max: 40,
   message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many tracking requests.' } },
 });
 

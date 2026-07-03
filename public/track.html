@@ -82,7 +82,6 @@
   <div class="powered">Powered by Aye Auto · Zero-commission auto booking</div>
 
   <script>
-    const MAPS_KEY = 'AIzaSyBaOw8Yu2FKHSOSqnBbZNfPVBfJcD4J2i8';
     const token    = location.pathname.split('/track/')[1];
     const API_URL  = `/api/v1/rides/track/${token}`;
 
@@ -98,26 +97,9 @@
     };
 
     function buildMapUrl(data) {
-      const hasDriver = data.driverLat && data.driverLng;
-      const center = hasDriver
-        ? `${data.driverLat},${data.driverLng}`
-        : `${data.pickupLat},${data.pickupLng}`;
-
-      // Build manually — URLSearchParams encodes | to %7C which breaks Google Static Maps
-      const parts = [
-        `center=${center}`,
-        `zoom=15`,
-        `size=640x400`,
-        `scale=2`,
-        `maptype=roadmap`,
-        `key=${MAPS_KEY}`,
-      ];
-
-      if (hasDriver) parts.push(`markers=color:0xF5C800|label:D|${data.driverLat},${data.driverLng}`);
-      parts.push(`markers=color:0x00C853|label:P|${data.pickupLat},${data.pickupLng}`);
-      parts.push(`markers=color:0xFF3B30|label:X|${data.dropoffLat},${data.dropoffLng}`);
-
-      return `https://maps.googleapis.com/maps/api/staticmap?${parts.join('&')}`;
+      // Map image is proxied through the server so the Maps API key is never exposed to the browser.
+      // The server looks up live coordinates by token; the cache-buster forces a refresh each poll.
+      return `/api/v1/rides/track/${token}/map?t=${Date.now()}`;
     }
 
     function render(data) {
@@ -152,10 +134,19 @@
       const img = document.getElementById('map-img');
       const placeholder = document.getElementById('map-placeholder');
       const badge = document.getElementById('refresh-badge');
+      img.onerror = () => {
+        // Map unavailable (no key configured / link expired) — show placeholder, don't break the page
+        img.style.display = 'none';
+        placeholder.textContent = 'Map unavailable';
+        placeholder.style.display = 'flex';
+        badge.style.display = 'none';
+      };
+      img.onload = () => {
+        img.style.display = 'block';
+        placeholder.style.display = 'none';
+        badge.style.display = 'block';
+      };
       img.src = buildMapUrl(data);
-      img.style.display = 'block';
-      placeholder.style.display = 'none';
-      badge.style.display = 'block';
 
       // Stop polling on terminal states
       if (['COMPLETED','CANCELLED_RIDER','CANCELLED_DRIVER','NO_DRIVERS'].includes(data.status)) {
