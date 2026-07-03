@@ -69,3 +69,8 @@ server/prisma/migrations/**/migration_lock.toml
 # Uploads
 uploads/
 .github/
+
+# Environment files — never commit real secrets
+.env
+.env.*
+!.env.example
